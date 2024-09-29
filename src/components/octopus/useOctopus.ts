@@ -12,10 +12,10 @@ const octopusAccount = process.env.REACT_APP_octopus_account;
     try {
       const result = await fetch(`${apiEndpoint}/v1/accounts/${octopusAccount}`, {
         method: 'GET',
-        headers: {
-          'X-Octopus-ApiKey': apiKey,
-          'Content-Type': 'application/json',
-        },
+        // headers: {
+        //   'X-Octopus-ApiKey': apiKey,
+        //   'Content-Type': 'application/json',
+        // },
   
       })
       // const result = await fetch(`${apiEndpoint}/v1/products`)
