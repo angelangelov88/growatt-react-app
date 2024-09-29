@@ -1,10 +1,12 @@
 import React from "react";
-import MyComponent from "./components/MyComponent";
+import Growatt from "./components/growatt/Growatt";
+import Octopus from "./components/octopus/Octopus";
 
 function App() {
   return (
     <div className="App">
-      <MyComponent />
+      <Growatt />
+      <Octopus />
     </div>
   );
 }
