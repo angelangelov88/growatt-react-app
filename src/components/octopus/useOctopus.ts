@@ -6,14 +6,14 @@ function useOctopus() {
 
   const apiEndpoint = process.env.REACT_APP_octopus_api_endpoint;
 
-  const apiKey = 'sk_live_XJmhLsTeJybhTUEr4hxDkGvS'
+  const apiKey = process.env.REACT_APP_octopus_api_key;
 
   const fetchOctopusData = async () => {
     try {
       const result = await fetch(`${apiEndpoint}/v1/accounts/A-A766CA0B`, {
         method: 'GET',
         headers: {
-          'X-Octopus-ApiKey': apiKey,  // Add your API key in the header
+          'X-Octopus-ApiKey': apiKey,
           'Content-Type': 'application/json',
         },
   
