@@ -3,10 +3,9 @@ import { useEffect, useMemo } from 'react';
 function useGrowatt() {
 
   const groName = "Growatt";
-  console.log('env user', process.env.REACT_APP_growatt_user);
   
-  const user = "Angel Angelov";
-  const password = "solar10";
+  const user = process.env.REACT_APP_growatt_user;
+  const password = process.env.REACT_APP_growatt_password;
   // const options = {};
 
   // fetch data from growatt inverter api using username and password
