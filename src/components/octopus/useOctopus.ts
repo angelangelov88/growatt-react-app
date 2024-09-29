@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useQuery, gql } from '@apollo/client';
 
 function useOctopus() {
 
@@ -6,20 +7,29 @@ function useOctopus() {
 
   const apiEndpoint = process.env.REACT_APP_octopus_api_endpoint;
 const octopusAccount = process.env.REACT_APP_octopus_account;
-  const apiKey = process.env.REACT_APP_octopus_api_key;
+  const apiKey = process.env.REACT_APP_octopus_api_key || '';
 
-  const fetchOctopusData = async () => {
+  const getItems = gql`
+    query getSlots {
+      plannedDispatches(accountNumber: "${octopusAccount}") {
+          startDt
+          endDt
+      }
+    }
+  `;
+
+  const fetchOctopusData = async () => {  
     try {
-      const result = await fetch(`${apiEndpoint}/v1/accounts/${octopusAccount}`, {
-        method: 'GET',
-        // headers: {
-        //   'X-Octopus-ApiKey': apiKey,
-        //   'Content-Type': 'application/json',
-        // },
-  
-      })
+      // const result = await fetch(`${apiEndpoint}/v1/accounts/${octopusAccount}`)
+      console.log('Fetching data from: ', '/v1/accounts/A-A766CA0B');
+      const result = await fetch(`/v1/accounts/${octopusAccount}`, {
+        headers: {
+          'X-Octopus-ApiKey': apiKey,
+        }
+      });
+
       // const result = await fetch(`${apiEndpoint}/v1/products`)
-      
+
       if (!result.ok) {
         throw new Error(`HTTP error! status: ${result.status}`);
       }
@@ -38,11 +48,11 @@ const octopusAccount = process.env.REACT_APP_octopus_account;
   return useMemo(
     () => ({
       octName,
-
+      getItems,
     }),
     [
       octName,
-
+      getItems,
     ],
   );
 }
