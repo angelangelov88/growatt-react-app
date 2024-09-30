@@ -3,7 +3,7 @@ import { ApolloClient, createHttpLink, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 
 const httpLink = createHttpLink({
-  uri: process.env.REACT_APP_octopus_graphql_api_endpoint,
+  uri: process.env.REACT_APP_octopus_api_endpoint,
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -11,14 +11,14 @@ const authLink = setContext((_, { headers }) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? `Bearer ${token}` : "",
+      Authorization: token ? `${token}` : "",
     },
   };
 });
 
   const client = new ApolloClient({
   link: authLink.concat(httpLink),
-  uri: process.env.REACT_APP_octopus_graphql_api_endpoint,
+  uri: process.env.REACT_APP_octopus_api_endpoint,
   cache: new InMemoryCache(),
 });
 
