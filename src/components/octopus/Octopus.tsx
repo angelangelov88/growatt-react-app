@@ -1,16 +1,13 @@
 import React from 'react';
 import useOctopus from './useOctopus';
-import { useQuery } from '@apollo/client';
 
 const Octopus = () => {
-  const { octName, getItems } = useOctopus();
+  const { octName, loading, error, data } = useOctopus();
 
-  const { loading, error, data } = useQuery(getItems);
 
+  console.log('loading:', loading);
+  console.log('error:', error);
   console.log('data:', data);
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-
   return ( 
     <div>
       <h1>Octopus</h1>

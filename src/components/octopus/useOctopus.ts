@@ -5,7 +5,7 @@ function useOctopus() {
 
   const octName = "Octopus";
 
-  const apiEndpoint = process.env.REACT_APP_octopus_api_endpoint;
+  // const apiEndpoint = process.env.REACT_APP_octopus_api_endpoint;
 const octopusAccount = process.env.REACT_APP_octopus_account;
   const apiKey = process.env.REACT_APP_octopus_api_key || '';
 
@@ -17,11 +17,13 @@ const octopusAccount = process.env.REACT_APP_octopus_account;
       }
     }
   `;
+  const { loading, error, data } = useQuery(getItems);
+
+  console.log('data:', data);
 
   const fetchOctopusData = async () => {  
     try {
       // const result = await fetch(`${apiEndpoint}/v1/accounts/${octopusAccount}`)
-      console.log('Fetching data from: ', '/v1/accounts/A-A766CA0B');
       const result = await fetch(`/v1/accounts/${octopusAccount}`, {
         headers: {
           'X-Octopus-ApiKey': apiKey,
@@ -49,10 +51,16 @@ const octopusAccount = process.env.REACT_APP_octopus_account;
     () => ({
       octName,
       getItems,
+      loading,
+      error,
+      data,
     }),
     [
       octName,
       getItems,
+      loading,
+      error,
+      data,
     ],
   );
 }
