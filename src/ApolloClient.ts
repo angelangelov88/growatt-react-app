@@ -22,10 +22,8 @@ import {
 
   const client = new ApolloClient({
   // link: authLink.concat(httpLink),
-  // uri: process.env.REACT_APP_octopus_api_endpoint,
-  // uri: "https://flyby-router-demo.herokuapp.com/",
-  // uri: "https://api.spacex.land/graphql/'",
-  uri: "https://swapi-graphql.netlify.app/.netlify/functions/index",
+  uri: process.env.REACT_APP_octopus_api_endpoint,
+  // uri: "https://swapi-graphql.netlify.app/.netlify/functions/index",
   cache: new InMemoryCache(),
 });
 
