@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useQuery, gql } from '@apollo/client';
 
 function useOctopus() {
@@ -41,7 +41,7 @@ function useOctopus() {
   // };
   const { loading, error, data } = useQuery(getItems);
 
-  console.log('data:', data);
+  // console.log('data:', data);
 
   // const fetchOctopusData = async () => {  
   //   try {

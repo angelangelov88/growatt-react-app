@@ -69,7 +69,7 @@ function useGrowatt() {
   
   // test();
 
-  console.log('user:', user);
+  // console.log('user:', user);
   // console.log('password:', password);
   // console.log('options:', options);
 
