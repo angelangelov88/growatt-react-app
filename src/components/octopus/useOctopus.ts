@@ -56,10 +56,10 @@ function useOctopus() {
   // const { loading, error, data } = useQuery(SLOTS);
   const [authMutation, { data, loading, error }] = useMutation(AUTH);
 
-  console.log('data', data);
   // console.log('authMutation', authMutation);
 
   const handleAuth = async () => {
+    console.log('handleAuthStarted');
     try {
       const response = await authMutation({
         variables: {
@@ -71,9 +71,7 @@ function useOctopus() {
       console.error('Error executing AUTH mutation:', err);
     }
   };
-  
-  console.log('data', data);
-  
+    
     return useMemo(
     () => ({
       loading,
