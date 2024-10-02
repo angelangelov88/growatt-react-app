@@ -23,6 +23,7 @@ import {
   const client = new ApolloClient({
   // link: authLink.concat(httpLink),
   uri: process.env.REACT_APP_octopus_api_endpoint,
+  // uri: "https://api.octopus.energy/v1/graphql/",
   // uri: "https://swapi-graphql.netlify.app/.netlify/functions/index",
   cache: new InMemoryCache(),
 });
