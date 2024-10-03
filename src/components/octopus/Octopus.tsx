@@ -1,6 +1,6 @@
 import React from 'react';
 import useOctopus from './useOctopus';
-import { slot } from '../../types/Slots';
+import { Slot } from '../../types/Slots';
 
 const Octopus = () => {
   const {       authLoading,
@@ -36,7 +36,7 @@ const Octopus = () => {
         {authLoading ? <p>Loading...</p> : null}
         {slotsData && <div>
           <h3>Success! Slots:</h3>
-          {slotsData?.plannedDispatches?.length > 0 ? slotsData?.planneDipatches?.map((item: slot, index: number) => (
+          {slotsData?.plannedDispatches?.length > 0 ? slotsData?.planneDipatches?.map((item: Slot, index: number) => (
             <div key={`slot-${index}`} className='border border-red-500 my-3 w-44'>
               <p>{String(item.start)}</p>
               <p>{String(item.end)}</p>

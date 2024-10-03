@@ -79,7 +79,7 @@ const [token, setToken] = useState('');
       console.error('Error executing AUTH mutation:', err);
     }
   };
-    
+
   const handleAuthAndFetchSlots = async () => {
     try {
       // Step 1: Execute the getAuth mutation to obtain the token

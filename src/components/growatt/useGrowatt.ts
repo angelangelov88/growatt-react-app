@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 function useGrowatt() {
+  const [response, setResponse] = useState({});
+  const [error, setError] = useState(null);
 
   const groName = "Growatt";
   
@@ -10,68 +12,29 @@ function useGrowatt() {
 
   // fetch data from growatt inverter api using username and password
   const fetchData = async () => {
-    const result = await fetch("http://test.growatt.com/v1/user/c_user_list", {
-      method: "POST",
-      mode: "no-cors",
-      // body: JSON.stringify({
-      //   page: 1,
-      //   perpage: 10,
-      //   username: user,
-      //   password: password,
-      // }),
-    });
-    
-    // console.log('result:', result);
+    try {
+      // const response = await fetch('http://server.growatt.com/v1/auth/login', {
+      // This is the POST request to set the battery to discharge
+      const response = await fetch('https://server.growatt.com/tcpSet.do$action=mixSet&serialNum=KTM0CML008&type=mix_ac_discharge_time_period&param1=100&param2=20&param3=22&param4=09&param5=22&param6=39&param7=1&param8=00&param9=00&param10=00&param11=00&param12=0&param13=00&param14=00&param15=00&param16=00&param17=0', {
+        method: 'POST', // Make sure the method matches what the API expects
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_name: user,
+          password: password,
+        }),
+      });
 
+      if (!response.ok) {
+        throw new Error('Error fetching data');
+      }
 
-  //     const fetchPhotos = async () => {
-  //       try {
-  //     // const response = await fetch(`http://test.growatt.com/v1/user/c_user_list?page=${page}&perpage=${perPage}`, {
-  //     const response = await fetch('https://jsonplaceholder.typicode.com/photos', 
-  //     //   {
-  //     //   mode: 'no-cors',
-  //     // }
-  //   );
-      
-  //     console.log('response:', response);
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  
-  //     const data = await response.json();
-  //     console.log(data);
-  //   } catch (error) {
-  //     console.error('Error fetching photos:', error);
-  //   }
-  // };
-
-  // fetchPhotos();
-  };
-
-
-  // async function test() {
-  //   const growatt = new api({});
-  //   const login = await growatt.login(user, password).catch((e: Error) => {
-  //     console.log(e);
-  //   });
-  //   console.log("login:", login);
-  //   const getAllPlantData = await growatt
-  //     .getAllPlantData(options)
-  //     .catch((e: Error) => {
-  //       console.log(e);
-  //     });
-  //   console.log("getAllPlatData:", JSON.stringify(getAllPlantData, null, " "));
-  //   const logout = await growatt.logout().catch((e: Error) => {
-  //     console.log(e);
-  //   });
-  //   console.log("logout:", logout);
-  // }
-  
-  // test();
-
-  // console.log('user:', user);
-  // console.log('password:', password);
-  // console.log('options:', options);
+      const data = await response.json();
+      setResponse(data);
+    } catch (error) {
+      console.log('error', error);
+    }};
 
   useEffect(() => {
     console.log('useEffect');
@@ -81,11 +44,13 @@ function useGrowatt() {
   return useMemo(
     () => ({
       groName,
-
+      response,
+      error,
     }),
     [
       groName,
-
+      response,
+      error,
     ],
   );
 }
