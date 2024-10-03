@@ -1,15 +1,21 @@
 import React from 'react';
 import useOctopus from './useOctopus';
 import { Slot } from '../../types/Slots';
+import useSlotChecker from './useSlotChecker';
 
 const Octopus = () => {
-  const {       authLoading,
-    authError,
-    authData,
+  const {       
+    // authLoading,
+    // authError,
+    // authData,
     slotsLoading,
     slotsError,
     slotsData, handleAuth,
-  handleAuthAndFetchSlots } = useOctopus();
+    formatDate,
+  handleAuthAndFetchSlots
+ } = useOctopus();
+
+ const { message } = useSlotChecker({ slotsData });
 
   return ( 
     <div>
@@ -31,18 +37,31 @@ const Octopus = () => {
         <h1>Handle Auth</h1>
         <button onClick={() => handleAuth()} className='bg-blue-300 p-2 m-2 rounded-lg'>Handle Auth</button>
         <button onClick={() => handleAuthAndFetchSlots()} className='bg-blue-300 p-2 m-2 rounded-lg'>Handle Auth and slots</button>
-        {authData && <p>Success! Token: {authData.obtainKrakenToken.token}</p>}
+        {/* {authData && <p>Success! Token: {authData.obtainKrakenToken.token}</p>}
         {authError ? <p>Error: {authError.message}</p> : null}
-        {authLoading ? <p>Loading...</p> : null}
-        {slotsData && <div>
+        {authLoading ? <p>Loading...</p> : null} */}
+        {/* {slotsData && <div>
           <h3>Success! Slots:</h3>
-          {slotsData?.plannedDispatches?.length > 0 ? slotsData?.planneDipatches?.map((item: Slot, index: number) => (
+          {slotsData?.plannedDispatches?.length > 0 ? slotsData?.plannedDipatches?.map((item: Slot, index: number) => (
             <div key={`slot-${index}`} className='border border-red-500 my-3 w-44'>
-              <p>{String(item.start)}</p>
-              <p>{String(item.end)}</p>
+              <p>{String(item.startDt)}</p>
+              <p>{new Date(item.endDt).toString()}</p>
           </div>
           )) : <div>No slots available</div>}
-        </div>}
+        </div>} */}
+        {slotsData && <h3>Success! Slots:</h3>}
+        {slotsData?.plannedDispatches?.length > 0 && slotsData?.plannedDispatches?.map((item: Slot, index: number) => {
+          return (
+            <div key={`slot-${index}`} className='m-3 '>
+              <p>{formatDate(item.startDt)}</p>
+              <p>{formatDate(item.endDt)}</p>
+              <h3>Message:</h3>
+              <p>{message}</p>
+            </div>
+
+          )
+        })}
+
         {slotsError ? <p>Error: {slotsError.message}</p> : null}
         {slotsLoading ? <p>Loading...</p> : null}
         </div>

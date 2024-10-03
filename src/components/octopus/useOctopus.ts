@@ -4,7 +4,7 @@ import { gql, useMutation, useLazyQuery } from '@apollo/client';
 function useOctopus() {
   const octopusAccount = process.env.REACT_APP_octopus_account;
   const apiKey = process.env.REACT_APP_octopus_api_key;
-const [token, setToken] = useState('');
+  const [token, setToken] = useState('');
   const AUTH = gql`
     mutation getAuth ($APIKey: String!) {
       obtainKrakenToken(input: { APIKey: $APIKey }) {
@@ -27,26 +27,26 @@ const [token, setToken] = useState('');
     // Authorization Header:
     // Authorization: "{token}"
 
-    const FILMS = gql`
-      query Query {
-        allFilms {
-          films {
-            title
-            director
-            releaseDate
-            speciesConnection {
-              species {
-                name
-                classification
-                homeworld {
-                  name
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
+    // const FILMS = gql`
+    //   query Query {
+    //     allFilms {
+    //       films {
+    //         title
+    //         director
+    //         releaseDate
+    //         speciesConnection {
+    //           species {
+    //             name
+    //             classification
+    //             homeworld {
+    //               name
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // `;
 
 
   // const { loading, error, data } = useQuery(FILMS);
@@ -63,7 +63,7 @@ const [token, setToken] = useState('');
     // authMutation,
     getAuth,
     { data: authData, loading: authLoading, error: authError }] = useMutation(AUTH);
-
+  
   // console.log('authMutation', authMutation);
   const handleAuth = async () => {
     try {
@@ -100,6 +100,24 @@ const [token, setToken] = useState('');
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    // Format the date as '04 Oct 2024'
+    const formattedDate = date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    // Format the time as '05:00:00'
+    const formattedTime = date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    return `${formattedDate} - ${formattedTime}`;
+  };
+
     return useMemo(
     () => ({
       authLoading,
@@ -110,6 +128,7 @@ const [token, setToken] = useState('');
       slotsData,
       handleAuth,
       handleAuthAndFetchSlots,
+      formatDate,
     }),
     [
       authLoading,
@@ -120,6 +139,7 @@ const [token, setToken] = useState('');
       slotsData,
       handleAuth,
       handleAuthAndFetchSlots,
+      formatDate,
     ],
   );
 }
