@@ -1,8 +1,8 @@
 // src/ApolloClient.js
 import { 
-  ApolloClient, 
-  // createHttpLink, 
-  InMemoryCache 
+	ApolloClient, 
+	// createHttpLink, 
+	InMemoryCache 
 } from '@apollo/client';
 // import { setContext } from '@apollo/client/link/context';
 
@@ -20,12 +20,12 @@ import {
 //   };
 // });
 
-  const client = new ApolloClient({
-  // link: authLink.concat(httpLink),
-  uri: process.env.REACT_APP_octopus_api_endpoint,
-  // uri: "https://api.octopus.energy/v1/graphql/",
-  // uri: "https://swapi-graphql.netlify.app/.netlify/functions/index",
-  cache: new InMemoryCache(),
+const client = new ApolloClient({
+	// link: authLink.concat(httpLink),
+	uri: process.env.REACT_APP_octopus_api_endpoint,
+	// uri: "https://api.octopus.energy/v1/graphql/",
+	// uri: "https://swapi-graphql.netlify.app/.netlify/functions/index",
+	cache: new InMemoryCache(),
 });
 
 export default client;
