@@ -49,7 +49,8 @@ const Octopus = () => {
           </div>
           )) : <div>No slots available</div>}
         </div>} */}
-					{slotsData?.plannedDispatches?.length > 0 ? <h3>Success! Slots:</h3> : (
+					{slotsData?.plannedDispatches?.length > 0 && <h3>Success! Slots:</h3>} 
+					{slotsData && slotsData?.plannedDispatches?.length === 0 && (
 						<div>No slots available</div>
 					)}
 					{slotsData?.plannedDispatches?.length > 0 && slotsData?.plannedDispatches?.map((item: Slot, index: number) => {
