@@ -28,6 +28,7 @@ function useGrowatt() {
   const user = process.env.REACT_APP_growatt_user;
   const password = process.env.REACT_APP_growatt_password;
   console.log("user", user);
+  console.log("user1", process.env.REACT_APP_growatt_user);
   console.log("password", password);
   // const options = {};
 
