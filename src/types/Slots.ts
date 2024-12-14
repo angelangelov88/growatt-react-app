@@ -6,7 +6,6 @@ type Slot = {
   //   source: string; //Present for planned dispatches, otherwise null. Value can be smart-charge, test-charge or bump-charge.
   //   location: string; // Present for completed dispatches, otherwise null. The only relevant value is AT_HOME if present.
   __typename: string;
-  
 };
 
 interface SlotsData {
@@ -17,6 +16,5 @@ interface Time {
   hours: number;
   minutes: number;
 }
-
 
 export type { Slot, SlotsData, Time };

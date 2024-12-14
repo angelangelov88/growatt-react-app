@@ -8,9 +8,9 @@ type film = {
       classification: string;
       homeworld: {
         name: string;
-      }
-    }
-  }
-}
+      };
+    };
+  };
+};
 
 export type { film };
