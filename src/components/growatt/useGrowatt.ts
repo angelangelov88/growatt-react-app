@@ -27,6 +27,8 @@ function useGrowatt() {
 
   const user = process.env.REACT_APP_growatt_user;
   const password = process.env.REACT_APP_growatt_password;
+  console.log("user", user);
+  console.log("password", password);
   // const options = {};
 
   // fetch data from growatt inverter api using username and password
