@@ -1,46 +1,46 @@
+import SparkMD5 from "spark-md5";
+
 const BASE = "/growatt";
 
-const headers = {
-  token: import.meta.env.VITE_GROWATT_TOKEN,
-  "Content-Type": "application/x-www-form-urlencoded",
-};
+const hashPassword = (password: string) => SparkMD5.hash(password);
 
-const get = async (path: string, retries = 3): Promise<any> => {
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(`${BASE}${path}`, { headers });
-    const data = await res.json();
-    console.log('data', data);
-    if (data.error_code === 10012) {
-      await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
-      continue;
-    }
-    if (data.error_code !== 0) throw new Error(data.error_msg);
-    return data.data;
+const request = async (path: string, body?: Record<string, string>): Promise<any> => {
+  const res = await fetch(`${BASE}${path}`, {
+    method: body ? "POST" : "GET",
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
+    body: body ? new URLSearchParams(body) : undefined,
+  });
+  const text = await res.text();
+  console.log(`${body ? "POST" : "GET"} ${path}:`, text);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Unexpected response: ${text.slice(0, 100)}`);
   }
-  throw new Error("Rate limited after retries");
 };
 
-const post = async (path: string, body: Record<string, string>, retries = 3): Promise<any> => {
-  for (let i = 0; i < retries; i++) {
-    const res = await fetch(`${BASE}${path}`, {
-      method: "POST",
-      headers,
-      body: new URLSearchParams(body),
-    });
-    const data = await res.json();
-    if (data.error_code === 10012) {
-      await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
-      continue;
-    }
-    if (data.error_code !== 0) throw new Error(data.error_msg);
-    return data.data;
-  }
-  throw new Error("Rate limited after retries");
+export const login = async (user: string, password: string) => {
+  const data = await request("/login", {
+    account: user,
+    password: "",
+    passwordCrc: hashPassword(password),
+    validateCode: "",
+    isReadPact: "0",
+    type: "1",
+  });
+  if (data.result !== 1) throw new Error(data.msg ?? "Login failed");
+  return data;
 };
 
-export const fetchUserInfo = () => get("/v1/user/info");
+export const fetchPlantList = () =>
+  request("/index/getPlantListTitle?currPage=1");
 
-export const fetchDeviceList = () => get("/v1/device/list?page=1");
+export const fetchPlantData = (plantId: string) =>
+  request("/panel/getPlantData", { plantId });
+
+export const fetchDevicesByPlant = (plantId: string) =>
+  request("/device/getDevicesByPlantList", { plantId, currPage: "1" });
 
 export const setChargeTime = (
   serial: string,
@@ -48,25 +48,33 @@ export const setChargeTime = (
   startMin: string,
   endHour: string,
   endMin: string,
-) =>
-  post("/v1/device/mix/set_mix_ac_charge_time_period", {
+  period: 2 | 3 = 2,
+) => {
+  const isP2 = period === 2;
+  return request("/tcpSet.do", {
+    action: "mixSet",
     serialNum: serial,
+    type: "mix_ac_charge_time_period",
     param1: "25",
     param2: "95",
     param3: "1",
-    param4: startHour,
-    param5: startMin,
-    param6: endHour,
-    param7: endMin,
+    // period 1 — hardcoded 01:00–05:00 enabled
+    param4: "01",
+    param5: "00",
+    param6: "05",
+    param7: "00",
     param8: "1",
-    param9: "00",
-    param10: "00",
-    param11: "00",
-    param12: "00",
-    param13: "0",
-    param14: "00",
-    param15: "00",
-    param16: "00",
-    param17: "00",
-    param18: "0",
+    // period 2
+    param9:  isP2 ? startHour : "00",
+    param10: isP2 ? startMin  : "00",
+    param11: isP2 ? endHour   : "00",
+    param12: isP2 ? endMin    : "00",
+    param13: isP2 ? "1"       : "0",
+    // period 3
+    param14: isP2 ? "00"      : startHour,
+    param15: isP2 ? "00"      : startMin,
+    param16: isP2 ? "00"      : endHour,
+    param17: isP2 ? "00"      : endMin,
+    param18: isP2 ? "0"       : "1",
   });
+};

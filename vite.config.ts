@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/growatt": {
-        target: "https://openapi.growatt.com",
+        target: "https://server.growatt.com",
         changeOrigin: true,
         cookieDomainRewrite: "localhost",
         rewrite: (path) => path.replace(/^\/growatt/, ""),
