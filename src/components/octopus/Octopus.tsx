@@ -3,11 +3,10 @@ import useOctopus from "./useOctopus";
 import { Slot } from "../../types/Slots";
 import useSlotChecker from "./useSlotChecker";
 
+import useApplySlots from "./useApplySlots";
+
 const Octopus = () => {
   const {
-    // authLoading,
-    // authError,
-    // authData,
     slotsLoading,
     slotsError,
     slotsData,
@@ -17,6 +16,7 @@ const Octopus = () => {
   } = useOctopus();
 
   const { message } = useSlotChecker({ slotsData });
+  const { applySlots, extraSlotsMessage, isPending, error: applyError } = useApplySlots({ slotsData });
 
   return (
     <div>
@@ -77,6 +77,17 @@ const Octopus = () => {
 
           {slotsError ? <p>Error: {slotsError.message}</p> : null}
           {slotsLoading ? <p>Loading...</p> : null}
+          {slotsData && (
+            <button
+              onClick={applySlots}
+              disabled={isPending}
+              className="bg-green-400 p-2 m-2 rounded-lg disabled:opacity-50"
+            >
+              {isPending ? "Applying..." : "Apply Slots to Growatt"}
+            </button>
+          )}
+          {extraSlotsMessage && <p className="text-yellow-600">{extraSlotsMessage}</p>}
+          {applyError && <p className="text-red-500">Apply error: {applyError.message}</p>}
         </div>
       </>
     </div>

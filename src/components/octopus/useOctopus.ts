@@ -28,19 +28,10 @@ function useOctopus() {
   const [
     getSlots,
     { loading: slotsLoading, error: slotsError, data: slotsData },
-  ] = useLazyQuery(GET_SLOTS, {
-    fetchPolicy: "network-only",
-    context: {
-      headers: {
-        Authorization: `${token}`,
-      },
-    },
-  });
+  ] = useLazyQuery(GET_SLOTS, { fetchPolicy: "network-only" });
 
-  const [
-    getAuth,
-    { data: authData, loading: authLoading, error: authError },
-  ] = useMutation(AUTH);
+  const [getAuth, { data: authData, loading: authLoading, error: authError }] =
+    useMutation(AUTH);
 
   const handleAuth = async () => {
     try {
@@ -58,8 +49,7 @@ function useOctopus() {
 
       if (newToken) {
         setToken(newToken);
-        const slotsResponse = await getSlots();
-        console.log("Slots Data:", slotsResponse.data);
+        await getSlots({ context: { headers: { Authorization: newToken } } });
       }
     } catch (e) {
       console.error("Error fetching auth or slots data:", e);

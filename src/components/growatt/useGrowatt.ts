@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { login, fetchPlantList, fetchDevicesByPlant, setChargeTime } from "./growattApi";
+import { login, fetchPlantList, fetchDevicesByPlant, setChargePeriods } from "./growattApi";
+import type { SlotParam } from "./growattApi";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 const user = import.meta.env.VITE_GROWATT_USER;
@@ -34,19 +35,8 @@ function useGrowatt() {
   });
 
   const chargeTimeMutation = useMutation({
-    mutationFn: ({
-      startHour,
-      startMin,
-      endHour,
-      endMin,
-      period = 2,
-    }: {
-      startHour: string;
-      startMin: string;
-      endHour: string;
-      endMin: string;
-      period?: 2 | 3;
-    }) => setChargeTime(serial, startHour, startMin, endHour, endMin, period),
+    mutationFn: ({ p2, p3 }: { p2: SlotParam; p3: SlotParam }) =>
+      setChargePeriods(serial, p2, p3),
   });
 
   return {

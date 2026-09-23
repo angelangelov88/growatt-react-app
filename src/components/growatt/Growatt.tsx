@@ -30,7 +30,7 @@ const Growatt = () => {
           {plantListQuery.isFetching ? "Loading..." : "Get Plants"}
         </button>
         <button
-          onClick={() => chargeTimeMutation.mutate({ startHour: "01", startMin: "00", endHour: "03", endMin: "00" })}
+          onClick={() => chargeTimeMutation.mutate({ p2: { startHour: "01", startMin: "00", endHour: "03", endMin: "00" }, p3: null })}
           disabled={!isLoggedIn || chargeTimeMutation.isPending}
           className="bg-green-300 p-2 rounded-lg disabled:opacity-50"
         >

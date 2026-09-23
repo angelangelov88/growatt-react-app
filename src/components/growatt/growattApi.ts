@@ -42,16 +42,10 @@ export const fetchPlantData = (plantId: string) =>
 export const fetchDevicesByPlant = (plantId: string) =>
   request("/device/getDevicesByPlantList", { plantId, currPage: "1" });
 
-export const setChargeTime = (
-  serial: string,
-  startHour: string,
-  startMin: string,
-  endHour: string,
-  endMin: string,
-  period: 2 | 3 = 2,
-) => {
-  const isP2 = period === 2;
-  return request("/tcpSet.do", {
+export type SlotParam = { startHour: string; startMin: string; endHour: string; endMin: string } | null;
+
+export const setChargePeriods = (serial: string, p2: SlotParam, p3: SlotParam) =>
+  request("/tcpSet.do", {
     action: "mixSet",
     serialNum: serial,
     type: "mix_ac_charge_time_period",
@@ -59,22 +53,17 @@ export const setChargeTime = (
     param2: "95",
     param3: "1",
     // period 1 — hardcoded 01:00–05:00 enabled
-    param4: "01",
-    param5: "00",
-    param6: "05",
-    param7: "00",
-    param8: "1",
+    param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
     // period 2
-    param9:  isP2 ? startHour : "00",
-    param10: isP2 ? startMin  : "00",
-    param11: isP2 ? endHour   : "00",
-    param12: isP2 ? endMin    : "00",
-    param13: isP2 ? "1"       : "0",
+    param9:  p2?.startHour ?? "00",
+    param10: p2?.startMin  ?? "00",
+    param11: p2?.endHour   ?? "00",
+    param12: p2?.endMin    ?? "00",
+    param13: p2 ? "1" : "0",
     // period 3
-    param14: isP2 ? "00"      : startHour,
-    param15: isP2 ? "00"      : startMin,
-    param16: isP2 ? "00"      : endHour,
-    param17: isP2 ? "00"      : endMin,
-    param18: isP2 ? "0"       : "1",
+    param14: p3?.startHour ?? "00",
+    param15: p3?.startMin  ?? "00",
+    param16: p3?.endHour   ?? "00",
+    param17: p3?.endMin    ?? "00",
+    param18: p3 ? "1" : "0",
   });
-};
