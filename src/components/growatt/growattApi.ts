@@ -1,6 +1,6 @@
 import SparkMD5 from "spark-md5";
 
-const BASE = "/growatt";
+const BASE = import.meta.env.DEV ? "/growatt" : "https://server.growatt.com";
 
 const hashPassword = (password: string) => SparkMD5.hash(password);
 
