@@ -3,4 +3,14 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      "/growatt": {
+        target: "https://openapi.growatt.com",
+        changeOrigin: true,
+        cookieDomainRewrite: "localhost",
+        rewrite: (path) => path.replace(/^\/growatt/, ""),
+      },
+    },
+  },
 });
