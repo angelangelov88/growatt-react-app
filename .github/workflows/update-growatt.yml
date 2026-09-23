@@ -1,0 +1,28 @@
+name: Update Growatt Charge Times
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install spark-md5
+
+      - name: Run update script
+        env:
+          GROWATT_USER: ${{ secrets.GROWATT_USER }}
+          GROWATT_PASSWORD: ${{ secrets.GROWATT_PASSWORD }}
+          GROWATT_SERIAL: ${{ secrets.GROWATT_SERIAL }}
+          OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
+          OCTOPUS_ACCOUNT: ${{ secrets.OCTOPUS_ACCOUNT }}
+        run: node scripts/update-growatt.mjs
