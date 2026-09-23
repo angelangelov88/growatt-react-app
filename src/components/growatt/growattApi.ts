@@ -1,11 +1,15 @@
 import SparkMD5 from "spark-md5";
 
-const BASE = import.meta.env.DEV ? "/growatt" : "https://server.growatt.com";
-
 const hashPassword = (password: string) => SparkMD5.hash(password);
 
+const buildUrl = (path: string) => {
+  if (import.meta.env.DEV) return `/growatt${path}`;
+  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+  return `/api/growatt?path=${encodeURIComponent(cleanPath)}`;
+};
+
 const request = async (path: string, body?: Record<string, string>): Promise<any> => {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(buildUrl(path), {
     method: body ? "POST" : "GET",
     credentials: "include",
     headers: body ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
