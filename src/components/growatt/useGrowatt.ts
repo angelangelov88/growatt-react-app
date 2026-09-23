@@ -25,8 +25,9 @@ function useGrowatt() {
   const serverUrl = "https://openapi.growatt.com/";
   const serverUrl2 = "https://server.growatt.com/";
 
-  const user = process.env.REACT_APP_growatt_user;
-  const password = process.env.REACT_APP_growatt_password;
+  const user = import.meta.env.VITE_GROWATT_USER;
+  const password = import.meta.env.VITE_GROWATT_PASSWORD;
+  const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
   // fetch data from growatt inverter api using username and password
   const fetchData = async () => {
@@ -74,7 +75,7 @@ function useGrowatt() {
 
       // This is the POST request to set the battery to charge on cheap night rate
       const response = await fetch(
-        "https://server.growatt.com/tcpSet.do$action=mixSet&serialNum=KTM0CML008&type=mix_ac_charge_time_period&param1=25&param2=95&param3=1&param4=23&param5=30&param6=05&param7=30&param8=1&param9=00&param10=00&param11=00&param12=00&param13=0&param14=00&param15=00&param16=00&param17=00&param18=0",
+        `https://server.growatt.com/tcpSet.do$action=mixSet&serialNum=${serial}&type=mix_ac_charge_time_period&param1=25&param2=95&param3=1&param4=23&param5=30&param6=05&param7=30&param8=1&param9=00&param10=00&param11=00&param12=00&param13=0&param14=00&param15=00&param16=00&param17=00&param18=0`,
         {
           // This is the POST request to set the battery to discharge
           // const response = await fetch('https://server.growatt.com/tcpSet.do$action=mixSet&serialNum=KTM0CML008&type=mix_ac_discharge_time_period&param1=100&param2=20&param3=22&param4=20&param5=23&param6=20&param7=1&param8=00&param9=00&param10=00&param11=00&param12=0&param13=00&param14=00&param15=00&param16=00&param17=0', {
@@ -108,7 +109,8 @@ function useGrowatt() {
       const endpoint = `${serverUrl2}login`;
       const params = {
         account: user,
-        password: hashPassword("solar10"),
+        // password: hashPassword("solar10"),
+        password,
         validateCode: "",
       };
 
