@@ -8,11 +8,16 @@ const buildUrl = (path: string) => {
   return `/api/growatt?path=${encodeURIComponent(cleanPath)}`;
 };
 
-const request = async (path: string, body?: Record<string, string>): Promise<any> => {
+const request = async (
+  path: string,
+  body?: Record<string, string>,
+): Promise<any> => {
   const res = await fetch(buildUrl(path), {
     method: body ? "POST" : "GET",
     credentials: "include",
-    headers: body ? { "Content-Type": "application/x-www-form-urlencoded" } : undefined,
+    headers: body
+      ? { "Content-Type": "application/x-www-form-urlencoded" }
+      : undefined,
     body: body ? new URLSearchParams(body) : undefined,
   });
   const text = await res.text();
@@ -46,9 +51,80 @@ export const fetchPlantData = (plantId: string) =>
 export const fetchDevicesByPlant = (plantId: string) =>
   request("/device/getDevicesByPlantList", { plantId, currPage: "1" });
 
-export type SlotParam = { startHour: string; startMin: string; endHour: string; endMin: string } | null;
+export type SlotParam = {
+  startHour: string;
+  startMin: string;
+  endHour: string;
+  endMin: string;
+} | null;
 
-export const setChargePeriods = (serial: string, p2: SlotParam, p3: SlotParam) =>
+export type ChargePeriod = { start: string; end: string; enabled: boolean };
+export type ChargePeriods = {
+  powerRate: number;
+  stopSOC: number;
+  raw: string;
+  period1: ChargePeriod;
+  period2: ChargePeriod;
+  period3: ChargePeriod;
+  period4: ChargePeriod;
+  period5: ChargePeriod;
+  period6: ChargePeriod;
+};
+
+export const fetchChargePeriods = async (
+  serial: string,
+): Promise<ChargePeriods> => {
+  const data1 = await request("/tcpSet.do", {
+    action: "readMixParam",
+    paramId: "mix_ac_charge_time_multi",
+    serialNum: serial,
+    startAddr: "-1",
+    endAddr: "-1",
+  });
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const data2 = await request("/tcpSet.do", {
+    action: "readMixParam",
+    paramId: "mix_ac_charge_time_multi_1",
+    serialNum: serial,
+    startAddr: "-1",
+    endAddr: "-1",
+  });
+  const raw1 = (data1.msg ?? "") as string;
+  const raw2 = (data2.msg ?? "") as string;
+  const v1 = raw1.split("-").filter((s: string) => s !== "").map(Number);
+  const v2 = raw2.split("-").filter((s: string) => s !== "").map(Number);
+  const decodeTime = (n: number) => {
+    const h = Math.floor(n / 256);
+    const m = n % 256;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+  const safe = (v: number[], offset: number): ChargePeriod =>
+    v[offset] !== undefined
+      ? { start: decodeTime(v[offset]), end: decodeTime(v[offset + 1]), enabled: v[offset + 2] === 1 }
+      : { start: "--", end: "--", enabled: false };
+  // mix_ac_charge_time_multi: powerRate=v[0], SOC=v[1], periods at 10/13/16 (start,end,enabled)
+  // mix_ac_charge_time_multi_1: periods 4-6 at 0/3/6
+  return {
+    powerRate: v1[0] ?? NaN,
+    stopSOC: v1[1] ?? NaN,
+    raw: `[1-3]: ${raw1} | [4-6]: ${raw2}`,
+    period1: safe(v1, 10),
+    period2: safe(v1, 13),
+    period3: safe(v1, 16),
+    period4: safe(v2, 0),
+    period5: safe(v2, 3),
+    period6: safe(v2, 6),
+  };
+};
+
+export const setChargePeriods = (
+  serial: string,
+  p2: SlotParam,
+  p3: SlotParam,
+  p4: SlotParam = null,
+  p5: SlotParam = null,
+  p6: SlotParam = null,
+) =>
   request("/tcpSet.do", {
     action: "mixSet",
     serialNum: serial,
@@ -59,15 +135,18 @@ export const setChargePeriods = (serial: string, p2: SlotParam, p3: SlotParam) =
     // period 1 — hardcoded 01:00–05:00 enabled
     param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
     // period 2
-    param9:  p2?.startHour ?? "00",
-    param10: p2?.startMin  ?? "00",
-    param11: p2?.endHour   ?? "00",
-    param12: p2?.endMin    ?? "00",
-    param13: p2 ? "1" : "0",
+    param9:  p2?.startHour ?? "00", param10: p2?.startMin ?? "00",
+    param11: p2?.endHour   ?? "00", param12: p2?.endMin   ?? "00", param13: p2 ? "1" : "0",
     // period 3
-    param14: p3?.startHour ?? "00",
-    param15: p3?.startMin  ?? "00",
-    param16: p3?.endHour   ?? "00",
-    param17: p3?.endMin    ?? "00",
-    param18: p3 ? "1" : "0",
+    param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",
+    param16: p3?.endHour   ?? "00", param17: p3?.endMin   ?? "00", param18: p3 ? "1" : "0",
+    // period 4
+    param19: p4?.startHour ?? "00", param20: p4?.startMin ?? "00",
+    param21: p4?.endHour   ?? "00", param22: p4?.endMin   ?? "00", param23: p4 ? "1" : "0",
+    // period 5
+    param24: p5?.startHour ?? "00", param25: p5?.startMin ?? "00",
+    param26: p5?.endHour   ?? "00", param27: p5?.endMin   ?? "00", param28: p5 ? "1" : "0",
+    // period 6
+    param29: p6?.startHour ?? "00", param30: p6?.startMin ?? "00",
+    param31: p6?.endHour   ?? "00", param32: p6?.endMin   ?? "00", param33: p6 ? "1" : "0",
   });

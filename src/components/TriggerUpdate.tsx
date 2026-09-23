@@ -1,6 +1,26 @@
 import { useMutation } from "@tanstack/react-query";
 
 const triggerUpdate = async () => {
+  if (import.meta.env.DEV) {
+    // In dev, call GitHub API directly (no serverless function available)
+    const token = import.meta.env.VITE_GITHUB_TOKEN;
+    const repo = import.meta.env.VITE_GITHUB_REPO;
+    if (!token || !repo) throw new Error("Missing VITE_GITHUB_TOKEN or VITE_GITHUB_REPO in .env");
+    const res = await fetch(
+      `https://api.github.com/repos/${repo}/actions/workflows/update-growatt.yml/dispatches`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ref: "main" }),
+      },
+    );
+    if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+    return;
+  }
   const res = await fetch("/api/trigger", { method: "POST" });
   if (!res.ok && res.status !== 204) {
     const json = await res.json().catch(() => ({}));

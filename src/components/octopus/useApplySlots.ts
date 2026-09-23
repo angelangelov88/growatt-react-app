@@ -26,20 +26,24 @@ const getUpcomingSlots = (slotsData: SlotsData | undefined) => {
 
 export default function useApplySlots({ slotsData }: { slotsData: SlotsData | undefined }) {
   const mutation = useMutation({
-    mutationFn: ({ p2, p3 }: { p2: SlotParam; p3: SlotParam }) =>
-      setChargePeriods(serial, p2, p3),
+    mutationFn: ({ p2, p3, p4, p5, p6 }: { p2: SlotParam; p3: SlotParam; p4: SlotParam; p5: SlotParam; p6: SlotParam }) =>
+      setChargePeriods(serial, p2, p3, p4, p5, p6),
   });
 
   const applySlots = () => {
     const upcoming = getUpcomingSlots(slotsData);
-    const p2 = upcoming[0] ? toSlotParam(upcoming[0]) : null;
-    const p3 = upcoming[1] ? toSlotParam(upcoming[1]) : null;
-    mutation.mutate({ p2, p3 });
+    mutation.mutate({
+      p2: upcoming[0] ? toSlotParam(upcoming[0]) : null,
+      p3: upcoming[1] ? toSlotParam(upcoming[1]) : null,
+      p4: upcoming[2] ? toSlotParam(upcoming[2]) : null,
+      p5: upcoming[3] ? toSlotParam(upcoming[3]) : null,
+      p6: upcoming[4] ? toSlotParam(upcoming[4]) : null,
+    });
   };
 
   const upcoming = getUpcomingSlots(slotsData);
-  const extraSlotsMessage = upcoming.length > 2
-    ? `${upcoming.length - 2} more slot(s) not applied (only 2 periods available)`
+  const extraSlotsMessage = upcoming.length > 5
+    ? `${upcoming.length - 5} slot(s) not applied (max 5 Octopus slots supported)`
     : null;
 
   return useMemo(
