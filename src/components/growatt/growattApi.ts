@@ -271,14 +271,18 @@ export const setDefaultPeriods = async (serial: string) => {
 
 export const setChargePeriods = async (
   serial: string,
-  p2: SlotParam, p3: SlotParam,
+  powerRate: string,
+  stopSOC: string,
+  p1: SlotParam,
+  p2: SlotParam = null, p3: SlotParam = null,
   p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null,
 ) => {
   await ensureLoggedIn();
   await request("/tcpSet.do", {
     action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
-    param1: "25", param2: "95", param3: "1",
-    param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
+    param1: powerRate, param2: stopSOC, param3: "1",
+    param4:  p1?.startHour ?? "00", param5:  p1?.startMin ?? "00",
+    param6:  p1?.endHour   ?? "00", param7:  p1?.endMin   ?? "00", param8:  p1 ? "1" : "0",
     param9:  p2?.startHour ?? "00", param10: p2?.startMin ?? "00",
     param11: p2?.endHour   ?? "00", param12: p2?.endMin   ?? "00", param13: p2 ? "1" : "0",
     param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",

@@ -28,8 +28,8 @@ export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: ({ p2, p3, p4, p5, p6 }: { p2: SlotParam; p3: SlotParam; p4: SlotParam; p5: SlotParam; p6: SlotParam }) =>
-      setChargePeriods(serial, p2, p3, p4, p5, p6),
+    mutationFn: ({ p1, p2, p3, p4, p5, p6 }: { p1: SlotParam; p2: SlotParam; p3: SlotParam; p4: SlotParam; p5: SlotParam; p6: SlotParam }) =>
+      setChargePeriods(serial, "35", "95", p1, p2, p3, p4, p5, p6),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ["growatt", "chargePeriods"] });
     },
@@ -38,17 +38,18 @@ export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
   const applySlots = () => {
     const upcoming = getUpcomingSlots(slotsData);
     mutation.mutate({
-      p2: upcoming[0] ? toSlotParam(upcoming[0]) : null,
-      p3: upcoming[1] ? toSlotParam(upcoming[1]) : null,
-      p4: upcoming[2] ? toSlotParam(upcoming[2]) : null,
-      p5: upcoming[3] ? toSlotParam(upcoming[3]) : null,
-      p6: upcoming[4] ? toSlotParam(upcoming[4]) : null,
+      p1: upcoming[0] ? toSlotParam(upcoming[0]) : null,
+      p2: upcoming[1] ? toSlotParam(upcoming[1]) : null,
+      p3: upcoming[2] ? toSlotParam(upcoming[2]) : null,
+      p4: upcoming[3] ? toSlotParam(upcoming[3]) : null,
+      p5: upcoming[4] ? toSlotParam(upcoming[4]) : null,
+      p6: upcoming[5] ? toSlotParam(upcoming[5]) : null,
     });
   };
 
   const upcoming = getUpcomingSlots(slotsData);
-  const extraSlotsMessage = upcoming.length > 5
-    ? `${upcoming.length - 5} slot(s) not applied (max 5 Octopus slots supported)`
+  const extraSlotsMessage = upcoming.length > 6
+    ? `${upcoming.length - 6} slot(s) not applied (max 6 Octopus slots supported)`
     : null;
 
   return useMemo(
