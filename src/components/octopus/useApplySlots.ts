@@ -1,8 +1,10 @@
 import { useMemo } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setChargePeriods } from "../growatt/growattApi";
 import type { SlotParam } from "../growatt/growattApi";
-import type { Slot, SlotsData } from "../../types/Slots";
+
+type Slot = { startDt: string; endDt: string };
+type SlotsData = { plannedDispatches: Slot[] } | undefined;
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
@@ -17,17 +19,20 @@ const toSlotParam = (slot: Slot): SlotParam => {
   };
 };
 
-const getUpcomingSlots = (slotsData: SlotsData | undefined) => {
+const getUpcomingSlots = (slotsData: SlotsData) => {
   const now = new Date();
-  return (slotsData?.plannedDispatches ?? []).filter(
-    (s) => new Date(s.endDt) > now,
-  );
+  return (slotsData?.plannedDispatches ?? []).filter((s) => new Date(s.endDt) > now);
 };
 
-export default function useApplySlots({ slotsData }: { slotsData: SlotsData | undefined }) {
+export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
+  const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: ({ p2, p3, p4, p5, p6 }: { p2: SlotParam; p3: SlotParam; p4: SlotParam; p5: SlotParam; p6: SlotParam }) =>
       setChargePeriods(serial, p2, p3, p4, p5, p6),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["growatt", "chargePeriods"] });
+    },
   });
 
   const applySlots = () => {

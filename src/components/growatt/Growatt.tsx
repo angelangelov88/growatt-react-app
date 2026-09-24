@@ -1,74 +1,86 @@
+import { useEffect } from "react";
 import useGrowatt from "./useGrowatt";
+import { useToast } from "../../contexts/ToastContext";
 import type { ChargePeriod } from "./growattApi";
 
 const PeriodRow = ({ label, period }: { label: string; period: ChargePeriod }) => (
-  <tr>
-    <td className="pr-4 font-medium">{label}</td>
-    <td className="pr-4">{period.start} – {period.end}</td>
-    <td className={period.enabled ? "text-green-600" : "text-gray-400"}>
-      {period.enabled ? "enabled" : "disabled"}
+  <tr className="border-t border-gray-800">
+    <td className="py-2 pr-6 text-gray-400 text-sm">{label}</td>
+    <td className="py-2 pr-6 text-sm font-mono text-gray-100">{period.start} – {period.end}</td>
+    <td className="py-2 text-sm">
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${period.enabled ? "bg-emerald-900 text-emerald-300" : "bg-gray-800 text-gray-500"}`}>
+        {period.enabled ? "enabled" : "disabled"}
+      </span>
     </td>
   </tr>
 );
 
 const Growatt = () => {
-  const { isLoggedIn, loginMutation, chargeTimeMutation, chargePeriodsQuery } = useGrowatt();
+  const { isLoggedIn, loginMutation, setDefaultsMutation, chargePeriodsQuery } = useGrowatt();
+  const { showToast } = useToast();
 
-  const errors = [
-    loginMutation.isError && `Login error: ${(loginMutation.error as Error).message}`,
-    chargeTimeMutation.isError && `Set charge error: ${(chargeTimeMutation.error as Error).message}`,
-    chargePeriodsQuery.isError && `Read error: ${(chargePeriodsQuery.error as Error).message}`,
-  ].filter(Boolean);
+  useEffect(() => {
+    if (loginMutation.isError) showToast(`Login failed: ${(loginMutation.error as Error).message}`, "error");
+  }, [loginMutation.isError]);
+
+  useEffect(() => {
+    if (setDefaultsMutation.isError) showToast(`Set defaults failed: ${(setDefaultsMutation.error as Error).message}`, "error");
+    if (setDefaultsMutation.isSuccess) showToast("Default settings applied", "success");
+  }, [setDefaultsMutation.isError, setDefaultsMutation.isSuccess]);
+
+  useEffect(() => {
+    if (chargePeriodsQuery.isError) showToast(`Read failed: ${(chargePeriodsQuery.error as Error).message}`, "error");
+  }, [chargePeriodsQuery.isError]);
 
   const cp = chargePeriodsQuery.data;
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Growatt</h2>
-
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => loginMutation.mutate()}
-          disabled={loginMutation.isPending || isLoggedIn}
-          className="bg-blue-300 p-2 rounded-lg disabled:opacity-50"
-        >
-          {loginMutation.isPending ? "Logging in..." : isLoggedIn ? "Logged in ✓" : "Login"}
-        </button>
-        <button
-          onClick={() => chargePeriodsQuery.refetch()}
-          disabled={!isLoggedIn || chargePeriodsQuery.isFetching}
-          className="bg-blue-300 p-2 rounded-lg disabled:opacity-50"
-        >
-          {chargePeriodsQuery.isFetching ? "Reading..." : "Read Current Settings"}
-        </button>
-        <button
-          onClick={() => chargeTimeMutation.mutate({ p2: { startHour: "01", startMin: "00", endHour: "03", endMin: "00" }, p3: null })}
-          disabled={!isLoggedIn || chargeTimeMutation.isPending}
-          className="bg-green-300 p-2 rounded-lg disabled:opacity-50"
-        >
-          {chargeTimeMutation.isPending ? "Setting..." : "Set Charge 01:00–03:00"}
-        </button>
+    <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-base font-semibold text-white">Growatt</h2>
+        <div className="flex items-center gap-2">
+          {!isLoggedIn ? (
+            <button
+              onClick={() => loginMutation.mutate()}
+              disabled={loginMutation.isPending}
+              className="px-3 py-1.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {loginMutation.isPending ? "Logging in…" : "Login"}
+            </button>
+          ) : (
+            <span className="text-xs text-emerald-400 font-medium">● Connected</span>
+          )}
+          <button
+            onClick={() => chargePeriodsQuery.refetch()}
+            disabled={!isLoggedIn || chargePeriodsQuery.isFetching}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {chargePeriodsQuery.isFetching ? "Reading…" : "Read Settings"}
+          </button>
+          <button
+            onClick={() => setDefaultsMutation.mutate()}
+            disabled={!isLoggedIn || setDefaultsMutation.isPending}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {setDefaultsMutation.isPending ? "Setting…" : "Set Defaults"}
+          </button>
+        </div>
       </div>
 
-      {errors.map((e, i) => (
-        <p key={i} className="text-red-500 mb-2">{e as string}</p>
-      ))}
-      {chargeTimeMutation.isSuccess && (
-        <p className="text-green-600 mb-2">Charge time set successfully</p>
-      )}
-
-      {cp && (
+      {cp ? (
         <>
-          <table className="text-sm mb-2">
+          <div className="flex gap-6 mb-4">
+            <div className="bg-gray-800 rounded-xl px-4 py-3 flex-1 text-center">
+              <p className="text-xs text-gray-400 mb-1">Charge Rate</p>
+              <p className="text-2xl font-bold text-white">{cp.powerRate}<span className="text-sm text-gray-400 ml-1">%</span></p>
+            </div>
+            <div className="bg-gray-800 rounded-xl px-4 py-3 flex-1 text-center">
+              <p className="text-xs text-gray-400 mb-1">Stop SOC</p>
+              <p className="text-2xl font-bold text-white">{cp.stopSOC}<span className="text-sm text-gray-400 ml-1">%</span></p>
+            </div>
+          </div>
+          <table className="w-full">
             <tbody>
-              <tr>
-                <td className="pr-4 font-medium">Charge power rate</td>
-                <td colSpan={2}>{cp.powerRate}%</td>
-              </tr>
-              <tr>
-                <td className="pr-4 font-medium">Charge stop SOC</td>
-                <td colSpan={2}>{cp.stopSOC}%</td>
-              </tr>
               <PeriodRow label="Period 1" period={cp.period1} />
               <PeriodRow label="Period 2" period={cp.period2} />
               <PeriodRow label="Period 3" period={cp.period3} />
@@ -77,8 +89,16 @@ const Growatt = () => {
               <PeriodRow label="Period 6" period={cp.period6} />
             </tbody>
           </table>
-          <p className="text-xs text-gray-400 font-mono">raw: {cp.raw}</p>
+          <p className="text-xs text-gray-600 font-mono mt-3">{cp.raw}</p>
         </>
+      ) : (
+        !chargePeriodsQuery.isFetching && (
+          <p className="text-sm text-gray-500">Login and read settings to view current charge periods.</p>
+        )
+      )}
+
+      {chargePeriodsQuery.isFetching && (
+        <p className="text-sm text-gray-400 animate-pulse">Reading from device…</p>
       )}
     </div>
   );

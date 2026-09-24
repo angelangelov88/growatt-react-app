@@ -1,95 +1,65 @@
-import React from "react";
+import { useEffect } from "react";
 import useOctopus from "./useOctopus";
-import { Slot } from "../../types/Slots";
-import useSlotChecker from "./useSlotChecker";
-
 import useApplySlots from "./useApplySlots";
+import { useToast } from "../../contexts/ToastContext";
 
 const Octopus = () => {
-  const {
-    slotsLoading,
-    slotsError,
-    slotsData,
-    handleAuth,
-    formatDate,
-    handleAuthAndFetchSlots,
-  } = useOctopus();
-
-  const { message } = useSlotChecker({ slotsData });
+  const { slotsLoading, slotsError, slotsData, formatDate, handleAuthAndFetchSlots } = useOctopus();
   const { applySlots, extraSlotsMessage, isPending, error: applyError } = useApplySlots({ slotsData });
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (slotsError) showToast(`Octopus error: ${(slotsError as Error).message}`, "error");
+  }, [slotsError]);
+
+  useEffect(() => {
+    if (applyError) showToast(`Apply failed: ${(applyError as Error).message}`, "error");
+  }, [applyError]);
+
+  useEffect(() => {
+    if (extraSlotsMessage) showToast(extraSlotsMessage, "info");
+  }, [extraSlotsMessage]);
+
+  const slots = slotsData?.plannedDispatches ?? [];
 
   return (
-    <div>
-      <h1>Octopus</h1>
-      {/* <h2>My name is: {octName}</h2> */}
-      <>
-        {/* <h1>Films</h1>
-        {loading || !data ? (<p>Films Loading...</p>) :
-          data?.allFilms?.films?.map((film: film) => (
-            <div key={film.title} className='border border-red-500 my-3 w-44'>
-              <h1>{film.title}</h1>
-              <p className='text-sm font-normal text-gray-600'>{film.director}</p>
-              <p className='text-sm font-normal text-gray-600'>{film.releaseDate}</p>
-            </div>
-          ))
-        } */}
-        <div>
-          <h1>Handle Auth</h1>
-          <button
-            onClick={() => handleAuth()}
-            className="bg-blue-300 p-2 m-2 rounded-lg"
-          >
-            Handle Auth
-          </button>
-          <button
-            onClick={() => handleAuthAndFetchSlots()}
-            className="bg-blue-300 p-2 m-2 rounded-lg"
-          >
-            Handle Auth and slots
-          </button>
-          {/* {authData && <p>Success! Token: {authData.obtainKrakenToken.token}</p>}
-        {authError ? <p>Error: {authError.message}</p> : null}
-        {authLoading ? <p>Loading...</p> : null} */}
-          {/* {slotsData && <div>
-          <h3>Success! Slots:</h3>
-          {slotsData?.plannedDispatches?.length > 0 ? slotsData?.plannedDipatches?.map((item: Slot, index: number) => (
-            <div key={`slot-${index}`} className='border border-red-500 my-3 w-44'>
-              <p>{String(item.startDt)}</p>
-              <p>{new Date(item.endDt).toString()}</p>
-          </div>
-          )) : <div>No slots available</div>}
-        </div>} */}
-          {slotsData?.plannedDispatches?.length > 0 && <h3>Success! Slots:</h3>}
-          {slotsData && slotsData?.plannedDispatches?.length === 0 && (
-            <div>No slots available</div>
-          )}
-          {slotsData?.plannedDispatches?.length > 0 &&
-            slotsData?.plannedDispatches?.map((item: Slot, index: number) => {
-              return (
-                <div key={`slot-${index}`} className="m-3 ">
-                  <p>{formatDate(item.startDt)}</p>
-                  <p>{formatDate(item.endDt)}</p>
-                  <h3>Message:</h3>
-                  <p>{message}</p>
-                </div>
-              );
-            })}
+    <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-base font-semibold text-white">Octopus Dispatch Slots</h2>
+        <button
+          onClick={handleAuthAndFetchSlots}
+          disabled={slotsLoading}
+          className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {slotsLoading ? "Fetching…" : "Fetch Slots"}
+        </button>
+      </div>
 
-          {slotsError ? <p>Error: {slotsError.message}</p> : null}
-          {slotsLoading ? <p>Loading...</p> : null}
-          {slotsData && (
-            <button
-              onClick={applySlots}
-              disabled={isPending}
-              className="bg-green-400 p-2 m-2 rounded-lg disabled:opacity-50"
-            >
-              {isPending ? "Applying..." : "Apply Slots to Growatt"}
-            </button>
-          )}
-          {extraSlotsMessage && <p className="text-yellow-600">{extraSlotsMessage}</p>}
-          {applyError && <p className="text-red-500">Apply error: {applyError.message}</p>}
-        </div>
-      </>
+      {slotsData && slots.length === 0 && (
+        <p className="text-sm text-gray-500">No upcoming dispatch slots.</p>
+      )}
+
+      {slots.length > 0 && (
+        <>
+          <div className="flex flex-col gap-2 mb-4">
+            {slots.map((item, index) => (
+              <div key={`slot-${index}`} className="flex items-center justify-between bg-gray-800 rounded-xl px-4 py-3">
+                <span className="text-xs text-gray-400 font-medium">Slot {index + 1}</span>
+                <span className="text-sm font-mono text-gray-100">
+                  {formatDate(item.startDt)} → {formatDate(item.endDt)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={applySlots}
+            disabled={isPending}
+            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {isPending ? "Applying…" : "Apply Slots to Growatt"}
+          </button>
+        </>
+      )}
     </div>
   );
 };

@@ -2,6 +2,8 @@ import SparkMD5 from "spark-md5";
 
 const hashPassword = (password: string) => SparkMD5.hash(password);
 
+let sessionCookie = "";
+
 const buildUrl = (path: string) => {
   if (import.meta.env.DEV) return `/growatt${path}`;
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
@@ -12,14 +14,23 @@ const request = async (
   path: string,
   body?: Record<string, string>,
 ): Promise<any> => {
+  const headers: Record<string, string> = {};
+  if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
+  if (sessionCookie) headers["X-Session-Cookie"] = sessionCookie;
+
   const res = await fetch(buildUrl(path), {
     method: body ? "POST" : "GET",
-    credentials: "include",
-    headers: body
-      ? { "Content-Type": "application/x-www-form-urlencoded" }
-      : undefined,
+    headers,
     body: body ? new URLSearchParams(body) : undefined,
   });
+
+  // Capture session cookie from login response
+  const setCookie = res.headers.get("x-set-cookie") ?? res.headers.get("set-cookie");
+  if (setCookie) {
+    const match = setCookie.match(/JSESSIONID=[^;]+/);
+    if (match) sessionCookie = match[0];
+  }
+
   const text = await res.text();
   console.log(`${body ? "POST" : "GET"} ${path}:`, text);
   try {
@@ -117,36 +128,49 @@ export const fetchChargePeriods = async (
   };
 };
 
-export const setChargePeriods = (
+const delay = () => new Promise((resolve) => setTimeout(resolve, 10000));
+
+const slotParams46 = (p4: SlotParam, p5: SlotParam, p6: SlotParam): Record<string, string> => ({
+  param1:  p4?.startHour ?? "00", param2:  p4?.startMin  ?? "00",
+  param3:  p4?.endHour   ?? "00", param4:  p4?.endMin    ?? "00", param5:  p4 ? "1" : "0",
+  param6:  p5?.startHour ?? "00", param7:  p5?.startMin  ?? "00",
+  param8:  p5?.endHour   ?? "00", param9:  p5?.endMin    ?? "00", param10: p5 ? "1" : "0",
+  param11: p6?.startHour ?? "00", param12: p6?.startMin  ?? "00",
+  param13: p6?.endHour   ?? "00", param14: p6?.endMin    ?? "00", param15: p6 ? "1" : "0",
+});
+
+export const setDefaultPeriods = async (serial: string) => {
+  await request("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
+    param1: "35", param2: "95", param3: "1",
+    param4: "01", param5: "01", param6: "05", param7: "00", param8: "1",
+    param9: "00", param10: "00", param11: "00", param12: "00", param13: "0",
+    param14: "00", param15: "00", param16: "00", param17: "00", param18: "0",
+  });
+  await delay();
+  return request("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1",
+    ...slotParams46(null, null, null),
+  });
+};
+
+export const setChargePeriods = async (
   serial: string,
-  p2: SlotParam,
-  p3: SlotParam,
-  p4: SlotParam = null,
-  p5: SlotParam = null,
-  p6: SlotParam = null,
-) =>
-  request("/tcpSet.do", {
-    action: "mixSet",
-    serialNum: serial,
-    type: "mix_ac_charge_time_period",
-    param1: "25",
-    param2: "95",
-    param3: "1",
-    // period 1 — hardcoded 01:00–05:00 enabled
+  p2: SlotParam, p3: SlotParam,
+  p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null,
+) => {
+  await request("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
+    param1: "25", param2: "95", param3: "1",
     param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
-    // period 2
     param9:  p2?.startHour ?? "00", param10: p2?.startMin ?? "00",
     param11: p2?.endHour   ?? "00", param12: p2?.endMin   ?? "00", param13: p2 ? "1" : "0",
-    // period 3
     param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",
     param16: p3?.endHour   ?? "00", param17: p3?.endMin   ?? "00", param18: p3 ? "1" : "0",
-    // period 4
-    param19: p4?.startHour ?? "00", param20: p4?.startMin ?? "00",
-    param21: p4?.endHour   ?? "00", param22: p4?.endMin   ?? "00", param23: p4 ? "1" : "0",
-    // period 5
-    param24: p5?.startHour ?? "00", param25: p5?.startMin ?? "00",
-    param26: p5?.endHour   ?? "00", param27: p5?.endMin   ?? "00", param28: p5 ? "1" : "0",
-    // period 6
-    param29: p6?.startHour ?? "00", param30: p6?.startMin ?? "00",
-    param31: p6?.endHour   ?? "00", param32: p6?.endMin   ?? "00", param33: p6 ? "1" : "0",
   });
+  await delay();
+  return request("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1",
+    ...slotParams46(p4, p5, p6),
+  });
+};

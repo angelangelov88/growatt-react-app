@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useToast } from "../contexts/ToastContext";
 
 const triggerUpdate = async () => {
   if (import.meta.env.DEV) {
-    // In dev, call GitHub API directly (no serverless function available)
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const repo = import.meta.env.VITE_GITHUB_REPO;
     if (!token || !repo) throw new Error("Missing VITE_GITHUB_TOKEN or VITE_GITHUB_REPO in .env");
@@ -29,30 +30,32 @@ const triggerUpdate = async () => {
 };
 
 const TriggerUpdate = () => {
+  const { showToast } = useToast();
   const mutation = useMutation({ mutationFn: triggerUpdate });
 
+  useEffect(() => {
+    if (mutation.isError) showToast(`Trigger failed: ${(mutation.error as Error).message}`, "error");
+  }, [mutation.isError]);
+
+  useEffect(() => {
+    if (mutation.isSuccess) showToast("Automation triggered — check GitHub Actions for progress", "success");
+  }, [mutation.isSuccess]);
+
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Automation</h2>
-      <button
-        onClick={() => mutation.mutate()}
-        disabled={mutation.isPending || mutation.isSuccess}
-        className="bg-purple-400 p-2 rounded-lg disabled:opacity-50"
-      >
-        {mutation.isPending
-          ? "Triggering..."
-          : mutation.isSuccess
-            ? "Triggered ✓"
-            : "Run Update Now"}
-      </button>
-      {mutation.isError && (
-        <p className="text-red-500 mt-2">{(mutation.error as Error).message}</p>
-      )}
-      {mutation.isSuccess && (
-        <p className="text-gray-500 mt-2 text-sm">
-          Check GitHub Actions for progress
-        </p>
-      )}
+    <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-white">Automation</h2>
+          <p className="text-sm text-gray-400 mt-0.5">Manually trigger the Octopus → Growatt sync</p>
+        </div>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || mutation.isSuccess}
+          className="px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {mutation.isPending ? "Triggering…" : mutation.isSuccess ? "Triggered ✓" : "Run Now"}
+        </button>
+      </div>
     </div>
   );
 };

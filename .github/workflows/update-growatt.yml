@@ -2,7 +2,10 @@ name: Update Growatt Charge Times
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0 19-23 * * *'      # every hour 7pm-11pm UTC (8pm-midnight GMT / BST)
+    - cron: '0 0-3 * * *'        # every hour midnight-3am UTC
+    - cron: '0,30 4-10 * * *'    # every 30 mins 4am-10am UTC (5am-11am GMT / BST)
+    - cron: '0 11 * * *'         # once at 11am UTC
   workflow_dispatch:
 
 jobs:

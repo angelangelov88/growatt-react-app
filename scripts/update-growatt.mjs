@@ -66,8 +66,84 @@ const fetchSerial = async (plantId) => {
   return serial;
 };
 
+const isAlreadyDefault = (periods) => {
+  const p = periods;
+  return (
+    p.powerRate === 35 &&
+    p.stopSOC === 95 &&
+    p.period1.start === "01:01" && p.period1.end === "05:00" && p.period1.enabled &&
+    !p.period2.enabled && !p.period3.enabled &&
+    !p.period4.enabled && !p.period5.enabled && !p.period6.enabled
+  );
+};
+
+const decodeTime = (n) => {
+  const h = Math.floor(n / 256);
+  const m = n % 256;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
+
+const fetchChargePeriods = async (serial) => {
+  const data1 = await growattRequest("/tcpSet.do", {
+    action: "readMixParam",
+    paramId: "mix_ac_charge_time_multi",
+    serialNum: serial,
+    startAddr: "-1",
+    endAddr: "-1",
+  });
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const data2 = await growattRequest("/tcpSet.do", {
+    action: "readMixParam",
+    paramId: "mix_ac_charge_time_multi_1",
+    serialNum: serial,
+    startAddr: "-1",
+    endAddr: "-1",
+  });
+  const v1 = (data1.msg ?? "").split("-").filter((s) => s !== "").map(Number);
+  const v2 = (data2.msg ?? "").split("-").filter((s) => s !== "").map(Number);
+  const safe = (v, offset) =>
+    v[offset] !== undefined
+      ? { start: decodeTime(v[offset]), end: decodeTime(v[offset + 1]), enabled: v[offset + 2] === 1 }
+      : { start: "00:00", end: "00:00", enabled: false };
+  return {
+    powerRate: v1[0] ?? NaN,
+    stopSOC: v1[1] ?? NaN,
+    period1: safe(v1, 10),
+    period2: safe(v1, 13),
+    period3: safe(v1, 16),
+    period4: safe(v2, 0),
+    period5: safe(v2, 3),
+    period6: safe(v2, 6),
+  };
+};
+
+const slotParams46 = (p4, p5, p6) => ({
+  param1:  p4?.startHour ?? "00", param2:  p4?.startMin  ?? "00",
+  param3:  p4?.endHour   ?? "00", param4:  p4?.endMin    ?? "00", param5:  p4 ? "1" : "0",
+  param6:  p5?.startHour ?? "00", param7:  p5?.startMin  ?? "00",
+  param8:  p5?.endHour   ?? "00", param9:  p5?.endMin    ?? "00", param10: p5 ? "1" : "0",
+  param11: p6?.startHour ?? "00", param12: p6?.startMin  ?? "00",
+  param13: p6?.endHour   ?? "00", param14: p6?.endMin    ?? "00", param15: p6 ? "1" : "0",
+});
+
+const applyDefaultPeriods = async (serial) => {
+  const data1 = await growattRequest("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
+    param1: "35", param2: "95", param3: "1",
+    param4: "01", param5: "01", param6: "05", param7: "00", param8: "1",
+    param9: "00", param10: "00", param11: "00", param12: "00", param13: "0",
+    param14: "00", param15: "00", param16: "00", param17: "00", param18: "0",
+  });
+  console.log("Growatt set defaults (1-3) response:", JSON.stringify(data1));
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const data2 = await growattRequest("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1",
+    ...slotParams46(null, null, null),
+  });
+  console.log("Growatt set defaults (4-6) response:", JSON.stringify(data2));
+};
+
 const toParam = (slot) => {
-  const start = new Date(slot.startDt);
   const end = new Date(slot.endDt);
   return {
     startHour: String(start.getHours()).padStart(2, "0"),
@@ -78,24 +154,22 @@ const toParam = (slot) => {
 };
 
 const applyToGrowatt = async (serial, p2, p3, p4 = null, p5 = null, p6 = null) => {
-  const data = await growattRequest("/tcpSet.do", {
-    action: "mixSet",
-    serialNum: serial,
-    type: "mix_ac_charge_time_period",
+  const data1 = await growattRequest("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
     param1: "25", param2: "95", param3: "1",
     param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
     param9:  p2?.startHour ?? "00", param10: p2?.startMin ?? "00",
     param11: p2?.endHour   ?? "00", param12: p2?.endMin   ?? "00", param13: p2 ? "1" : "0",
     param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",
     param16: p3?.endHour   ?? "00", param17: p3?.endMin   ?? "00", param18: p3 ? "1" : "0",
-    param19: p4?.startHour ?? "00", param20: p4?.startMin ?? "00",
-    param21: p4?.endHour   ?? "00", param22: p4?.endMin   ?? "00", param23: p4 ? "1" : "0",
-    param24: p5?.startHour ?? "00", param25: p5?.startMin ?? "00",
-    param26: p5?.endHour   ?? "00", param27: p5?.endMin   ?? "00", param28: p5 ? "1" : "0",
-    param29: p6?.startHour ?? "00", param30: p6?.startMin ?? "00",
-    param31: p6?.endHour   ?? "00", param32: p6?.endMin   ?? "00", param33: p6 ? "1" : "0",
   });
-  console.log("Growatt set charge periods response:", JSON.stringify(data));
+  console.log("Growatt set periods (1-3) response:", JSON.stringify(data1));
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const data2 = await growattRequest("/tcpSet.do", {
+    action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1",
+    ...slotParams46(p4, p5, p6),
+  });
+  console.log("Growatt set periods (4-6) response:", JSON.stringify(data2));
 };
 
 // --- Octopus ---
@@ -140,7 +214,17 @@ const run = async () => {
   const upcoming = allSlots.filter((s) => new Date(s.endDt) > now);
 
   if (upcoming.length === 0) {
-    console.log("No upcoming slots — nothing to do");
+    console.log("No upcoming slots — checking if defaults need applying...");
+    await growattLogin();
+    const plantId = await fetchPlantId();
+    const serial = await fetchSerial(plantId);
+    const current = await fetchChargePeriods(serial);
+    if (isAlreadyDefault(current)) {
+      console.log("Already at default settings — nothing to do");
+    } else {
+      console.log("Applying default settings...");
+      await applyDefaultPeriods(serial);
+    }
     return;
   }
 

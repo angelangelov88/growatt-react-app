@@ -1,101 +1,64 @@
-import { useMemo, useState } from "react";
-import { gql, useMutation, useLazyQuery } from "@apollo/client";
+import { useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
-function useOctopus() {
-  const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT;
-  const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY;
-  const [token, setToken] = useState("");
+const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT as string;
+const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY as string;
+const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
 
-  const AUTH = gql`
-    mutation getAuth($APIKey: String!) {
-      obtainKrakenToken(input: { APIKey: $APIKey }) {
-        token
-        refreshToken
-        refreshExpiresIn
-      }
-    }
-  `;
+const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
+  const res = await fetch(ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: token } : {}),
+    },
+    body: JSON.stringify({ query }),
+  });
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors[0].message);
+  return json.data;
+};
 
-  const GET_SLOTS = gql`
-    query getSlots {
-      plannedDispatches(accountNumber: "${octopusAccount}") {
-        startDt
-        endDt
-      }
-    }
-  `;
+const fetchToken = async (): Promise<string> => {
+  const data = await octopusRequest<{ obtainKrakenToken: { token: string } }>(
+    `mutation { obtainKrakenToken(input: { APIKey: "${apiKey}" }) { token } }`,
+  );
+  const token = data.obtainKrakenToken?.token;
+  if (!token) throw new Error("No token returned from Octopus");
+  return token;
+};
 
-  const [
-    getSlots,
-    { loading: slotsLoading, error: slotsError, data: slotsData },
-  ] = useLazyQuery(GET_SLOTS, { fetchPolicy: "network-only" });
+export default function useOctopus() {
+  const tokenMutation = useMutation({ mutationFn: fetchToken });
 
-  const [getAuth, { data: authData, loading: authLoading, error: authError }] =
-    useMutation(AUTH);
-
-  const handleAuth = async () => {
-    try {
-      const response = await getAuth({ variables: { APIKey: apiKey } });
-      setToken(response?.data?.obtainKrakenToken?.token);
-    } catch (err) {
-      console.error("Error executing AUTH mutation:", err);
-    }
-  };
+  const slotsQuery = useQuery({
+    queryKey: ["octopus", "slots", tokenMutation.data],
+    queryFn: () =>
+      octopusRequest<{ plannedDispatches: { startDt: string; endDt: string }[] }>(
+        `query { plannedDispatches(accountNumber: "${octopusAccount}") { startDt endDt } }`,
+        tokenMutation.data!,
+      ),
+    enabled: !!tokenMutation.data,
+    retry: false,
+  });
 
   const handleAuthAndFetchSlots = async () => {
-    try {
-      const authResponse = await getAuth({ variables: { APIKey: apiKey } });
-      const newToken = authResponse?.data?.obtainKrakenToken?.token;
-
-      if (newToken) {
-        setToken(newToken);
-        await getSlots({ context: { headers: { Authorization: newToken } } });
-      }
-    } catch (e) {
-      console.error("Error fetching auth or slots data:", e);
-    }
+    await tokenMutation.mutateAsync(undefined);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const formattedDate = date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-    const formattedTime = date.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    return `${formattedDate} - ${formattedTime}`;
+    return `${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} ${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
   };
 
   return useMemo(
     () => ({
-      authLoading,
-      authError,
-      authData,
-      slotsLoading,
-      slotsError,
-      slotsData,
-      handleAuth,
+      slotsLoading: tokenMutation.isPending || slotsQuery.isFetching,
+      slotsError: tokenMutation.error ?? slotsQuery.error,
+      slotsData: slotsQuery.data,
       handleAuthAndFetchSlots,
       formatDate,
     }),
-    [
-      authLoading,
-      authError,
-      authData,
-      slotsLoading,
-      slotsError,
-      slotsData,
-      handleAuth,
-      handleAuthAndFetchSlots,
-      formatDate,
-    ],
+    [tokenMutation.isPending, tokenMutation.error, slotsQuery.isFetching, slotsQuery.error, slotsQuery.data],
   );
 }
-
-export default useOctopus;
