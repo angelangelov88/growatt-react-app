@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
+export const maxDuration = 60;
+
 const TARGET = "https://server.growatt.com";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
