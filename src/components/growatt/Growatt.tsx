@@ -1,105 +1,305 @@
 import { useEffect } from "react";
 import useGrowatt from "./useGrowatt";
+import { useSlotForm, type SlotState } from "./useSlotForm";
 import { useToast } from "../../contexts/ToastContext";
-import type { ChargePeriod } from "./growattApi";
 
-const PeriodRow = ({ label, period }: { label: string; period: ChargePeriod }) => (
-  <tr className="border-t border-gray-800">
-    <td className="py-2 pr-6 text-gray-400 text-sm">{label}</td>
-    <td className="py-2 pr-6 text-sm font-mono text-gray-100">{period.start} – {period.end}</td>
-    <td className="py-2 text-sm">
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${period.enabled ? "bg-emerald-900 text-emerald-300" : "bg-gray-800 text-gray-500"}`}>
-        {period.enabled ? "enabled" : "disabled"}
-      </span>
-    </td>
-  </tr>
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = ["00", "15", "30", "45"];
+const SOC_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
+const RATE_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
+
+const selectClass = "bg-gray-800 border border-gray-700 rounded-xl px-2 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-blue-500 appearance-none text-center w-full";
+
+const Spinner = ({ className = "text-gray-400" }: { className?: string }) => (
+  <svg className={`animate-spin h-4 w-4 shrink-0 ${className}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
 );
 
-const Growatt = () => {
-  const { isLoggedIn, loginMutation, setDefaultsMutation, chargePeriodsQuery } = useGrowatt();
+const TimePicker = ({
+  slot,
+  onChange,
+}: {
+  slot: SlotState;
+  onChange: (field: keyof SlotState, value: string) => void;
+}) => (
+  <div className="flex items-center gap-1">
+    <select value={slot.startHour} onChange={(e) => onChange("startHour", e.target.value)} className={selectClass}>
+      {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+    </select>
+    <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
+    <select value={slot.startMin} onChange={(e) => onChange("startMin", e.target.value)} className={selectClass}>
+      {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+    </select>
+    <span className="text-gray-500 font-mono text-xs shrink-0 px-1">–</span>
+    <select value={slot.endHour} onChange={(e) => onChange("endHour", e.target.value)} className={selectClass}>
+      {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
+    </select>
+    <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
+    <select value={slot.endMin} onChange={(e) => onChange("endMin", e.target.value)} className={selectClass}>
+      {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+    </select>
+  </div>
+);
+
+const SlotList = ({ form }: { form: ReturnType<typeof useSlotForm> }) => (
+  <>
+    <div className="flex flex-col gap-3 mb-4">
+      {form.slots.map((slot, i) => (
+        <div key={i} className="bg-gray-800 rounded-xl p-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-400 font-medium">Slot {i + 1}</span>
+            {i > 0 && (
+              <button
+                onClick={() => form.removeSlot(i)}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <TimePicker slot={slot} onChange={(field, value) => form.updateSlot(i, field, value)} />
+        </div>
+      ))}
+    </div>
+    {form.canAddSlot && (
+      <button
+        onClick={form.addSlot}
+        className="w-full py-2 rounded-xl text-sm font-medium border border-dashed border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors mb-4"
+      >
+        + Add Slot
+      </button>
+    )}
+  </>
+);
+
+// ─── Battery First ────────────────────────────────────────────────────────────
+
+type BatteryFirstProps = {
+  chargePeriodsQuery: ReturnType<typeof useGrowatt>["chargePeriodsQuery"];
+  setChargePeriodsMutation: ReturnType<typeof useGrowatt>["setChargePeriodsMutation"];
+  setDefaultsMutation: ReturnType<typeof useGrowatt>["setDefaultsMutation"];
+};
+
+const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation, setDefaultsMutation }: BatteryFirstProps) => {
   const { showToast } = useToast();
+  const form = useSlotForm("35", "95");
+  const isLoading = chargePeriodsQuery.isFetching;
+  const isApplying = setChargePeriodsMutation.isPending;
+  const isDisabled = isLoading || isApplying;
 
   useEffect(() => {
-    if (loginMutation.isError) showToast(`Login failed: ${(loginMutation.error as Error).message}`, "error");
-  }, [loginMutation.isError]);
+    if (chargePeriodsQuery.data) form.loadFromChargePeriods(chargePeriodsQuery.data);
+  }, [chargePeriodsQuery.data]);
 
   useEffect(() => {
-    if (setDefaultsMutation.isError) showToast(`Set defaults failed: ${(setDefaultsMutation.error as Error).message}`, "error");
-    if (setDefaultsMutation.isSuccess) showToast("Default settings applied", "success");
-  }, [setDefaultsMutation.isError, setDefaultsMutation.isSuccess]);
+    if (setChargePeriodsMutation.isError) showToast(`Apply failed: ${(setChargePeriodsMutation.error as Error).message}`, "error");
+    if (setChargePeriodsMutation.isSuccess) showToast("Battery First settings applied", "success");
+  }, [setChargePeriodsMutation.isError, setChargePeriodsMutation.isSuccess]);
 
   useEffect(() => {
     if (chargePeriodsQuery.isError) showToast(`Read failed: ${(chargePeriodsQuery.error as Error).message}`, "error");
   }, [chargePeriodsQuery.isError]);
 
-  const cp = chargePeriodsQuery.data;
+  useEffect(() => {
+    if (setDefaultsMutation.isError) showToast(`Defaults failed: ${(setDefaultsMutation.error as Error).message}`, "error");
+  }, [setDefaultsMutation.isError]);
+
+  const handleApply = () => {
+    const [p1, p2, p3, p4, p5, p6] = form.toParams();
+    setChargePeriodsMutation.mutate({ powerRate: form.powerRate, stopSOC: form.stopSOC, slots: [p1, p2, p3, p4, p5, p6] });
+  };
 
   return (
-    <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-white">Growatt</h2>
+    <div className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}>
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          {!isLoggedIn ? (
-            <button
-              onClick={() => loginMutation.mutate()}
-              disabled={loginMutation.isPending}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              {loginMutation.isPending ? "Logging in…" : "Login"}
-            </button>
-          ) : (
-            <span className="text-xs text-emerald-400 font-medium">● Connected</span>
-          )}
+          <h2 className="text-base font-semibold text-white">Battery First</h2>
+          {isLoading && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner />Loading…</span>}
+          {isApplying && <span className="flex items-center gap-1.5 text-xs text-blue-400"><Spinner className="text-blue-400" />Applying…</span>}
+        </div>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => chargePeriodsQuery.refetch()}
-            disabled={!isLoggedIn || chargePeriodsQuery.isFetching}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={isDisabled}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {chargePeriodsQuery.isFetching ? "Reading…" : "Read Settings"}
+            Read
           </button>
           <button
-            onClick={() => setDefaultsMutation.mutate()}
-            disabled={!isLoggedIn || setDefaultsMutation.isPending}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            onClick={() => form.setDefaults("35", "95", { startHour: "01", startMin: "00", endHour: "05", endMin: "00" })}
+            disabled={isDisabled}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {setDefaultsMutation.isPending ? "Setting…" : "Set Defaults"}
+            Defaults
           </button>
         </div>
       </div>
 
-      {cp ? (
-        <>
-          <div className="flex gap-6 mb-4">
-            <div className="bg-gray-800 rounded-xl px-4 py-3 flex-1 text-center">
-              <p className="text-xs text-gray-400 mb-1">Charge Rate</p>
-              <p className="text-2xl font-bold text-white">{cp.powerRate}<span className="text-sm text-gray-400 ml-1">%</span></p>
-            </div>
-            <div className="bg-gray-800 rounded-xl px-4 py-3 flex-1 text-center">
-              <p className="text-xs text-gray-400 mb-1">Stop SOC</p>
-              <p className="text-2xl font-bold text-white">{cp.stopSOC}<span className="text-sm text-gray-400 ml-1">%</span></p>
-            </div>
-          </div>
-          <table className="w-full">
-            <tbody>
-              <PeriodRow label="Period 1" period={cp.period1} />
-              <PeriodRow label="Period 2" period={cp.period2} />
-              <PeriodRow label="Period 3" period={cp.period3} />
-              <PeriodRow label="Period 4" period={cp.period4} />
-              <PeriodRow label="Period 5" period={cp.period5} />
-              <PeriodRow label="Period 6" period={cp.period6} />
-            </tbody>
-          </table>
-          <p className="text-xs text-gray-600 font-mono mt-3">{cp.raw}</p>
-        </>
-      ) : (
-        !chargePeriodsQuery.isFetching && (
-          <p className="text-sm text-gray-500">Login and read settings to view current charge periods.</p>
-        )
-      )}
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <div>
+          <label className="text-xs text-gray-400 block mb-1.5">Charge rate %</label>
+          <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
+            {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
+          <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
+            {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+          </select>
+        </div>
+      </div>
 
-      {chargePeriodsQuery.isFetching && (
-        <p className="text-sm text-gray-400 animate-pulse">Reading from device…</p>
-      )}
+      <SlotList form={form} />
+
+      <button
+        onClick={handleApply}
+        disabled={isDisabled || !form.isDirty}
+        className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        {isApplying ? "Applying…" : "Apply Battery First"}
+      </button>
+    </div>
+  );
+};
+
+// ─── Grid First ───────────────────────────────────────────────────────────────
+
+type Preset = "high" | "low";
+const PRESETS: Record<Preset, { powerRate: string; stopSOC: string; label: string; desc: string; defaultSlot: SlotState }> = {
+  high: { powerRate: "95", stopSOC: "20", label: "High Export", desc: "95% · stop 20% SOC", defaultSlot: { startHour: "20", startMin: "00", endHour: "21", endMin: "00" } },
+  low:  { powerRate: "60", stopSOC: "15", label: "Low Export",  desc: "60% · stop 15% SOC", defaultSlot: { startHour: "20", startMin: "00", endHour: "21", endMin: "00" } },
+};
+
+type GridFirstProps = {
+  dischargePeriodsQuery: ReturnType<typeof useGrowatt>["dischargePeriodsQuery"];
+  setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
+  disableAllDischargeMutation: ReturnType<typeof useGrowatt>["disableAllDischargeMutation"];
+};
+
+const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation, disableAllDischargeMutation }: GridFirstProps) => {
+  const { showToast } = useToast();
+  const form = useSlotForm("95", "20");
+  const isLoading = dischargePeriodsQuery.isFetching;
+  const isApplying = setDischargeMutation.isPending || disableAllDischargeMutation.isPending;
+  const isDisabled = isLoading || isApplying;
+
+  useEffect(() => {
+    if (dischargePeriodsQuery.data) form.loadFromDischargePeriods(dischargePeriodsQuery.data);
+  }, [dischargePeriodsQuery.data]);
+
+  useEffect(() => {
+    if (setDischargeMutation.isError) showToast(`GridFirst failed: ${(setDischargeMutation.error as Error).message}`, "error");
+    if (setDischargeMutation.isSuccess) showToast("GridFirst settings applied", "success");
+  }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
+
+  useEffect(() => {
+    if (disableAllDischargeMutation.isError) showToast(`Disable failed: ${(disableAllDischargeMutation.error as Error).message}`, "error");
+    if (disableAllDischargeMutation.isSuccess) showToast("GridFirst disabled", "success");
+  }, [disableAllDischargeMutation.isError, disableAllDischargeMutation.isSuccess]);
+
+  useEffect(() => {
+    if (dischargePeriodsQuery.isError) showToast(`Read failed: ${(dischargePeriodsQuery.error as Error).message}`, "error");
+  }, [dischargePeriodsQuery.isError]);
+
+  const handleApply = () => {
+    const [p1, p2, p3, p4, p5, p6] = form.toParams();
+    setDischargeMutation.mutate({ powerRate: form.powerRate, stopSOC: form.stopSOC, p1, p2, p3, p4, p5, p6 });
+  };
+
+  return (
+    <div className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold text-white">GridFirst</h2>
+          {isLoading && <span className="flex items-center gap-1.5 text-xs text-gray-400"><Spinner />Loading…</span>}
+          {isApplying && <span className="flex items-center gap-1.5 text-xs text-blue-400"><Spinner className="text-blue-400" />Applying…</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => dischargePeriodsQuery.refetch()}
+            disabled={isDisabled}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Read
+          </button>
+          <button
+            onClick={() => disableAllDischargeMutation.mutate()}
+            disabled={isDisabled}
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {disableAllDischargeMutation.isPending ? "Disabling…" : "Disable All"}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        {(Object.entries(PRESETS) as [Preset, typeof PRESETS[Preset]][]).map(([key, p]) => (
+          <button
+            key={key}
+            onClick={() => form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot)}
+            className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
+          >
+            <p className="text-sm font-medium text-white">{p.label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{p.desc}</p>
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        <div>
+          <label className="text-xs text-gray-400 block mb-1.5">Discharge rate %</label>
+          <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
+            {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
+          <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
+            {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+          </select>
+        </div>
+      </div>
+
+      <SlotList form={form} />
+
+      <button
+        onClick={handleApply}
+        disabled={isDisabled || !form.isDirty}
+        className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        {isApplying ? "Applying…" : "Apply GridFirst"}
+      </button>
+    </div>
+  );
+};
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+const Growatt = () => {
+  const {
+    setDefaultsMutation,
+    setChargePeriodsMutation,
+    chargePeriodsQuery,
+    dischargePeriodsQuery,
+    setDischargeMutation,
+    disableAllDischargeMutation,
+  } = useGrowatt();
+
+  return (
+    <div className="flex flex-col gap-6">
+      <BatteryFirstCard
+        chargePeriodsQuery={chargePeriodsQuery}
+        setChargePeriodsMutation={setChargePeriodsMutation}
+        setDefaultsMutation={setDefaultsMutation}
+      />
+      <GridFirstCard
+        dischargePeriodsQuery={dischargePeriodsQuery}
+        setDischargeMutation={setDischargeMutation}
+        disableAllDischargeMutation={disableAllDischargeMutation}
+      />
     </div>
   );
 };
