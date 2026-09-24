@@ -77,23 +77,23 @@ const toParam = (slot) => {
   };
 };
 
-const applyToGrowatt = async (serial, p2, p3) => {
+const applyToGrowatt = async (serial, p2, p3, p4 = null, p5 = null, p6 = null) => {
   const data = await growattRequest("/tcpSet.do", {
     action: "mixSet",
     serialNum: serial,
     type: "mix_ac_charge_time_period",
     param1: "25", param2: "95", param3: "1",
     param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
-    param9:  p2?.startHour ?? "00",
-    param10: p2?.startMin  ?? "00",
-    param11: p2?.endHour   ?? "00",
-    param12: p2?.endMin    ?? "00",
-    param13: p2 ? "1" : "0",
-    param14: p3?.startHour ?? "00",
-    param15: p3?.startMin  ?? "00",
-    param16: p3?.endHour   ?? "00",
-    param17: p3?.endMin    ?? "00",
-    param18: p3 ? "1" : "0",
+    param9:  p2?.startHour ?? "00", param10: p2?.startMin ?? "00",
+    param11: p2?.endHour   ?? "00", param12: p2?.endMin   ?? "00", param13: p2 ? "1" : "0",
+    param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",
+    param16: p3?.endHour   ?? "00", param17: p3?.endMin   ?? "00", param18: p3 ? "1" : "0",
+    param19: p4?.startHour ?? "00", param20: p4?.startMin ?? "00",
+    param21: p4?.endHour   ?? "00", param22: p4?.endMin   ?? "00", param23: p4 ? "1" : "0",
+    param24: p5?.startHour ?? "00", param25: p5?.startMin ?? "00",
+    param26: p5?.endHour   ?? "00", param27: p5?.endMin   ?? "00", param28: p5 ? "1" : "0",
+    param29: p6?.startHour ?? "00", param30: p6?.startMin ?? "00",
+    param31: p6?.endHour   ?? "00", param32: p6?.endMin   ?? "00", param33: p6 ? "1" : "0",
   });
   console.log("Growatt set charge periods response:", JSON.stringify(data));
 };
@@ -145,12 +145,15 @@ const run = async () => {
   }
 
   console.log(`Found ${upcoming.length} upcoming slot(s)`);
-  if (upcoming.length > 2) {
-    console.log(`Warning: ${upcoming.length - 2} slot(s) not applied (only 2 periods available)`);
+  if (upcoming.length > 5) {
+    console.log(`Warning: ${upcoming.length - 5} slot(s) not applied (max 5 periods available)`);
   }
 
-  const p2 = toParam(upcoming[0]);
+  const p2 = upcoming[0] ? toParam(upcoming[0]) : null;
   const p3 = upcoming[1] ? toParam(upcoming[1]) : null;
+  const p4 = upcoming[2] ? toParam(upcoming[2]) : null;
+  const p5 = upcoming[3] ? toParam(upcoming[3]) : null;
+  const p6 = upcoming[4] ? toParam(upcoming[4]) : null;
 
   console.log("Logging into Growatt...");
   await growattLogin();
@@ -159,7 +162,7 @@ const run = async () => {
   const serial = await fetchSerial(plantId);
 
   console.log(`Applying slots to serial ${serial}...`);
-  await applyToGrowatt(serial, p2, p3);
+  await applyToGrowatt(serial, p2, p3, p4, p5, p6);
   console.log("Done");
 };
 
