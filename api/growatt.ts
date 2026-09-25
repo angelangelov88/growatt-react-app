@@ -11,7 +11,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const headers: Record<string, string> = {
     "Content-Type": req.headers["content-type"] as string ?? "application/x-www-form-urlencoded",
   };
-  if (req.headers.cookie) headers["Cookie"] = req.headers.cookie;
+  const sessionCookie = req.headers["x-session-cookie"] as string | undefined;
+  if (sessionCookie) headers["Cookie"] = sessionCookie;
+  else if (req.headers.cookie) headers["Cookie"] = req.headers.cookie;
 
   const upstream = await fetch(url, {
     method: req.method,
@@ -20,6 +22,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   const setCookie = upstream.headers.getSetCookie?.() ?? [];
-  setCookie.forEach((c) => res.appendHeader("Set-Cookie", c));
+  if (setCookie.length) {
+    // Forward as both Set-Cookie (for browser) and x-set-cookie (readable by fetch)
+    setCookie.forEach((c) => res.appendHeader("Set-Cookie", c));
+    res.setHeader("x-set-cookie", setCookie.join(", "));
+  }
   res.status(upstream.status).send(await upstream.text());
 }

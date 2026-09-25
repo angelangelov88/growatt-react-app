@@ -16,6 +16,9 @@ const periodToSlot = (p: { start: string; end: string }): SlotState => {
   return { startHour, startMin, endHour, endMin };
 };
 
+const isValidPeriod = (p: { start: string; end: string; enabled: boolean }) =>
+  p.enabled && p.start !== "--";
+
 const slotToParam = (s: SlotState): SlotParam => ({
   startHour: s.startHour,
   startMin: s.startMin,
@@ -60,7 +63,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     const pr = String(data.powerRate);
     const soc = String(data.stopSOC);
     const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const active = periods.filter((p) => p.enabled && p.start !== "--");
+    const active = periods.filter(isValidPeriod);
     const newSlots = active.length > 0 ? active.map(periodToSlot) : [{ ...DEFAULT_SLOT }];
     setPowerRate(pr);
     setStopSOC(soc);
@@ -72,7 +75,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     const pr = String(data.powerRate);
     const soc = String(data.stopSOC);
     const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const active = periods.filter((p) => p.enabled && p.start !== "--");
+    const active = periods.filter(isValidPeriod);
     const newSlots = active.length > 0 ? active.map(periodToSlot) : [{ ...DEFAULT_SLOT }];
     setPowerRate(pr);
     setStopSOC(soc);

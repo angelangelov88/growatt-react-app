@@ -4,7 +4,7 @@ import { useSlotForm, type SlotState } from "./useSlotForm";
 import { useToast } from "../../contexts/ToastContext";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "15", "30", "45"];
+const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 const SOC_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 const RATE_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 
@@ -16,6 +16,11 @@ const Spinner = ({ className = "text-gray-400" }: { className?: string }) => (
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
   </svg>
 );
+
+const minuteOptions = (current: string) => {
+  const opts = MINUTES.includes(current) ? MINUTES : [...MINUTES, current].sort((a, b) => Number(a) - Number(b));
+  return opts;
+};
 
 const TimePicker = ({
   slot,
@@ -30,7 +35,7 @@ const TimePicker = ({
     </select>
     <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
     <select value={slot.startMin} onChange={(e) => onChange("startMin", e.target.value)} className={selectClass}>
-      {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+      {minuteOptions(slot.startMin).map((m) => <option key={m} value={m}>{m}</option>)}
     </select>
     <span className="text-gray-500 font-mono text-xs shrink-0 px-1">–</span>
     <select value={slot.endHour} onChange={(e) => onChange("endHour", e.target.value)} className={selectClass}>
@@ -38,7 +43,7 @@ const TimePicker = ({
     </select>
     <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
     <select value={slot.endMin} onChange={(e) => onChange("endMin", e.target.value)} className={selectClass}>
-      {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
+      {minuteOptions(slot.endMin).map((m) => <option key={m} value={m}>{m}</option>)}
     </select>
   </div>
 );

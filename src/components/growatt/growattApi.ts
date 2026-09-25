@@ -25,16 +25,17 @@ export type GrowattConfig = {
   user: string;
   password: string;
   buildUrl: (path: string) => string;
+  cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
 };
 
-export const createGrowattClient = ({ user, password, buildUrl }: GrowattConfig) => {
+export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "Cookie" }: GrowattConfig) => {
   let sessionCookie = "";
   let loginPromise: Promise<void> | null = null;
 
   const request = async (path: string, body?: Record<string, string>): Promise<any> => {
     const headers: Record<string, string> = {};
     if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
-    if (sessionCookie) headers["Cookie"] = sessionCookie;
+    if (sessionCookie) headers[cookieHeader] = sessionCookie;
 
     const res = await fetch(buildUrl(path), {
       method: body ? "POST" : "GET",
@@ -192,6 +193,9 @@ export const createGrowattClient = ({ user, password, buildUrl }: GrowattConfig)
 };
 
 // ─── Browser singleton ────────────────────────────────────────────────────────
+// The browser cannot set the Cookie header directly (forbidden header).
+// Instead we store the session cookie in memory and send it via X-Session-Cookie,
+// which the Vercel proxy reads and forwards as Cookie to Growatt.
 
 let _client: ReturnType<typeof createGrowattClient> | null = null;
 
@@ -200,6 +204,7 @@ const browserClient = () => {
     _client = createGrowattClient({
       user: import.meta.env.VITE_GROWATT_USER,
       password: import.meta.env.VITE_GROWATT_PASSWORD,
+      cookieHeader: "X-Session-Cookie",
       buildUrl: (path) => {
         if (import.meta.env.DEV) return `/growatt${path}`;
         const clean = path.startsWith("/") ? path.slice(1) : path;
