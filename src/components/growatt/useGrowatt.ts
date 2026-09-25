@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  setDefaultPeriods, fetchChargePeriods, setChargePeriods,
-  fetchDischargePeriods, setDischargePeriods, disableAllDischargePeriods,
+  fetchChargePeriods, setChargePeriods,
+  fetchDischargePeriods, setDischargePeriods,
   type SlotParam,
 } from "./growattApi";
 
@@ -13,13 +13,6 @@ function useGrowatt() {
   const setChargePeriodsMutation = useMutation({
     mutationFn: (vars: { powerRate: string; stopSOC: string; slots: (SlotParam)[] }) =>
       setChargePeriods(serial, vars.powerRate, vars.stopSOC, vars.slots[0], vars.slots[1], vars.slots[2], vars.slots[3], vars.slots[4], vars.slots[5]),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ["growatt", "chargePeriods"] });
-    },
-  });
-
-  const setDefaultsMutation = useMutation({
-    mutationFn: () => setDefaultPeriods(serial),
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: ["growatt", "chargePeriods"] });
     },
@@ -50,20 +43,11 @@ function useGrowatt() {
     },
   });
 
-  const disableAllDischargeMutation = useMutation({
-    mutationFn: () => disableAllDischargePeriods(serial),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ["growatt", "dischargePeriods"] });
-    },
-  });
-
   return {
     setChargePeriodsMutation,
-    setDefaultsMutation,
     chargePeriodsQuery,
     dischargePeriodsQuery,
     setDischargeMutation,
-    disableAllDischargeMutation,
   };
 }
 

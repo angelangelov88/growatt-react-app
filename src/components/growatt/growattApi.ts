@@ -148,19 +148,6 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1", ...slotParams46(p4, p5, p6) });
     },
 
-    setDefaultPeriods: async (serial: string) => {
-      await ensureLoggedIn();
-      await request("/tcpSet.do", {
-        action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
-        param1: "35", param2: "95", param3: "1",
-        param4: "01", param5: "00", param6: "05", param7: "00", param8: "1",
-        param9: "00", param10: "00", param11: "00", param12: "00", param13: "0",
-        param14: "00", param15: "00", param16: "00", param17: "00", param18: "0",
-      });
-      await delay();
-      return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1", ...slotParams46(null, null, null) });
-    },
-
     setDischargePeriods: async (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => {
       await ensureLoggedIn();
       await request("/tcpSet.do", {
@@ -175,19 +162,6 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       });
       await delay();
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_multi_1", ...slotParams46(p4, p5, p6) });
-    },
-
-    disableAllDischargePeriods: async (serial: string) => {
-      await ensureLoggedIn();
-      await request("/tcpSet.do", {
-        action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_period",
-        param1: "95", param2: "20",
-        param3: "00", param4: "00", param5: "00", param6: "00", param7: "0",
-        param8: "00", param9: "00", param10: "00", param11: "00", param12: "0",
-        param13: "00", param14: "00", param15: "00", param16: "00", param17: "0",
-      });
-      await delay();
-      return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_multi_1", ...slotParams46(null, null, null) });
     },
   };
 };
@@ -215,9 +189,7 @@ const browserClient = () => {
   return _client;
 };
 
-export const fetchChargePeriods         = (serial: string) => browserClient().fetchChargePeriods(serial);
-export const fetchDischargePeriods      = (serial: string) => browserClient().fetchDischargePeriods(serial);
-export const setChargePeriods           = (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2?: SlotParam, p3?: SlotParam, p4?: SlotParam, p5?: SlotParam, p6?: SlotParam) => browserClient().setChargePeriods(serial, powerRate, stopSOC, p1, p2, p3, p4, p5, p6);
-export const setDefaultPeriods          = (serial: string) => browserClient().setDefaultPeriods(serial);
-export const setDischargePeriods        = (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2?: SlotParam, p3?: SlotParam, p4?: SlotParam, p5?: SlotParam, p6?: SlotParam) => browserClient().setDischargePeriods(serial, powerRate, stopSOC, p1, p2, p3, p4, p5, p6);
-export const disableAllDischargePeriods = (serial: string) => browserClient().disableAllDischargePeriods(serial);
+export const fetchChargePeriods    = (serial: string) => browserClient().fetchChargePeriods(serial);
+export const fetchDischargePeriods = (serial: string) => browserClient().fetchDischargePeriods(serial);
+export const setChargePeriods      = (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2?: SlotParam, p3?: SlotParam, p4?: SlotParam, p5?: SlotParam, p6?: SlotParam) => browserClient().setChargePeriods(serial, powerRate, stopSOC, p1, p2, p3, p4, p5, p6);
+export const setDischargePeriods   = (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2?: SlotParam, p3?: SlotParam, p4?: SlotParam, p5?: SlotParam, p6?: SlotParam) => browserClient().setDischargePeriods(serial, powerRate, stopSOC, p1, p2, p3, p4, p5, p6);

@@ -98,7 +98,10 @@ const run = async () => {
       console.log("Already at default settings — nothing to do");
     } else {
       console.log("Applying default settings...");
-      await growatt.setDefaultPeriods(GROWATT_SERIAL);
+      await growatt.setChargePeriods(GROWATT_SERIAL, "35", "95",
+        { startHour: "01", startMin: "00", endHour: "05", endMin: "00" },
+        null, null, null, null, null,
+      );
       console.log("Done");
     }
     return;
