@@ -124,6 +124,11 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
     if (chargePeriodsQuery.isError) showToast(`Read failed: ${(chargePeriodsQuery.error as Error).message}`, "error");
   }, [chargePeriodsQuery.errorUpdatedAt]);
 
+  const handleRead = () => {
+    if (form.isLoaded && form.isDirty && !window.confirm("You have unsaved changes. Read from the inverter and discard them?")) return;
+    chargePeriodsQuery.refetch({ cancelRefetch: false });
+  };
+
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
     setChargePeriodsMutation.mutate({ powerRate: form.powerRate, stopSOC: form.stopSOC, slots: [p1, p2, p3, p4, p5, p6] });
@@ -139,7 +144,7 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => chargePeriodsQuery.refetch({ cancelRefetch: false })}
+            onClick={handleRead}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -226,6 +231,11 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
     if (dischargePeriodsQuery.isError) showToast(`Read failed: ${(dischargePeriodsQuery.error as Error).message}`, "error");
   }, [dischargePeriodsQuery.errorUpdatedAt]);
 
+  const handleRead = () => {
+    if (form.isLoaded && form.isDirty && !window.confirm("You have unsaved changes. Read from the inverter and discard them?")) return;
+    dischargePeriodsQuery.refetch({ cancelRefetch: false });
+  };
+
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
     setDischargeMutation.mutate({ powerRate: form.powerRate, stopSOC: form.stopSOC, p1, p2, p3, p4, p5, p6 });
@@ -241,7 +251,7 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => dischargePeriodsQuery.refetch({ cancelRefetch: false })}
+            onClick={handleRead}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
