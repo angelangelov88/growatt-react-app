@@ -23,10 +23,7 @@ function useGrowatt() {
 
   const dischargePeriodsQuery = useQuery({
     queryKey: ["growatt", "dischargePeriods"],
-    queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      return fetchDischargePeriods(serial);
-    },
+    queryFn: () => fetchDischargePeriods(serial),
     retry: false,
     staleTime: Infinity,
     notifyOnChangeProps: ["data", "error", "status"],

@@ -105,6 +105,16 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
   const readDelay  = () => new Promise((resolve) => setTimeout(resolve, 1000));
   const writeDelay = () => new Promise((resolve) => setTimeout(resolve, 10000));
 
+  // The inverter can only handle one tcpSet call at a time, so every read/write
+  // goes through this queue, with a short gap before the next one starts.
+  const QUEUE_GAP_MS = 1000;
+  let queue: Promise<unknown> = Promise.resolve();
+  const enqueue = <T>(fn: () => Promise<T>): Promise<T> => {
+    const run = queue.then(fn, fn);
+    queue = run.catch(() => {}).then(() => new Promise((resolve) => setTimeout(resolve, QUEUE_GAP_MS)));
+    return run;
+  };
+
   const decodeTime = (n: number) => {
     const h = Math.floor(n / 256);
     const m = n % 256;
@@ -126,7 +136,7 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
   });
 
   return {
-    fetchChargePeriods: async (serial: string): Promise<ChargePeriods> => {
+    fetchChargePeriods: (serial: string): Promise<ChargePeriods> => enqueue(async () => {
       await ensureLoggedIn();
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
@@ -144,9 +154,9 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
         period1: p1, period2: p2, period3: p3,
         period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
       };
-    },
+    }),
 
-    fetchDischargePeriods: async (serial: string): Promise<DischargePeriods> => {
+    fetchDischargePeriods: (serial: string): Promise<DischargePeriods> => enqueue(async () => {
       await ensureLoggedIn();
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "MIX_AC_DISCHARGE_TIME_MULTI", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
@@ -164,9 +174,9 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
         period1: p1, period2: p2, period3: p3,
         period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
       };
-    },
+    }),
 
-    setChargePeriods: async (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => {
+    setChargePeriods: (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => enqueue(async () => {
       await ensureLoggedIn();
       await request("/tcpSet.do", {
         action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_period",
@@ -181,9 +191,9 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       if (!p4 && !p5 && !p6) return;
       await writeDelay();
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1", ...slotParams46(p4, p5, p6) });
-    },
+    }),
 
-    setDischargePeriods: async (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => {
+    setDischargePeriods: (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => enqueue(async () => {
       await ensureLoggedIn();
       await request("/tcpSet.do", {
         action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_period",
@@ -198,7 +208,7 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       if (!p4 && !p5 && !p6) return;
       await writeDelay();
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_multi_1", ...slotParams46(p4, p5, p6) });
-    },
+    }),
   };
 };
 
