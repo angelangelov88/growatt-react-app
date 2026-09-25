@@ -1,4 +1,9 @@
-import { createGrowattClient, type ChargePeriods } from "../src/components/growatt/growattApi";
+import { createGrowattClient } from "../src/components/growatt/growattApi";
+import {
+  buildChargePlan,
+  describePlan,
+  planMatches,
+} from "../src/components/octopus/chargePlan";
 
 const GROWATT_BASE = "https://server.growatt.com";
 const OCTOPUS_ENDPOINT = "https://api.octopus.energy/v1/graphql/";
@@ -27,7 +32,7 @@ const octopusAuth = async () => {
       query: `mutation { obtainKrakenToken(input: { APIKey: "${OCTOPUS_API_KEY}" }) { token } }`,
     }),
   });
-  const json = await res.json() as any;
+  const json = (await res.json()) as any;
   const token = json?.data?.obtainKrakenToken?.token;
   if (!token) throw new Error("Octopus auth failed");
   return token as string;
@@ -41,44 +46,11 @@ const fetchSlots = async (token: string) => {
       query: `query { plannedDispatches(accountNumber: "${OCTOPUS_ACCOUNT}") { startDt endDt } }`,
     }),
   });
-  const json = await res.json() as any;
-  return (json?.data?.plannedDispatches ?? []) as { startDt: string; endDt: string }[];
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const toParam = (slot: { startDt: string; endDt: string }) => {
-  const start = new Date(slot.startDt);
-  const end = new Date(slot.endDt);
-  return {
-    startHour: String(start.getHours()).padStart(2, "0"),
-    startMin:  String(start.getMinutes()).padStart(2, "0"),
-    endHour:   String(end.getHours()).padStart(2, "0"),
-    endMin:    String(end.getMinutes()).padStart(2, "0"),
-  };
-};
-
-type Param = { startHour: string; startMin: string; endHour: string; endMin: string };
-
-const periodTime = (p: Param) => `${p.startHour}:${p.startMin}`;
-const periodEnd  = (p: Param) => `${p.endHour}:${p.endMin}`;
-
-const isAlreadyDefault = (p: ChargePeriods) =>
-  p.powerRate === 35 &&
-  p.stopSOC === 95 &&
-  p.period1.start === "01:00" && p.period1.end === "05:00" && p.period1.enabled &&
-  !p.period2.enabled && !p.period3.enabled &&
-  !p.period4.enabled && !p.period5.enabled && !p.period6.enabled;
-
-const slotsMatch = (p: ChargePeriods, fixed: Param, extras: (Param | null)[]) => {
-  if (p.powerRate !== 25 || p.stopSOC !== 95) return false;
-  if (!p.period1.enabled || p.period1.start !== periodTime(fixed) || p.period1.end !== periodEnd(fixed)) return false;
-  const periods = [p.period2, p.period3, p.period4, p.period5, p.period6];
-  return extras.every((slot, i) => {
-    const period = periods[i];
-    if (!slot) return !period.enabled;
-    return period.enabled && period.start === periodTime(slot) && period.end === periodEnd(slot);
-  });
+  const json = (await res.json()) as any;
+  return (json?.data?.plannedDispatches ?? []) as {
+    startDt: string;
+    endDt: string;
+  }[];
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -86,44 +58,29 @@ const slotsMatch = (p: ChargePeriods, fixed: Param, extras: (Param | null)[]) =>
 const run = async () => {
   console.log("Fetching Octopus slots...");
   const token = await octopusAuth();
-  const allSlots = await fetchSlots(token);
+  const dispatches = await fetchSlots(token);
 
-  const now = new Date();
-  const upcoming = allSlots.filter((s) => new Date(s.endDt) > now);
-
-  if (upcoming.length === 0) {
-    console.log("No upcoming slots — checking if defaults need applying...");
-    const current = await growatt.fetchChargePeriods(GROWATT_SERIAL);
-    if (isAlreadyDefault(current)) {
-      console.log("Already at default settings — nothing to do");
-    } else {
-      console.log("Applying default settings...");
-      await growatt.setChargePeriods(GROWATT_SERIAL, "35", "95",
-        { startHour: "01", startMin: "00", endHour: "05", endMin: "00" },
-        null, null, null, null, null,
-      );
-      console.log("Done");
-    }
-    return;
+  const plan = buildChargePlan(dispatches);
+  console.log(`Plan (UK time): ${describePlan(plan)}`);
+  if (plan.skipped) {
+    console.log(
+      `Warning: ${plan.skipped} Octopus period(s) not applied — the inverter only has 6 slots`,
+    );
   }
-
-  console.log(`Found ${upcoming.length} upcoming slot(s)`);
-  if (upcoming.length > 5) {
-    console.log(`Warning: ${upcoming.length - 5} slot(s) not applied (max 5 extra periods)`);
-  }
-
-  const fixed: Param = { startHour: "01", startMin: "00", endHour: "05", endMin: "00" };
-  const [s1, s2, s3, s4, s5] = upcoming.map(toParam);
-  const extras: (Param | null)[] = [s1 ?? null, s2 ?? null, s3 ?? null, s4 ?? null, s5 ?? null];
 
   const current = await growatt.fetchChargePeriods(GROWATT_SERIAL);
-  if (slotsMatch(current, fixed, extras)) {
-    console.log("Growatt already matches upcoming slots — nothing to do");
+  if (planMatches(plan, current)) {
+    console.log("Growatt already matches the plan — nothing to do");
     return;
   }
 
-  console.log("Applying slots to Growatt...");
-  await growatt.setChargePeriods(GROWATT_SERIAL, "25", "95", fixed, ...extras);
+  console.log("Applying plan to Growatt...");
+  await growatt.setChargePeriods(
+    GROWATT_SERIAL,
+    plan.powerRate,
+    plan.stopSOC,
+    ...plan.slots,
+  );
   console.log("Done");
 };
 
