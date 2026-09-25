@@ -19,7 +19,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install spark-md5
+        run: npm install spark-md5 tsx
 
       - name: Run update script
         env:
@@ -28,4 +28,4 @@ jobs:
           GROWATT_SERIAL: ${{ secrets.GROWATT_SERIAL }}
           OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
           OCTOPUS_ACCOUNT: ${{ secrets.OCTOPUS_ACCOUNT }}
-        run: node scripts/update-growatt.mjs
+        run: npx tsx scripts/update-growatt.ts
