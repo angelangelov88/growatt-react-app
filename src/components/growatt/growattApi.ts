@@ -102,14 +102,15 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
     return loginPromise;
   };
 
-  const readDelay  = () => new Promise((resolve) => setTimeout(resolve, 1000));
+  const readDelay  = () => new Promise((resolve) => setTimeout(resolve, 3000));
   const writeDelay = () => new Promise((resolve) => setTimeout(resolve, 10000));
 
   // The inverter can only handle one tcpSet call at a time, so every read/write
-  // goes through this queue, with a short gap before the next one starts.
-  const QUEUE_GAP_MS = 1000;
+  // goes through this queue, with a gap before the next one starts. The datalogger
+  // needs ~2-3s between commands, otherwise reads come back empty.
+  const QUEUE_GAP_MS = 3000;
   let queue: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(fn: () => Promise<T>): Promise<T> => {
+  const enqueue = <T,>(fn: () => Promise<T>): Promise<T> => {
     const run = queue.then(fn, fn);
     queue = run.catch(() => {}).then(() => new Promise((resolve) => setTimeout(resolve, QUEUE_GAP_MS)));
     return run;
@@ -135,46 +136,49 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
     param13: p6?.endHour   ?? "00", param14: p6?.endMin    ?? "00", param15: p6 ? "1" : "0",
   });
 
-  return {
-    fetchChargePeriods: (serial: string): Promise<ChargePeriods> => enqueue(async () => {
-      await ensureLoggedIn();
-      const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-      const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
-      const hasMore = p1.enabled && p2.enabled && p3.enabled;
-      let v2: number[] = [];
-      if (hasMore) {
-        await readDelay();
-        const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-        v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      }
-      return {
-        powerRate: v1[0] ?? NaN, stopSOC: v1[1] ?? NaN,
-        raw: `[1-3]: ${data1.msg}`,
-        period1: p1, period2: p2, period3: p3,
-        period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
-      };
-    }),
+  // readMixParam sometimes returns {"success":true,"msg":""} when the datalogger is busy.
+  // Treat a missing or short reply as a failure: retry, then throw, never return partial data.
+  const READ_ATTEMPTS = 3;
+  const READ_RETRY_MS = 3000;
+  const readParam = async (serial: string, paramId: string, minLength: number) => {
+    for (let attempt = 1; ; attempt++) {
+      const data = await request("/tcpSet.do", { action: "readMixParam", paramId, serialNum: serial, startAddr: "-1", endAddr: "-1" });
+      const msg = (data.msg ?? "") as string;
+      const values = msg.split("-").filter(Boolean).map(Number);
+      if (values.length >= minLength && !values.some(Number.isNaN)) return { msg, values };
+      if (attempt >= READ_ATTEMPTS) throw new Error(`Inverter returned no data for ${paramId} — it may be busy, try again`);
+      console.warn(`${paramId}: empty reply (attempt ${attempt}/${READ_ATTEMPTS}), retrying in ${READ_RETRY_MS / 1000}s`);
+      await new Promise((resolve) => setTimeout(resolve, READ_RETRY_MS));
+    }
+  };
 
-    fetchDischargePeriods: (serial: string): Promise<DischargePeriods> => enqueue(async () => {
-      await ensureLoggedIn();
-      const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "MIX_AC_DISCHARGE_TIME_MULTI", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-      const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
-      const hasMore = p1.enabled && p2.enabled && p3.enabled;
-      let v2: number[] = [];
-      if (hasMore) {
-        await readDelay();
-        const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_discharge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-        v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      }
-      return {
-        powerRate: v1[0] ?? NaN, stopSOC: v1[1] ?? NaN,
-        raw: `[1-3]: ${data1.msg}`,
-        period1: p1, period2: p2, period3: p3,
-        period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
-      };
-    }),
+  // Periods 1-3 plus rate/SOC come from the first param (19 values); 4-6 from the second (9 values),
+  // which is only read when 1-3 are all enabled.
+  const readPeriods = async (serial: string, paramId13: string, paramId46: string): Promise<ChargePeriods> => {
+    await ensureLoggedIn();
+    const first = await readParam(serial, paramId13, 19);
+    const v1 = first.values;
+    const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
+    const hasMore = p1.enabled && p2.enabled && p3.enabled;
+    let v2: number[] = [];
+    if (hasMore) {
+      await readDelay();
+      v2 = (await readParam(serial, paramId46, 9)).values;
+    }
+    return {
+      powerRate: v1[0], stopSOC: v1[1],
+      raw: `[1-3]: ${first.msg}`,
+      period1: p1, period2: p2, period3: p3,
+      period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
+    };
+  };
+
+  return {
+    fetchChargePeriods: (serial: string): Promise<ChargePeriods> =>
+      enqueue(() => readPeriods(serial, "mix_ac_charge_time_multi", "mix_ac_charge_time_multi_1")),
+
+    fetchDischargePeriods: (serial: string): Promise<DischargePeriods> =>
+      enqueue(() => readPeriods(serial, "MIX_AC_DISCHARGE_TIME_MULTI", "mix_ac_discharge_time_multi_1")),
 
     setChargePeriods: (serial: string, powerRate: string, stopSOC: string, p1: SlotParam, p2: SlotParam = null, p3: SlotParam = null, p4: SlotParam = null, p5: SlotParam = null, p6: SlotParam = null) => enqueue(async () => {
       await ensureLoggedIn();

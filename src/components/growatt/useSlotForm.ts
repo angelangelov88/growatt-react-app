@@ -44,6 +44,8 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
   const [powerRate, setPowerRate] = useState(defaultPowerRate);
   const [stopSOC, setStopSOC] = useState(defaultStopSOC);
   const [slots, setSlots] = useState<SlotState[]>([]);
+  // False until the form holds real values — from an inverter read or a preset the user picked.
+  const [isLoaded, setIsLoaded] = useState(false);
   const lastRead = useRef<Snapshot | null>(null);
 
   const updateSlot = (index: number, field: keyof SlotState, value: string) => {
@@ -66,6 +68,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setPowerRate(pr);
     setStopSOC(soc);
     setSlots(newSlots);
+    setIsLoaded(true);
     lastRead.current = { powerRate: pr, stopSOC: soc, slots: newSlots };
   };
 
@@ -77,6 +80,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setPowerRate(pr);
     setStopSOC(soc);
     setSlots(newSlots);
+    setIsLoaded(true);
     lastRead.current = { powerRate: pr, stopSOC: soc, slots: newSlots };
   };
 
@@ -84,12 +88,14 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setPowerRate(rate);
     setStopSOC(soc);
     setSlots([{ ...defaultSlot }]);
+    setIsLoaded(true);
   };
 
   const disableAll = (rate: string, soc: string) => {
     setPowerRate(rate);
     setStopSOC(soc);
     setSlots([]);
+    setIsLoaded(true);
   };
 
   const markClean = () => {
@@ -111,5 +117,6 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setDefaults, disableAll, markClean, toParams,
     canAddSlot: slots.length < 6,
     isDirty,
-  }), [powerRate, stopSOC, slots, isDirty]);
+    isLoaded,
+  }), [powerRate, stopSOC, slots, isDirty, isLoaded]);
 };

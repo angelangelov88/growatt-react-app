@@ -5,7 +5,7 @@ const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT as string;
 const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY as string;
 const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
 
-const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
+const octopusRequest = async <T,>(query: string, token?: string): Promise<T> => {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {

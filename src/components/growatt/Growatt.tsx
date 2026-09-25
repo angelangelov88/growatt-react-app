@@ -80,6 +80,19 @@ const SlotList = ({ form }: { form: ReturnType<typeof useSlotForm> }) => (
   </>
 );
 
+const NotReadYet = ({ isReading, hint }: { isReading: boolean; hint: string }) => (
+  <div className="rounded-xl border border-dashed border-gray-700 px-4 py-6 text-center">
+    {isReading ? (
+      <p className="flex items-center justify-center gap-2 text-sm text-gray-400"><Spinner />Reading from inverter…</p>
+    ) : (
+      <>
+        <p className="text-sm text-gray-300">Not read yet</p>
+        <p className="text-xs text-gray-500 mt-1">{hint}</p>
+      </>
+    )}
+  </div>
+);
+
 // ─── Battery First ────────────────────────────────────────────────────────────
 
 type BatteryFirstProps = {
@@ -90,7 +103,7 @@ type BatteryFirstProps = {
 const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: BatteryFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("35", "95");
-  const isLoading = chargePeriodsQuery.isFetching && !chargePeriodsQuery.data;
+  const isLoading = chargePeriodsQuery.isFetching;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -103,13 +116,13 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
     if (setChargePeriodsMutation.isSuccess) {
       form.markClean();
       showToast("Battery First settings applied", "success");
-      chargePeriodsQuery.refetch();
+      chargePeriodsQuery.refetch({ cancelRefetch: false });
     }
   }, [setChargePeriodsMutation.isError, setChargePeriodsMutation.isSuccess]);
 
   useEffect(() => {
     if (chargePeriodsQuery.isError) showToast(`Read failed: ${(chargePeriodsQuery.error as Error).message}`, "error");
-  }, [chargePeriodsQuery.isError]);
+  }, [chargePeriodsQuery.errorUpdatedAt]);
 
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
@@ -126,7 +139,7 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => chargePeriodsQuery.refetch()}
+            onClick={() => chargePeriodsQuery.refetch({ cancelRefetch: false })}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -134,7 +147,7 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
           </button>
           <button
             onClick={() => form.setDefaults("35", "95", { startHour: "01", startMin: "00", endHour: "05", endMin: "00" })}
-            disabled={isDisabled}
+            disabled={isDisabled || !form.isLoaded}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Defaults
@@ -142,30 +155,36 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Charge rate %</label>
-          <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
-            {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
-          <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
-            {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
-          </select>
-        </div>
-      </div>
+      {!form.isLoaded ? (
+        <NotReadYet isReading={isLoading} hint="Press Read to load the current settings." />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1.5">Charge rate %</label>
+              <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
+                {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
+              <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
+                {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+              </select>
+            </div>
+          </div>
 
-      <SlotList form={form} />
+          <SlotList form={form} />
 
-      <button
-        onClick={handleApply}
-        disabled={isDisabled || !form.isDirty}
-        className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        {isApplying ? "Applying…" : "Apply Battery First"}
-      </button>
+          <button
+            onClick={handleApply}
+            disabled={isDisabled || !form.isDirty}
+            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {isApplying ? "Applying…" : "Apply Battery First"}
+          </button>
+        </>
+      )}
     </div>
   );
 };
@@ -186,7 +205,7 @@ type GridFirstProps = {
 const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("95", "20");
-  const isLoading = dischargePeriodsQuery.isFetching && !dischargePeriodsQuery.data;
+  const isLoading = dischargePeriodsQuery.isFetching;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -199,13 +218,13 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
     if (setDischargeMutation.isSuccess) {
       form.markClean();
       showToast("GridFirst settings applied", "success");
-      dischargePeriodsQuery.refetch();
+      dischargePeriodsQuery.refetch({ cancelRefetch: false });
     }
   }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
 
   useEffect(() => {
     if (dischargePeriodsQuery.isError) showToast(`Read failed: ${(dischargePeriodsQuery.error as Error).message}`, "error");
-  }, [dischargePeriodsQuery.isError]);
+  }, [dischargePeriodsQuery.errorUpdatedAt]);
 
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
@@ -222,7 +241,7 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => dischargePeriodsQuery.refetch()}
+            onClick={() => dischargePeriodsQuery.refetch({ cancelRefetch: false })}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -230,7 +249,7 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
           </button>
           <button
             onClick={() => form.disableAll("95", "20")}
-            disabled={isDisabled}
+            disabled={isDisabled || !form.isLoaded}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Disable All
@@ -238,43 +257,49 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        {(Object.entries(PRESETS) as [Preset, typeof PRESETS[Preset]][]).map(([key, p]) => (
+      {!form.isLoaded ? (
+        <NotReadYet isReading={isLoading} hint="Press Read to load the current settings." />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {(Object.entries(PRESETS) as [Preset, typeof PRESETS[Preset]][]).map(([key, p]) => (
+              <button
+                key={key}
+                onClick={() => form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot)}
+                className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
+              >
+                <p className="text-sm font-medium text-white">{p.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{p.desc}</p>
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1.5">Discharge rate %</label>
+              <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
+                {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
+              <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
+                {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
+              </select>
+            </div>
+          </div>
+
+          <SlotList form={form} />
+
           <button
-            key={key}
-            onClick={() => form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot)}
-            className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
+            onClick={handleApply}
+            disabled={isDisabled || !form.isDirty}
+            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            <p className="text-sm font-medium text-white">{p.label}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{p.desc}</p>
+            {isApplying ? "Applying…" : "Apply GridFirst"}
           </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Discharge rate %</label>
-          <select value={form.powerRate} onChange={(e) => form.setPowerRate(e.target.value)} className={selectClass}>
-            {RATE_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs text-gray-400 block mb-1.5">Stop SOC %</label>
-          <select value={form.stopSOC} onChange={(e) => form.setStopSOC(e.target.value)} className={selectClass}>
-            {SOC_OPTIONS.map((v) => <option key={v} value={v}>{v}%</option>)}
-          </select>
-        </div>
-      </div>
-
-      <SlotList form={form} />
-
-      <button
-        onClick={handleApply}
-        disabled={isDisabled || !form.isDirty}
-        className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-      >
-        {isApplying ? "Applying…" : "Apply GridFirst"}
-      </button>
+        </>
+      )}
     </div>
   );
 };
