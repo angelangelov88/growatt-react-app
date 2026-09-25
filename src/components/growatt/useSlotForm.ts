@@ -43,7 +43,7 @@ const snapshotsEqual = (a: Snapshot | null, b: Snapshot): boolean => {
 export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   const [powerRate, setPowerRate] = useState(defaultPowerRate);
   const [stopSOC, setStopSOC] = useState(defaultStopSOC);
-  const [slots, setSlots] = useState<SlotState[]>([{ ...DEFAULT_SLOT }]);
+  const [slots, setSlots] = useState<SlotState[]>([]);
   const lastRead = useRef<Snapshot | null>(null);
 
   const updateSlot = (index: number, field: keyof SlotState, value: string) => {
@@ -55,7 +55,6 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
   };
 
   const removeSlot = (index: number) => {
-    if (index === 0) return;
     setSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -63,8 +62,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     const pr = String(data.powerRate);
     const soc = String(data.stopSOC);
     const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const active = periods.filter(isValidPeriod);
-    const newSlots = active.length > 0 ? active.map(periodToSlot) : [{ ...DEFAULT_SLOT }];
+    const newSlots = periods.filter(isValidPeriod).map(periodToSlot);
     setPowerRate(pr);
     setStopSOC(soc);
     setSlots(newSlots);
@@ -75,8 +73,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     const pr = String(data.powerRate);
     const soc = String(data.stopSOC);
     const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const active = periods.filter(isValidPeriod);
-    const newSlots = active.length > 0 ? active.map(periodToSlot) : [{ ...DEFAULT_SLOT }];
+    const newSlots = periods.filter(isValidPeriod).map(periodToSlot);
     setPowerRate(pr);
     setStopSOC(soc);
     setSlots(newSlots);
@@ -87,6 +84,12 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setPowerRate(rate);
     setStopSOC(soc);
     setSlots([{ ...defaultSlot }]);
+  };
+
+  const disableAll = (rate: string, soc: string) => {
+    setPowerRate(rate);
+    setStopSOC(soc);
+    setSlots([]);
   };
 
   const toParams = (): [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam] => {
@@ -101,7 +104,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     stopSOC, setStopSOC,
     slots, updateSlot, addSlot, removeSlot,
     loadFromChargePeriods, loadFromDischargePeriods,
-    setDefaults, toParams,
+    setDefaults, disableAll, toParams,
     canAddSlot: slots.length < 6,
     isDirty,
   }), [powerRate, stopSOC, slots, isDirty]);

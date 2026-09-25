@@ -51,18 +51,19 @@ const TimePicker = ({
 const SlotList = ({ form }: { form: ReturnType<typeof useSlotForm> }) => (
   <>
     <div className="flex flex-col gap-3 mb-4">
+      {form.slots.length === 0 && (
+        <p className="text-xs text-gray-500 text-center py-3">No slots — all periods disabled</p>
+      )}
       {form.slots.map((slot, i) => (
         <div key={i} className="bg-gray-800 rounded-xl p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-400 font-medium">Slot {i + 1}</span>
-            {i > 0 && (
-              <button
-                onClick={() => form.removeSlot(i)}
-                className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
-              >
-                Remove
-              </button>
-            )}
+            <button
+              onClick={() => form.removeSlot(i)}
+              className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
+            >
+              Remove
+            </button>
           </div>
           <TimePicker slot={slot} onChange={(field, value) => form.updateSlot(i, field, value)} />
         </div>
@@ -84,10 +85,9 @@ const SlotList = ({ form }: { form: ReturnType<typeof useSlotForm> }) => (
 type BatteryFirstProps = {
   chargePeriodsQuery: ReturnType<typeof useGrowatt>["chargePeriodsQuery"];
   setChargePeriodsMutation: ReturnType<typeof useGrowatt>["setChargePeriodsMutation"];
-  setDefaultsMutation: ReturnType<typeof useGrowatt>["setDefaultsMutation"];
 };
 
-const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation, setDefaultsMutation }: BatteryFirstProps) => {
+const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: BatteryFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("35", "95");
   const isLoading = chargePeriodsQuery.isFetching;
@@ -106,10 +106,6 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation, setDef
   useEffect(() => {
     if (chargePeriodsQuery.isError) showToast(`Read failed: ${(chargePeriodsQuery.error as Error).message}`, "error");
   }, [chargePeriodsQuery.isError]);
-
-  useEffect(() => {
-    if (setDefaultsMutation.isError) showToast(`Defaults failed: ${(setDefaultsMutation.error as Error).message}`, "error");
-  }, [setDefaultsMutation.isError]);
 
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
@@ -181,14 +177,13 @@ const PRESETS: Record<Preset, { powerRate: string; stopSOC: string; label: strin
 type GridFirstProps = {
   dischargePeriodsQuery: ReturnType<typeof useGrowatt>["dischargePeriodsQuery"];
   setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
-  disableAllDischargeMutation: ReturnType<typeof useGrowatt>["disableAllDischargeMutation"];
 };
 
-const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation, disableAllDischargeMutation }: GridFirstProps) => {
+const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("95", "20");
   const isLoading = dischargePeriodsQuery.isFetching;
-  const isApplying = setDischargeMutation.isPending || disableAllDischargeMutation.isPending;
+  const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
   useEffect(() => {
@@ -199,11 +194,6 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation, disableAll
     if (setDischargeMutation.isError) showToast(`GridFirst failed: ${(setDischargeMutation.error as Error).message}`, "error");
     if (setDischargeMutation.isSuccess) showToast("GridFirst settings applied", "success");
   }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
-
-  useEffect(() => {
-    if (disableAllDischargeMutation.isError) showToast(`Disable failed: ${(disableAllDischargeMutation.error as Error).message}`, "error");
-    if (disableAllDischargeMutation.isSuccess) showToast("GridFirst disabled", "success");
-  }, [disableAllDischargeMutation.isError, disableAllDischargeMutation.isSuccess]);
 
   useEffect(() => {
     if (dischargePeriodsQuery.isError) showToast(`Read failed: ${(dischargePeriodsQuery.error as Error).message}`, "error");
@@ -231,11 +221,11 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation, disableAll
             Read
           </button>
           <button
-            onClick={() => disableAllDischargeMutation.mutate()}
+            onClick={() => form.disableAll("95", "20")}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {disableAllDischargeMutation.isPending ? "Disabling…" : "Disable All"}
+            Disable All
           </button>
         </div>
       </div>
@@ -285,12 +275,10 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation, disableAll
 
 const Growatt = () => {
   const {
-    setDefaultsMutation,
     setChargePeriodsMutation,
     chargePeriodsQuery,
     dischargePeriodsQuery,
     setDischargeMutation,
-    disableAllDischargeMutation,
   } = useGrowatt();
 
   return (
@@ -298,12 +286,10 @@ const Growatt = () => {
       <BatteryFirstCard
         chargePeriodsQuery={chargePeriodsQuery}
         setChargePeriodsMutation={setChargePeriodsMutation}
-        setDefaultsMutation={setDefaultsMutation}
       />
       <GridFirstCard
         dischargePeriodsQuery={dischargePeriodsQuery}
         setDischargeMutation={setDischargeMutation}
-        disableAllDischargeMutation={disableAllDischargeMutation}
       />
     </div>
   );
