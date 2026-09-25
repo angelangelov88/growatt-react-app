@@ -6,8 +6,9 @@ import { sameSettings, useSlotForm, type SlotState } from "./useSlotForm";
 import { useToast } from "../../contexts/ToastContext";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = Array.from({ length: 60 }, (_, i) =>
-  String(i).padStart(2, "0"),
+// 5-minute steps; minuteOptions adds any other value read from the inverter.
+const MINUTES = Array.from({ length: 12 }, (_, i) =>
+  String(i * 5).padStart(2, "0"),
 );
 const SOC_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 const RATE_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
