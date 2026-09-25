@@ -1,20 +1,77 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchChargePeriods, setChargePeriods,
-  fetchDischargePeriods, setDischargePeriods,
+  fetchChargePeriods,
+  setChargePeriods,
+  fetchDischargePeriods,
+  setDischargePeriods,
+  type ChargePeriod,
+  type ChargePeriods,
   type SlotParam,
 } from "./growattApi";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
+export const CHARGE_KEY = ["growatt", "chargePeriods"];
+export const DISCHARGE_KEY = ["growatt", "dischargePeriods"];
+
+// Builds what a read would return for the values just written, so the cache
+// reflects a successful save straight away instead of waiting for the inverter.
+const toPeriods = (
+  powerRate: string,
+  stopSOC: string,
+  slots: SlotParam[],
+): ChargePeriods => {
+  const period = (s: SlotParam | undefined): ChargePeriod =>
+    s
+      ? {
+          start: `${s.startHour}:${s.startMin}`,
+          end: `${s.endHour}:${s.endMin}`,
+          enabled: true,
+        }
+      : { start: "00:00", end: "00:00", enabled: false };
+  return {
+    powerRate: Number(powerRate),
+    stopSOC: Number(stopSOC),
+    raw: "(saved)",
+    period1: period(slots[0]),
+    period2: period(slots[1]),
+    period3: period(slots[2]),
+    period4: period(slots[3]),
+    period5: period(slots[4]),
+    period6: period(slots[5]),
+  };
+};
+
 function useGrowatt() {
+  const queryClient = useQueryClient();
+
   const setChargePeriodsMutation = useMutation({
-    mutationFn: (vars: { powerRate: string; stopSOC: string; slots: (SlotParam)[] }) =>
-      setChargePeriods(serial, vars.powerRate, vars.stopSOC, vars.slots[0], vars.slots[1], vars.slots[2], vars.slots[3], vars.slots[4], vars.slots[5]),
+    mutationFn: (vars: {
+      powerRate: string;
+      stopSOC: string;
+      slots: SlotParam[];
+    }) =>
+      setChargePeriods(
+        serial,
+        vars.powerRate,
+        vars.stopSOC,
+        vars.slots[0],
+        vars.slots[1],
+        vars.slots[2],
+        vars.slots[3],
+        vars.slots[4],
+        vars.slots[5],
+      ),
+    onSuccess: (_, vars) => {
+      queryClient.setQueryData(
+        CHARGE_KEY,
+        toPeriods(vars.powerRate, vars.stopSOC, vars.slots),
+      );
+    },
   });
 
   const chargePeriodsQuery = useQuery({
-    queryKey: ["growatt", "chargePeriods"],
+    queryKey: CHARGE_KEY,
     queryFn: () => fetchChargePeriods(serial),
     retry: false,
     staleTime: Infinity,
@@ -22,7 +79,7 @@ function useGrowatt() {
   });
 
   const dischargePeriodsQuery = useQuery({
-    queryKey: ["growatt", "dischargePeriods"],
+    queryKey: DISCHARGE_KEY,
     queryFn: () => fetchDischargePeriods(serial),
     retry: false,
     staleTime: Infinity,
@@ -30,8 +87,40 @@ function useGrowatt() {
   });
 
   const setDischargeMutation = useMutation({
-    mutationFn: (vars: { powerRate: string; stopSOC: string; p1: SlotParam; p2?: SlotParam; p3?: SlotParam; p4?: SlotParam; p5?: SlotParam; p6?: SlotParam }) =>
-      setDischargePeriods(serial, vars.powerRate, vars.stopSOC, vars.p1, vars.p2, vars.p3, vars.p4, vars.p5, vars.p6),
+    mutationFn: (vars: {
+      powerRate: string;
+      stopSOC: string;
+      p1: SlotParam;
+      p2?: SlotParam;
+      p3?: SlotParam;
+      p4?: SlotParam;
+      p5?: SlotParam;
+      p6?: SlotParam;
+    }) =>
+      setDischargePeriods(
+        serial,
+        vars.powerRate,
+        vars.stopSOC,
+        vars.p1,
+        vars.p2,
+        vars.p3,
+        vars.p4,
+        vars.p5,
+        vars.p6,
+      ),
+    onSuccess: (_, vars) => {
+      queryClient.setQueryData(
+        DISCHARGE_KEY,
+        toPeriods(vars.powerRate, vars.stopSOC, [
+          vars.p1,
+          vars.p2 ?? null,
+          vars.p3 ?? null,
+          vars.p4 ?? null,
+          vars.p5 ?? null,
+          vars.p6 ?? null,
+        ]),
+      );
+    },
   });
 
   return {

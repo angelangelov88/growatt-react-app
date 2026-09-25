@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from "react";
-import type { ChargePeriods, DischargePeriods, SlotParam } from "./growattApi";
+import type { ChargePeriods, SlotParam } from "./growattApi";
 
 export type SlotState = {
   startHour: string;
@@ -8,7 +8,12 @@ export type SlotState = {
   endMin: string;
 };
 
-const DEFAULT_SLOT: SlotState = { startHour: "00", startMin: "00", endHour: "00", endMin: "00" };
+const DEFAULT_SLOT: SlotState = {
+  startHour: "00",
+  startMin: "00",
+  endHour: "00",
+  endMin: "00",
+};
 
 const periodToSlot = (p: { start: string; end: string }): SlotState => {
   const [startHour, startMin] = p.start.split(":");
@@ -28,19 +33,38 @@ const slotToParam = (s: SlotState): SlotParam => ({
 
 type Snapshot = { powerRate: string; stopSOC: string; slots: SlotState[] };
 
+const toSnapshot = (data: ChargePeriods): Snapshot => ({
+  powerRate: String(data.powerRate),
+  stopSOC: String(data.stopSOC),
+  slots: [
+    data.period1,
+    data.period2,
+    data.period3,
+    data.period4,
+    data.period5,
+    data.period6,
+  ]
+    .filter(isValidPeriod)
+    .map(periodToSlot),
+});
+
 const snapshotsEqual = (a: Snapshot | null, b: Snapshot): boolean => {
   if (!a) return false;
   if (a.powerRate !== b.powerRate || a.stopSOC !== b.stopSOC) return false;
   if (a.slots.length !== b.slots.length) return false;
-  return a.slots.every((s, i) =>
-    s.startHour === b.slots[i].startHour &&
-    s.startMin === b.slots[i].startMin &&
-    s.endHour === b.slots[i].endHour &&
-    s.endMin === b.slots[i].endMin
+  return a.slots.every(
+    (s, i) =>
+      s.startHour === b.slots[i].startHour &&
+      s.startMin === b.slots[i].startMin &&
+      s.endHour === b.slots[i].endHour &&
+      s.endMin === b.slots[i].endMin,
   );
 };
 
-export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
+export const useSlotForm = (
+  defaultPowerRate: string,
+  defaultStopSOC: string,
+) => {
   const [powerRate, setPowerRate] = useState(defaultPowerRate);
   const [stopSOC, setStopSOC] = useState(defaultStopSOC);
   const [slots, setSlots] = useState<SlotState[]>([]);
@@ -49,7 +73,9 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
   const lastRead = useRef<Snapshot | null>(null);
 
   const updateSlot = (index: number, field: keyof SlotState, value: string) => {
-    setSlots((prev) => prev.map((s, i) => i === index ? { ...s, [field]: value } : s));
+    setSlots((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)),
+    );
   };
 
   const addSlot = () => {
@@ -60,29 +86,19 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setSlots((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const loadFromChargePeriods = (data: ChargePeriods) => {
-    const pr = String(data.powerRate);
-    const soc = String(data.stopSOC);
-    const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const newSlots = periods.filter(isValidPeriod).map(periodToSlot);
-    setPowerRate(pr);
-    setStopSOC(soc);
-    setSlots(newSlots);
+  // Charge and discharge periods share the same shape.
+  const load = (data: ChargePeriods) => {
+    const next = toSnapshot(data);
+    setPowerRate(next.powerRate);
+    setStopSOC(next.stopSOC);
+    setSlots(next.slots);
     setIsLoaded(true);
-    lastRead.current = { powerRate: pr, stopSOC: soc, slots: newSlots };
+    lastRead.current = next;
   };
 
-  const loadFromDischargePeriods = (data: DischargePeriods) => {
-    const pr = String(data.powerRate);
-    const soc = String(data.stopSOC);
-    const periods = [data.period1, data.period2, data.period3, data.period4, data.period5, data.period6];
-    const newSlots = periods.filter(isValidPeriod).map(periodToSlot);
-    setPowerRate(pr);
-    setStopSOC(soc);
-    setSlots(newSlots);
-    setIsLoaded(true);
-    lastRead.current = { powerRate: pr, stopSOC: soc, slots: newSlots };
-  };
+  // True when the form already shows exactly these values.
+  const matches = (data: ChargePeriods) =>
+    snapshotsEqual(toSnapshot(data), { powerRate, stopSOC, slots });
 
   const setDefaults = (rate: string, soc: string, defaultSlot: SlotState) => {
     setPowerRate(rate);
@@ -98,25 +114,44 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setIsLoaded(true);
   };
 
-  const markClean = () => {
-    lastRead.current = { powerRate, stopSOC, slots };
-  };
-
-  const toParams = (): [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam] => {
-    const get = (i: number): SlotParam => slots[i] ? slotToParam(slots[i]) : null;
+  const toParams = (): [
+    SlotParam,
+    SlotParam,
+    SlotParam,
+    SlotParam,
+    SlotParam,
+    SlotParam,
+  ] => {
+    const get = (i: number): SlotParam =>
+      slots[i] ? slotToParam(slots[i]) : null;
     return [get(0), get(1), get(2), get(3), get(4), get(5)];
   };
 
-  const isDirty = !snapshotsEqual(lastRead.current, { powerRate, stopSOC, slots });
+  const isDirty = !snapshotsEqual(lastRead.current, {
+    powerRate,
+    stopSOC,
+    slots,
+  });
 
-  return useMemo(() => ({
-    powerRate, setPowerRate,
-    stopSOC, setStopSOC,
-    slots, updateSlot, addSlot, removeSlot,
-    loadFromChargePeriods, loadFromDischargePeriods,
-    setDefaults, disableAll, markClean, toParams,
-    canAddSlot: slots.length < 6,
-    isDirty,
-    isLoaded,
-  }), [powerRate, stopSOC, slots, isDirty, isLoaded]);
+  return useMemo(
+    () => ({
+      powerRate,
+      setPowerRate,
+      stopSOC,
+      setStopSOC,
+      slots,
+      updateSlot,
+      addSlot,
+      removeSlot,
+      load,
+      matches,
+      setDefaults,
+      disableAll,
+      toParams,
+      canAddSlot: slots.length < 6,
+      isDirty,
+      isLoaded,
+    }),
+    [powerRate, stopSOC, slots, isDirty, isLoaded],
+  );
 };
