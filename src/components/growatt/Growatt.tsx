@@ -90,7 +90,7 @@ type BatteryFirstProps = {
 const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: BatteryFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("35", "95");
-  const isLoading = chargePeriodsQuery.isFetching;
+  const isLoading = chargePeriodsQuery.isFetching && !chargePeriodsQuery.data;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -100,7 +100,11 @@ const BatteryFirstCard = ({ chargePeriodsQuery, setChargePeriodsMutation }: Batt
 
   useEffect(() => {
     if (setChargePeriodsMutation.isError) showToast(`Apply failed: ${(setChargePeriodsMutation.error as Error).message}`, "error");
-    if (setChargePeriodsMutation.isSuccess) showToast("Battery First settings applied", "success");
+    if (setChargePeriodsMutation.isSuccess) {
+      form.markClean();
+      showToast("Battery First settings applied", "success");
+      chargePeriodsQuery.refetch();
+    }
   }, [setChargePeriodsMutation.isError, setChargePeriodsMutation.isSuccess]);
 
   useEffect(() => {
@@ -182,7 +186,7 @@ type GridFirstProps = {
 const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirstProps) => {
   const { showToast } = useToast();
   const form = useSlotForm("95", "20");
-  const isLoading = dischargePeriodsQuery.isFetching;
+  const isLoading = dischargePeriodsQuery.isFetching && !dischargePeriodsQuery.data;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -192,7 +196,11 @@ const GridFirstCard = ({ dischargePeriodsQuery, setDischargeMutation }: GridFirs
 
   useEffect(() => {
     if (setDischargeMutation.isError) showToast(`GridFirst failed: ${(setDischargeMutation.error as Error).message}`, "error");
-    if (setDischargeMutation.isSuccess) showToast("GridFirst settings applied", "success");
+    if (setDischargeMutation.isSuccess) {
+      form.markClean();
+      showToast("GridFirst settings applied", "success");
+      dischargePeriodsQuery.refetch();
+    }
   }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
 
   useEffect(() => {

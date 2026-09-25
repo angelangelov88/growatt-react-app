@@ -79,7 +79,8 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
     return loginPromise;
   };
 
-  const delay = () => new Promise((resolve) => setTimeout(resolve, 10000));
+  const readDelay  = () => new Promise((resolve) => setTimeout(resolve, 1000));
+  const writeDelay = () => new Promise((resolve) => setTimeout(resolve, 10000));
 
   const decodeTime = (n: number) => {
     const h = Math.floor(n / 256);
@@ -105,30 +106,40 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
     fetchChargePeriods: async (serial: string): Promise<ChargePeriods> => {
       await ensureLoggedIn();
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-      await delay();
-      const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      const v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
+      const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
+      const hasMore = p1.enabled || p2.enabled || p3.enabled;
+      let v2: number[] = [];
+      if (hasMore) {
+        await readDelay();
+        const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
+        v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
+      }
       return {
         powerRate: v1[0] ?? NaN, stopSOC: v1[1] ?? NaN,
-        raw: `[1-3]: ${data1.msg} | [4-6]: ${data2.msg}`,
-        period1: safe(v1, 10), period2: safe(v1, 13), period3: safe(v1, 16),
-        period4: safe(v2, 0),  period5: safe(v2, 3),  period6: safe(v2, 6),
+        raw: `[1-3]: ${data1.msg}`,
+        period1: p1, period2: p2, period3: p3,
+        period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
       };
     },
 
     fetchDischargePeriods: async (serial: string): Promise<DischargePeriods> => {
       await ensureLoggedIn();
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "MIX_AC_DISCHARGE_TIME_MULTI", serialNum: serial, startAddr: "-1", endAddr: "-1" });
-      await delay();
-      const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_discharge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
-      const v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
+      const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
+      const hasMore = p1.enabled || p2.enabled || p3.enabled;
+      let v2: number[] = [];
+      if (hasMore) {
+        await readDelay();
+        const data2 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_discharge_time_multi_1", serialNum: serial, startAddr: "-1", endAddr: "-1" });
+        v2 = ((data2.msg ?? "") as string).split("-").filter(Boolean).map(Number);
+      }
       return {
         powerRate: v1[0] ?? NaN, stopSOC: v1[1] ?? NaN,
-        raw: `[1-3]: ${data1.msg} | [4-6]: ${data2.msg}`,
-        period1: safe(v1, 10), period2: safe(v1, 13), period3: safe(v1, 16),
-        period4: safe(v2, 0),  period5: safe(v2, 3),  period6: safe(v2, 6),
+        raw: `[1-3]: ${data1.msg}`,
+        period1: p1, period2: p2, period3: p3,
+        period4: safe(v2, 0), period5: safe(v2, 3), period6: safe(v2, 6),
       };
     },
 
@@ -144,7 +155,8 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
         param14: p3?.startHour ?? "00", param15: p3?.startMin ?? "00",
         param16: p3?.endHour   ?? "00", param17: p3?.endMin   ?? "00", param18: p3 ? "1" : "0",
       });
-      await delay();
+      if (!p4 && !p5 && !p6) return;
+      await writeDelay();
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_charge_time_multi_1", ...slotParams46(p4, p5, p6) });
     },
 
@@ -160,7 +172,8 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
         param13: p3?.startHour ?? "00", param14: p3?.startMin ?? "00",
         param15: p3?.endHour   ?? "00", param16: p3?.endMin   ?? "00", param17: p3 ? "1" : "0",
       });
-      await delay();
+      if (!p4 && !p5 && !p6) return;
+      await writeDelay();
       return request("/tcpSet.do", { action: "mixSet", serialNum: serial, type: "mix_ac_discharge_time_multi_1", ...slotParams46(p4, p5, p6) });
     },
   };

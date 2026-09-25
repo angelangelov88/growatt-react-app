@@ -92,6 +92,10 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     setSlots([]);
   };
 
+  const markClean = () => {
+    lastRead.current = { powerRate, stopSOC, slots };
+  };
+
   const toParams = (): [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam] => {
     const get = (i: number): SlotParam => slots[i] ? slotToParam(slots[i]) : null;
     return [get(0), get(1), get(2), get(3), get(4), get(5)];
@@ -104,7 +108,7 @@ export const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) =>
     stopSOC, setStopSOC,
     slots, updateSlot, addSlot, removeSlot,
     loadFromChargePeriods, loadFromDischargePeriods,
-    setDefaults, disableAll, toParams,
+    setDefaults, disableAll, markClean, toParams,
     canAddSlot: slots.length < 6,
     isDirty,
   }), [powerRate, stopSOC, slots, isDirty]);
