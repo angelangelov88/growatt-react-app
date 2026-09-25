@@ -118,6 +118,28 @@ export const fetchSavingSessions = async (
   };
 };
 
+const JOIN_MUTATION = `mutation JoinSavingSession($input: JoinSavingSessionsEventInput!) {
+  joinSavingSessionsEvent(input: $input) { joinedEventCodes }
+}`;
+
+// Opts the account in to one Power Down session.
+export const joinSession = async (
+  token: string,
+  account: string,
+  eventCode: string,
+): Promise<void> => {
+  const res = await fetch(BACKEND_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: token },
+    body: JSON.stringify({
+      query: JOIN_MUTATION,
+      variables: { input: { accountNumber: account, eventCode } },
+    }),
+  });
+  const json = await res.json();
+  if (json.errors?.length) throw new Error(json.errors[0].message);
+};
+
 const ukDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" });
 const isSameUkDay = (a: Date, b: Date) => ukDate.format(a) === ukDate.format(b);
 
@@ -136,7 +158,7 @@ export const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
     )
     .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
 
-// Sessions you joined that started in the last `days` days (including later today).
+// Sessions you joined that ended within the last `days` days, newest first.
 export const joinedInLastDays = (
   data: SavingSessionsData,
   days: number,
@@ -144,7 +166,7 @@ export const joinedInLastDays = (
 ) => {
   const from = now.getTime() - days * 24 * 60 * 60 * 1000;
   return data.joined
-    .filter((s) => s.startAt.getTime() >= from)
+    .filter((s) => s.startAt.getTime() >= from && s.endAt <= now)
     .sort(byStartDesc);
 };
 

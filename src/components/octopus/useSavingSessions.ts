@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchToken } from "./useOctopus";
-import { fetchSavingSessions } from "./savingSessions";
+import { fetchSavingSessions, joinSession } from "./savingSessions";
 
 const account = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
 
@@ -12,5 +12,13 @@ export default function useSavingSessions() {
     enabled: false,
     retry: false,
     staleTime: Infinity,
+  });
+}
+
+// The caller reloads the sessions on success (refetchQueries skips disabled queries).
+export function useJoinSession() {
+  return useMutation({
+    mutationFn: async (eventCode: string) =>
+      joinSession(await fetchToken(), account, eventCode),
   });
 }
