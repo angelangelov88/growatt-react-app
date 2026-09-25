@@ -154,11 +154,11 @@ const NotReadYet = ({
     {isReading ? (
       <p className="flex items-center justify-center gap-2 text-sm text-gray-400">
         <Spinner />
-        Reading from inverter…
+        Loading settings from your inverter…
       </p>
     ) : (
       <>
-        <p className="text-sm text-gray-300">Not read yet</p>
+        <p className="text-sm text-gray-300">Settings not loaded yet</p>
         <p className="text-xs text-gray-500 mt-1">{hint}</p>
       </>
     )}
@@ -194,7 +194,7 @@ const useInverterRead = (
     if (isSaveCheck && sameSettings(prev, data)) return;
     if (hasUnsavedChanges) {
       showToast(
-        "The inverter's settings changed — press Read to load them (your edits are kept until then)",
+        "Your inverter's settings have changed — press Load to see them (your edits are kept until then)",
         "info",
       );
       return;
@@ -210,16 +210,19 @@ const useInverterRead = (
   useEffect(() => {
     if (!query.isError) return;
     userRead.current = false;
-    showToast(`Read failed: ${(query.error as Error).message}`, "error");
+    showToast(
+      `Couldn't load settings: ${(query.error as Error).message}`,
+      "error",
+    );
   }, [query.errorUpdatedAt]);
 
-  // `confirmed` skips the prompt when the caller has already asked (Read all).
+  // `confirmed` skips the prompt when the caller has already asked (Load all).
   const read = ({ confirmed = false }: { confirmed?: boolean } = {}) => {
     if (
       !confirmed &&
       hasUnsavedChanges &&
       !window.confirm(
-        "You have unsaved changes. Read from the inverter and discard them?",
+        "You have unsaved changes. Load the settings from your inverter and discard them?",
       )
     )
       return;
@@ -326,7 +329,7 @@ const BatteryFirstCard = ({
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Read
+            Load
           </button>
           <button
             onClick={() =>
@@ -348,7 +351,7 @@ const BatteryFirstCard = ({
       {!form.isLoaded ? (
         <NotReadYet
           isReading={isLoading}
-          hint="Press Read to load the current settings."
+          hint="Press Load to get the current settings from your inverter."
         />
       ) : (
         <>
@@ -371,7 +374,7 @@ const BatteryFirstCard = ({
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1.5">
-                Stop SOC %
+                Stop at battery %
               </label>
               <select
                 value={form.stopSOC}
@@ -419,7 +422,7 @@ const PRESETS: Record<
     powerRate: "95",
     stopSOC: "20",
     label: "High Export",
-    desc: "95% · stop 20% SOC",
+    desc: "95% · stop at 20% battery",
     defaultSlot: {
       startHour: "20",
       startMin: "00",
@@ -431,7 +434,7 @@ const PRESETS: Record<
     powerRate: "60",
     stopSOC: "15",
     label: "Low Export",
-    desc: "60% · stop 15% SOC",
+    desc: "60% · stop at 15% battery",
     defaultSlot: {
       startHour: "20",
       startMin: "00",
@@ -460,11 +463,11 @@ const GridFirstCard = ({
   useEffect(() => {
     if (setDischargeMutation.isError)
       showToast(
-        `GridFirst failed: ${(setDischargeMutation.error as Error).message}`,
+        `Grid First failed: ${(setDischargeMutation.error as Error).message}`,
         "error",
       );
     if (setDischargeMutation.isSuccess) {
-      showToast("GridFirst settings applied", "success");
+      showToast("Grid First settings applied", "success");
       verify();
     }
   }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
@@ -489,7 +492,7 @@ const GridFirstCard = ({
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">GridFirst</h2>
+          <h2 className="text-base font-semibold text-white">Grid First</h2>
           {isLoading && (
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <Spinner />
@@ -515,7 +518,7 @@ const GridFirstCard = ({
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Read
+            Load
           </button>
           <button
             onClick={() => form.disableAll("95", "20")}
@@ -530,7 +533,7 @@ const GridFirstCard = ({
       {!form.isLoaded ? (
         <NotReadYet
           isReading={isLoading}
-          hint="Press Read to load the current settings."
+          hint="Press Load to get the current settings from your inverter."
         />
       ) : (
         <>
@@ -570,7 +573,7 @@ const GridFirstCard = ({
             </div>
             <div>
               <label className="text-xs text-gray-400 block mb-1.5">
-                Stop SOC %
+                Stop at battery %
               </label>
               <select
                 value={form.stopSOC}
@@ -593,7 +596,7 @@ const GridFirstCard = ({
             disabled={isDisabled || !form.isDirty}
             className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {isApplying ? "Applying…" : "Apply GridFirst"}
+            {isApplying ? "Applying…" : "Apply Grid First"}
           </button>
         </>
       )}
@@ -627,7 +630,7 @@ const Growatt = () => {
     if (
       (chargeReader.hasUnsavedChanges || dischargeReader.hasUnsavedChanges) &&
       !window.confirm(
-        "You have unsaved changes. Read from the inverter and discard them?",
+        "You have unsaved changes. Load the settings from your inverter and discard them?",
       )
     )
       return;
@@ -644,7 +647,7 @@ const Growatt = () => {
           disabled={isBusy}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Read all
+          Load all
         </button>
       </div>
       <BatteryFirstCard
