@@ -76,6 +76,8 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
 
     if (isAuthError) throw new Error(json.msg);
 
+    if (json?.success === false) throw new Error(json?.msg ?? "Request failed");
+
     return json;
   };
 
@@ -129,7 +131,7 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "mix_ac_charge_time_multi", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
       const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
-      const hasMore = p1.enabled || p2.enabled || p3.enabled;
+      const hasMore = p1.enabled && p2.enabled && p3.enabled;
       let v2: number[] = [];
       if (hasMore) {
         await readDelay();
@@ -149,7 +151,7 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
       const data1 = await request("/tcpSet.do", { action: "readMixParam", paramId: "MIX_AC_DISCHARGE_TIME_MULTI", serialNum: serial, startAddr: "-1", endAddr: "-1" });
       const v1 = ((data1.msg ?? "") as string).split("-").filter(Boolean).map(Number);
       const p1 = safe(v1, 10), p2 = safe(v1, 13), p3 = safe(v1, 16);
-      const hasMore = p1.enabled || p2.enabled || p3.enabled;
+      const hasMore = p1.enabled && p2.enabled && p3.enabled;
       let v2: number[] = [];
       if (hasMore) {
         await readDelay();
