@@ -111,6 +111,14 @@ export const useSlotForm = (
     setIsLoaded(true);
   };
 
+  // Like setDefaults, but keeps the existing slots and adds this one after them.
+  const appendSlot = (rate: string, soc: string, slot: SlotState) => {
+    setPowerRate(rate);
+    setStopSOC(soc);
+    setSlots((prev) => [...prev, { ...slot }]);
+    setIsLoaded(true);
+  };
+
   const disableAll = (rate: string, soc: string) => {
     setPowerRate(rate);
     setStopSOC(soc);
@@ -150,6 +158,7 @@ export const useSlotForm = (
       load,
       matches,
       setDefaults,
+      appendSlot,
       disableAll,
       toParams,
       canAddSlot: slots.length < 6,

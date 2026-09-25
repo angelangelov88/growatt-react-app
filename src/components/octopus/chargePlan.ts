@@ -43,7 +43,7 @@ const ukTime = new Intl.DateTimeFormat("en-GB", {
   hourCycle: "h23",
 });
 
-const toUkMinutes = (date: Date) => {
+export const toUkMinutes = (date: Date) => {
   const parts = ukTime.formatToParts(date);
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value);

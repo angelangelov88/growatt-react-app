@@ -4,6 +4,12 @@ import useGrowatt, { isSavedData } from "./useGrowatt";
 import type { ChargePeriods } from "./growattApi";
 import { sameSettings, useSlotForm, type SlotState } from "./useSlotForm";
 import { useToast } from "../../contexts/ToastContext";
+import Spinner from "../Spinner";
+import PowerDownSessions from "../octopus/PowerDownSessions";
+import {
+  sessionToSlot,
+  type PowerDownSession,
+} from "../octopus/savingSessions";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 // 5-minute steps; minuteOptions adds any other value read from the inverter.
@@ -15,29 +21,6 @@ const RATE_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 
 const selectClass =
   "bg-gray-800 border border-gray-700 rounded-xl px-2 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-blue-500 appearance-none text-center w-full";
-
-const Spinner = ({ className = "text-gray-400" }: { className?: string }) => (
-  <svg
-    className={`animate-spin h-4 w-4 shrink-0 ${className}`}
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-  >
-    <circle
-      className="opacity-25"
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      strokeWidth="4"
-    />
-    <path
-      className="opacity-75"
-      fill="currentColor"
-      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-    />
-  </svg>
-);
 
 const minuteOptions = (current: string) => {
   const opts = MINUTES.includes(current)
@@ -606,6 +589,26 @@ const GridFirstCard = ({
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
+// A slot as [start, end) minutes, with end past midnight (above 1440) if it wraps.
+const slotRange = (s: SlotState): [number, number] => {
+  const start = Number(s.startHour) * 60 + Number(s.startMin);
+  let end = Number(s.endHour) * 60 + Number(s.endMin);
+  if (end <= start) end += 24 * 60;
+  return [start, end];
+};
+
+const slotsOverlap = (a: SlotState, b: SlotState) => {
+  const [aStart, aEnd] = slotRange(a);
+  const [bStart, bEnd] = slotRange(b);
+  // Also compare a day either side, for slots that wrap past midnight.
+  return [-1440, 0, 1440].some(
+    (shift) => aStart < bEnd + shift && bStart + shift < aEnd,
+  );
+};
+
+const formatSlot = (s: SlotState) =>
+  `${s.startHour}:${s.startMin}–${s.endHour}:${s.endMin}`;
+
 const Growatt = () => {
   const {
     setChargePeriodsMutation,
@@ -618,6 +621,60 @@ const Growatt = () => {
   const chargeReader = useInverterRead(chargePeriodsQuery, chargeForm);
   const dischargeForm = useSlotForm("95", "20");
   const dischargeReader = useInverterRead(dischargePeriodsQuery, dischargeForm);
+
+  const { showToast } = useToast();
+  const gridFirstRef = useRef<HTMLDivElement>(null);
+  // A session window waiting to be added once Grid First has loaded.
+  const [pendingSessionSlot, setPendingSessionSlot] =
+    useState<SlotState | null>(null);
+
+  // Fills the Grid First form only; the user reviews it and presses Apply.
+  const addSessionSlot = (slot: SlotState) => {
+    const clash = dischargeForm.slots.find((s) => slotsOverlap(s, slot));
+    if (clash) {
+      showToast(
+        `Grid First already has ${formatSlot(clash)}, which overlaps this session`,
+        "error",
+      );
+      return;
+    }
+    if (!dischargeForm.canAddSlot) {
+      showToast("Grid First already has 6 slots — remove one first", "error");
+      return;
+    }
+    dischargeForm.appendSlot(
+      PRESETS.high.powerRate,
+      PRESETS.high.stopSOC,
+      slot,
+    );
+    showToast(
+      `Added ${formatSlot(slot)} to Grid First with High Export — review it and press Apply`,
+      "info",
+    );
+    gridFirstRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const exportDuringSession = (session: PowerDownSession) => {
+    const slot = sessionToSlot(session);
+    if (dischargeForm.isLoaded) return addSessionSlot(slot);
+    setPendingSessionSlot(slot);
+    dischargeReader.read();
+  };
+
+  // Once Grid First has loaded, add the waiting slot; drop it if the load failed
+  // (the card already shows the read error).
+  useEffect(() => {
+    if (!pendingSessionSlot) return;
+    if (dischargeForm.isLoaded) {
+      addSessionSlot(pendingSessionSlot);
+      setPendingSessionSlot(null);
+    } else if (!dischargeReader.isReading) {
+      setPendingSessionSlot(null);
+    }
+  }, [dischargeForm.isLoaded, dischargeReader.isReading]);
 
   const isBusy =
     chargeReader.isReading ||
@@ -655,11 +712,21 @@ const Growatt = () => {
         reader={chargeReader}
         setChargePeriodsMutation={setChargePeriodsMutation}
       />
-      <GridFirstCard
-        form={dischargeForm}
-        reader={dischargeReader}
-        setDischargeMutation={setDischargeMutation}
+      <PowerDownSessions
+        onExportDuringSession={exportDuringSession}
+        exportDisabled={
+          dischargeReader.isReading ||
+          setDischargeMutation.isPending ||
+          !!pendingSessionSlot
+        }
       />
+      <div ref={gridFirstRef} className="scroll-mt-4">
+        <GridFirstCard
+          form={dischargeForm}
+          reader={dischargeReader}
+          setDischargeMutation={setDischargeMutation}
+        />
+      </div>
     </div>
   );
 };
