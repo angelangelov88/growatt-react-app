@@ -18,7 +18,7 @@ function useGrowatt() {
     queryFn: () => fetchChargePeriods(serial),
     retry: false,
     staleTime: Infinity,
-    notifyOnChangeProps: ["data", "error", "status"],
+    enabled: false,
   });
 
   const dischargePeriodsQuery = useQuery({
@@ -26,7 +26,7 @@ function useGrowatt() {
     queryFn: () => fetchDischargePeriods(serial),
     retry: false,
     staleTime: Infinity,
-    notifyOnChangeProps: ["data", "error", "status"],
+    enabled: false,
   });
 
   const setDischargeMutation = useMutation({
