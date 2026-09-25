@@ -29,10 +29,11 @@ export type GrowattConfig = {
 };
 
 export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "Cookie" }: GrowattConfig) => {
-  let sessionCookie = "";
+  const STORAGE_KEY = "growatt_session";
+  let sessionCookie = sessionStorage.getItem(STORAGE_KEY) ?? "";
   let loginPromise: Promise<void> | null = null;
 
-  const request = async (path: string, body?: Record<string, string>): Promise<any> => {
+  const request = async (path: string, body?: Record<string, string>, isRetry = false): Promise<any> => {
     const headers: Record<string, string> = {};
     if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
     if (sessionCookie) headers[cookieHeader] = sessionCookie;
@@ -46,16 +47,36 @@ export const createGrowattClient = ({ user, password, buildUrl, cookieHeader = "
     const setCookie = res.headers.get("x-set-cookie") ?? res.headers.get("set-cookie");
     if (setCookie) {
       const match = setCookie.match(/JSESSIONID=[^;]+/);
-      if (match) sessionCookie = match[0];
+      if (match) {
+        sessionCookie = match[0];
+        sessionStorage.setItem(STORAGE_KEY, sessionCookie);
+      }
     }
 
     const text = await res.text();
     console.log(`${body ? "POST" : "GET"} ${path}:`, text);
+    let json: any;
     try {
-      return JSON.parse(text);
+      json = JSON.parse(text);
     } catch {
       throw new Error(`Unexpected response: ${text.slice(0, 100)}`);
     }
+
+    // Detect session expiry and retry once
+    const isAuthError = json?.success === false && typeof json?.msg === "string" &&
+      (json.msg.toLowerCase().includes("login") || json.msg.toLowerCase().includes("session"));
+
+    if (!isRetry && isAuthError) {
+      sessionCookie = "";
+      sessionStorage.removeItem(STORAGE_KEY);
+      loginPromise = null;
+      await ensureLoggedIn();
+      return request(path, body, true);
+    }
+
+    if (isAuthError) throw new Error(json.msg);
+
+    return json;
   };
 
   const ensureLoggedIn = () => {
