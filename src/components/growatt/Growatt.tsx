@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
-import useGrowatt from "./useGrowatt";
+import useGrowatt, { isSavedData } from "./useGrowatt";
 import type { ChargePeriods } from "./growattApi";
-import { useSlotForm, type SlotState } from "./useSlotForm";
+import { sameSettings, useSlotForm, type SlotState } from "./useSlotForm";
 import { useToast } from "../../contexts/ToastContext";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
@@ -166,8 +166,9 @@ const NotReadYet = ({
 
 // ─── Inverter reads ───────────────────────────────────────────────────────────
 // A Read the user presses locks the card and always loads the result. Any other data
-// change (the saved values written to the cache on Apply, then the background read
-// that checks them) is only loaded if it doesn't clash with unsaved edits.
+// change (values written to the cache after a save — from this card or the Octopus
+// card — then the background read that checks them) is only loaded if it doesn't
+// clash with unsaved edits.
 
 const useInverterRead = (
   query: UseQueryResult<ChargePeriods>,
@@ -176,25 +177,33 @@ const useInverterRead = (
   const { showToast } = useToast();
   const [isReading, setIsReading] = useState(false);
   const userRead = useRef(false);
+  const prevData = useRef<ChargePeriods | undefined>(undefined);
+  const hasUnsavedChanges = form.isLoaded && form.isDirty;
 
   useEffect(() => {
     const data = query.data;
+    const prev = prevData.current;
+    prevData.current = data;
     if (!data) return;
     const isUserRead = userRead.current;
     userRead.current = false;
     if (isUserRead || form.matches(data)) return form.load(data);
-    if (form.isDirty) {
+    // A real read following a save is the check of that save. If it agrees, nothing to do.
+    const isSaveCheck = !!prev && isSavedData(prev) && !isSavedData(data);
+    if (isSaveCheck && sameSettings(prev, data)) return;
+    if (hasUnsavedChanges) {
       showToast(
-        "The inverter reports different settings to what you're editing — press Read to reload",
+        "The inverter's settings changed — press Read to load them (your edits are kept until then)",
         "info",
       );
       return;
     }
     form.load(data);
-    showToast(
-      "The inverter reports different settings to what was saved — showing the inverter's values",
-      "error",
-    );
+    if (isSaveCheck)
+      showToast(
+        "The inverter reports different settings to what was saved — showing the inverter's values",
+        "error",
+      );
   }, [query.data]);
 
   useEffect(() => {
@@ -203,10 +212,11 @@ const useInverterRead = (
     showToast(`Read failed: ${(query.error as Error).message}`, "error");
   }, [query.errorUpdatedAt]);
 
-  const read = () => {
+  // `confirmed` skips the prompt when the caller has already asked (Read all).
+  const read = ({ confirmed = false }: { confirmed?: boolean } = {}) => {
     if (
-      form.isLoaded &&
-      form.isDirty &&
+      !confirmed &&
+      hasUnsavedChanges &&
       !window.confirm(
         "You have unsaved changes. Read from the inverter and discard them?",
       )
@@ -233,6 +243,7 @@ const useInverterRead = (
   return {
     read,
     verify,
+    hasUnsavedChanges,
     isReading,
     isVerifying: query.isFetching && !isReading,
   };
@@ -240,25 +251,24 @@ const useInverterRead = (
 
 // ─── Battery First ────────────────────────────────────────────────────────────
 
+type SlotForm = ReturnType<typeof useSlotForm>;
+type InverterRead = ReturnType<typeof useInverterRead>;
+
 type BatteryFirstProps = {
-  chargePeriodsQuery: ReturnType<typeof useGrowatt>["chargePeriodsQuery"];
+  form: SlotForm;
+  reader: InverterRead;
   setChargePeriodsMutation: ReturnType<
     typeof useGrowatt
   >["setChargePeriodsMutation"];
 };
 
 const BatteryFirstCard = ({
-  chargePeriodsQuery,
+  form,
+  reader,
   setChargePeriodsMutation,
 }: BatteryFirstProps) => {
   const { showToast } = useToast();
-  const form = useSlotForm("35", "95");
-  const {
-    read,
-    verify,
-    isReading: isLoading,
-    isVerifying,
-  } = useInverterRead(chargePeriodsQuery, form);
+  const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -311,7 +321,7 @@ const BatteryFirstCard = ({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={read}
+            onClick={() => read()}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -431,22 +441,18 @@ const PRESETS: Record<
 };
 
 type GridFirstProps = {
-  dischargePeriodsQuery: ReturnType<typeof useGrowatt>["dischargePeriodsQuery"];
+  form: SlotForm;
+  reader: InverterRead;
   setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
 };
 
 const GridFirstCard = ({
-  dischargePeriodsQuery,
+  form,
+  reader,
   setDischargeMutation,
 }: GridFirstProps) => {
   const { showToast } = useToast();
-  const form = useSlotForm("95", "20");
-  const {
-    read,
-    verify,
-    isReading: isLoading,
-    isVerifying,
-  } = useInverterRead(dischargePeriodsQuery, form);
+  const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
@@ -504,7 +510,7 @@ const GridFirstCard = ({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={read}
+            onClick={() => read()}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -604,14 +610,50 @@ const Growatt = () => {
     setDischargeMutation,
   } = useGrowatt();
 
+  const chargeForm = useSlotForm("35", "95");
+  const chargeReader = useInverterRead(chargePeriodsQuery, chargeForm);
+  const dischargeForm = useSlotForm("95", "20");
+  const dischargeReader = useInverterRead(dischargePeriodsQuery, dischargeForm);
+
+  const isBusy =
+    chargeReader.isReading ||
+    dischargeReader.isReading ||
+    setChargePeriodsMutation.isPending ||
+    setDischargeMutation.isPending;
+
+  // Both reads go through the client's queue, so they run one after the other.
+  const readAll = () => {
+    if (
+      (chargeReader.hasUnsavedChanges || dischargeReader.hasUnsavedChanges) &&
+      !window.confirm(
+        "You have unsaved changes. Read from the inverter and discard them?",
+      )
+    )
+      return;
+    chargeReader.read({ confirmed: true });
+    dischargeReader.read({ confirmed: true });
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-400">Inverter settings</p>
+        <button
+          onClick={readAll}
+          disabled={isBusy}
+          className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Read all
+        </button>
+      </div>
       <BatteryFirstCard
-        chargePeriodsQuery={chargePeriodsQuery}
+        form={chargeForm}
+        reader={chargeReader}
         setChargePeriodsMutation={setChargePeriodsMutation}
       />
       <GridFirstCard
-        dischargePeriodsQuery={dischargePeriodsQuery}
+        form={dischargeForm}
+        reader={dischargeReader}
         setDischargeMutation={setDischargeMutation}
       />
     </div>

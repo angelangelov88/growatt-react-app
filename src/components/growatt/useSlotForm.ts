@@ -61,6 +61,10 @@ const snapshotsEqual = (a: Snapshot | null, b: Snapshot): boolean => {
   );
 };
 
+// True when two sets of periods hold the same rate, SOC and enabled slots.
+export const sameSettings = (a: ChargePeriods, b: ChargePeriods) =>
+  snapshotsEqual(toSnapshot(a), toSnapshot(b));
+
 export const useSlotForm = (
   defaultPowerRate: string,
   defaultStopSOC: string,

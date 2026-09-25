@@ -2,11 +2,18 @@ import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setChargePeriods } from "../growatt/growattApi";
 import type { SlotParam } from "../growatt/growattApi";
+import {
+  CHARGE_KEY,
+  chargePeriodsQueryOptions,
+  toPeriods,
+} from "../growatt/useGrowatt";
 
 type Slot = { startDt: string; endDt: string };
 type SlotsData = { plannedDispatches: Slot[] } | undefined;
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
+const POWER_RATE = "35";
+const STOP_SOC = "95";
 
 const toSlotParam = (slot: Slot): SlotParam => {
   const start = new Date(slot.startDt);
@@ -21,17 +28,42 @@ const toSlotParam = (slot: Slot): SlotParam => {
 
 const getUpcomingSlots = (slotsData: SlotsData) => {
   const now = new Date();
-  return (slotsData?.plannedDispatches ?? []).filter((s) => new Date(s.endDt) > now);
+  return (slotsData?.plannedDispatches ?? []).filter(
+    (s) => new Date(s.endDt) > now,
+  );
 };
 
 export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: ({ p1, p2, p3, p4, p5, p6 }: { p1: SlotParam; p2: SlotParam; p3: SlotParam; p4: SlotParam; p5: SlotParam; p6: SlotParam }) =>
-      setChargePeriods(serial, "35", "95", p1, p2, p3, p4, p5, p6),
-    onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ["growatt", "chargePeriods"] });
+    mutationFn: ({
+      p1,
+      p2,
+      p3,
+      p4,
+      p5,
+      p6,
+    }: {
+      p1: SlotParam;
+      p2: SlotParam;
+      p3: SlotParam;
+      p4: SlotParam;
+      p5: SlotParam;
+      p6: SlotParam;
+    }) =>
+      setChargePeriods(serial, POWER_RATE, STOP_SOC, p1, p2, p3, p4, p5, p6),
+    onSuccess: (_, { p1, p2, p3, p4, p5, p6 }) => {
+      // Show the new charge periods on the Battery First card straight away, then
+      // check them against the inverter in the background. fetchQuery is used because
+      // refetchQueries skips queries with enabled: false.
+      queryClient.setQueryData(
+        CHARGE_KEY,
+        toPeriods(POWER_RATE, STOP_SOC, [p1, p2, p3, p4, p5, p6]),
+      );
+      queryClient
+        .fetchQuery({ ...chargePeriodsQueryOptions, staleTime: 0 })
+        .catch(() => {});
     },
   });
 
@@ -48,12 +80,18 @@ export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
   };
 
   const upcoming = getUpcomingSlots(slotsData);
-  const extraSlotsMessage = upcoming.length > 6
-    ? `${upcoming.length - 6} slot(s) not applied (max 6 Octopus slots supported)`
-    : null;
+  const extraSlotsMessage =
+    upcoming.length > 6
+      ? `${upcoming.length - 6} slot(s) not applied (max 6 Octopus slots supported)`
+      : null;
 
   return useMemo(
-    () => ({ applySlots, extraSlotsMessage, isPending: mutation.isPending, error: mutation.error }),
+    () => ({
+      applySlots,
+      extraSlotsMessage,
+      isPending: mutation.isPending,
+      error: mutation.error,
+    }),
     [mutation.isPending, mutation.error, extraSlotsMessage],
   );
 }

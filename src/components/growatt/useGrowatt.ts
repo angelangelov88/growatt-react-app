@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   fetchChargePeriods,
   setChargePeriods,
@@ -14,9 +19,22 @@ const serial = import.meta.env.VITE_GROWATT_SERIAL;
 export const CHARGE_KEY = ["growatt", "chargePeriods"];
 export const DISCHARGE_KEY = ["growatt", "dischargePeriods"];
 
+// Shared with the Octopus card, which also writes charge periods.
+export const chargePeriodsQueryOptions = queryOptions({
+  queryKey: CHARGE_KEY,
+  queryFn: () => fetchChargePeriods(serial),
+  retry: false,
+  staleTime: Infinity,
+});
+
+// Marks cache data that was written after a save rather than read from the inverter,
+// so the next real read can be recognised as the check of that save.
+const SAVED_RAW = "(saved)";
+export const isSavedData = (data: ChargePeriods) => data.raw === SAVED_RAW;
+
 // Builds what a read would return for the values just written, so the cache
 // reflects a successful save straight away instead of waiting for the inverter.
-const toPeriods = (
+export const toPeriods = (
   powerRate: string,
   stopSOC: string,
   slots: SlotParam[],
@@ -32,7 +50,7 @@ const toPeriods = (
   return {
     powerRate: Number(powerRate),
     stopSOC: Number(stopSOC),
-    raw: "(saved)",
+    raw: SAVED_RAW,
     period1: period(slots[0]),
     period2: period(slots[1]),
     period3: period(slots[2]),
@@ -71,10 +89,7 @@ function useGrowatt() {
   });
 
   const chargePeriodsQuery = useQuery({
-    queryKey: CHARGE_KEY,
-    queryFn: () => fetchChargePeriods(serial),
-    retry: false,
-    staleTime: Infinity,
+    ...chargePeriodsQueryOptions,
     enabled: false,
   });
 
