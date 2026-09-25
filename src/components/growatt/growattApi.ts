@@ -39,7 +39,9 @@ export const createGrowattClient = ({
   cookieHeader = "Cookie",
 }: GrowattConfig) => {
   const STORAGE_KEY = "growatt_session";
-  let sessionCookie = sessionStorage.getItem(STORAGE_KEY) ?? "";
+  // sessionStorage only exists in the browser; the Node script keeps the session in memory.
+  const storage = typeof sessionStorage !== "undefined" ? sessionStorage : null;
+  let sessionCookie = storage?.getItem(STORAGE_KEY) ?? "";
   let loginPromise: Promise<void> | null = null;
 
   const request = async (
@@ -63,7 +65,7 @@ export const createGrowattClient = ({
       const match = setCookie.match(/JSESSIONID=[^;]+/);
       if (match) {
         sessionCookie = match[0];
-        sessionStorage.setItem(STORAGE_KEY, sessionCookie);
+        storage?.setItem(STORAGE_KEY, sessionCookie);
       }
     }
 
@@ -85,7 +87,7 @@ export const createGrowattClient = ({
 
     if (!isRetry && isAuthError) {
       sessionCookie = "";
-      sessionStorage.removeItem(STORAGE_KEY);
+      storage?.removeItem(STORAGE_KEY);
       loginPromise = null;
       await ensureLoggedIn();
       return request(path, body, true);

@@ -5,7 +5,7 @@ const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT as string;
 const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY as string;
 const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
 
-const octopusRequest = async <T,>(query: string, token?: string): Promise<T> => {
+const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
@@ -34,7 +34,9 @@ export default function useOctopus() {
   const slotsQuery = useQuery({
     queryKey: ["octopus", "slots", tokenMutation.data],
     queryFn: () =>
-      octopusRequest<{ plannedDispatches: { startDt: string; endDt: string }[] }>(
+      octopusRequest<{
+        plannedDispatches: { startDt: string; endDt: string }[];
+      }>(
         `query { plannedDispatches(accountNumber: "${octopusAccount}") { startDt endDt } }`,
         tokenMutation.data!,
       ),
@@ -48,7 +50,7 @@ export default function useOctopus() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return `${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} ${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    return `${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "Europe/London" })} ${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London" })}`;
   };
 
   return useMemo(
@@ -59,6 +61,12 @@ export default function useOctopus() {
       handleAuthAndFetchSlots,
       formatDate,
     }),
-    [tokenMutation.isPending, tokenMutation.error, slotsQuery.isFetching, slotsQuery.error, slotsQuery.data],
+    [
+      tokenMutation.isPending,
+      tokenMutation.error,
+      slotsQuery.isFetching,
+      slotsQuery.error,
+      slotsQuery.data,
+    ],
   );
 }
