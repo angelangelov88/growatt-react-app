@@ -82,7 +82,9 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   };
 
   const addSlot = () => {
-    if (slots.length < 6) setSlots((prev) => [...prev, { ...DEFAULT_SLOT }]);
+    setSlots((prev) =>
+      prev.length < 6 ? [...prev, { ...DEFAULT_SLOT }] : prev,
+    );
   };
 
   const removeSlot = (index: number) => {
@@ -98,10 +100,6 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
     setIsLoaded(true);
     setLastRead(next);
   };
-
-  // True when the form already shows exactly these values.
-  const matches = (data: ChargePeriods) =>
-    snapshotsEqual(toSnapshot(data), { powerRate, stopSOC, slots });
 
   const setDefaults = (rate: string, soc: string, defaultSlot: SlotState) => {
     setPowerRate(rate);
@@ -125,27 +123,33 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
     setIsLoaded(true);
   };
 
-  const toParams = (): [
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-  ] => {
-    const get = (i: number): SlotParam =>
-      slots[i] ? slotToParam(slots[i]) : null;
-    return [get(0), get(1), get(2), get(3), get(4), get(5)];
-  };
-
   const isDirty = !snapshotsEqual(lastRead, {
     powerRate,
     stopSOC,
     slots,
   });
 
-  return useMemo(
-    () => ({
+  // matches and toParams read the form values, so they're created inside the memo
+  // and only change when those values do.
+  return useMemo(() => {
+    // True when the form already shows exactly these values.
+    const matches = (data: ChargePeriods) =>
+      snapshotsEqual(toSnapshot(data), { powerRate, stopSOC, slots });
+
+    const toParams = (): [
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+    ] => {
+      const get = (i: number): SlotParam =>
+        slots[i] ? slotToParam(slots[i]) : null;
+      return [get(0), get(1), get(2), get(3), get(4), get(5)];
+    };
+
+    return {
       powerRate,
       setPowerRate,
       stopSOC,
@@ -163,9 +167,8 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
       canAddSlot: slots.length < 6,
       isDirty,
       isLoaded,
-    }),
-    [powerRate, stopSOC, slots, isDirty, isLoaded],
-  );
+    };
+  }, [powerRate, stopSOC, slots, isDirty, isLoaded]);
 };
 
 type SlotForm = ReturnType<typeof useSlotForm>;
