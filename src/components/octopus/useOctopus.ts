@@ -19,7 +19,7 @@ const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
   return json.data;
 };
 
-export const fetchToken = async (): Promise<string> => {
+const fetchToken = async (): Promise<string> => {
   const data = await octopusRequest<{ obtainKrakenToken: { token: string } }>(
     `mutation { obtainKrakenToken(input: { APIKey: "${apiKey}" }) { token } }`,
   );
@@ -28,7 +28,7 @@ export const fetchToken = async (): Promise<string> => {
   return token;
 };
 
-export default function useOctopus() {
+const useOctopus = () => {
   const tokenMutation = useMutation({ mutationFn: fetchToken });
 
   const slotsQuery = useQuery({
@@ -69,4 +69,7 @@ export default function useOctopus() {
       slotsQuery.data,
     ],
   );
-}
+};
+
+export { fetchToken };
+export default useOctopus;

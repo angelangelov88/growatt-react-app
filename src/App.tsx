@@ -2,7 +2,7 @@ import Growatt from "./components/growatt/Growatt";
 import Octopus from "./components/octopus/Octopus";
 import TriggerUpdate from "./components/TriggerUpdate";
 
-function App() {
+const App = () => {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       <header className="border-b border-gray-800 px-6 py-4">
@@ -17,6 +17,6 @@ function App() {
       </main>
     </div>
   );
-}
+};
 
 export default App;

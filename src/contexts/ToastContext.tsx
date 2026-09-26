@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useState, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useMemo,
+} from "react";
 import type { ReactNode } from "react";
 
 type ToastType = "error" | "success" | "info";
@@ -15,17 +21,20 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
 
-export const useToast = () => useContext(ToastContext);
+const useToast = () => useContext(ToastContext);
 
 let nextId = 0;
 
-export const ToastProvider = ({ children }: { children: ReactNode }) => {
+const ToastProvider = ({ children }: { children: ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {
     const id = nextId++;
     setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+    setTimeout(
+      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
+      4000,
+    );
   }, []);
 
   const value = useMemo(() => ({ showToast }), [showToast]);
@@ -41,8 +50,8 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               t.type === "error"
                 ? "bg-red-900 border border-red-700 text-red-200"
                 : t.type === "success"
-                ? "bg-emerald-900 border border-emerald-700 text-emerald-200"
-                : "bg-gray-800 border border-gray-700 text-gray-200"
+                  ? "bg-emerald-900 border border-emerald-700 text-emerald-200"
+                  : "bg-gray-800 border border-gray-700 text-gray-200"
             }`}
           >
             {t.message}
@@ -52,3 +61,5 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     </ToastContext.Provider>
   );
 };
+
+export { useToast, ToastProvider };

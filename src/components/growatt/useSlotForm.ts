@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import type { ChargePeriods, SlotParam } from "./growattApi";
 
-export type SlotState = {
+type SlotState = {
   startHour: string;
   startMin: string;
   endHour: string;
@@ -62,13 +62,10 @@ const snapshotsEqual = (a: Snapshot | null, b: Snapshot): boolean => {
 };
 
 // True when two sets of periods hold the same rate, SOC and enabled slots.
-export const sameSettings = (a: ChargePeriods, b: ChargePeriods) =>
+const sameSettings = (a: ChargePeriods, b: ChargePeriods) =>
   snapshotsEqual(toSnapshot(a), toSnapshot(b));
 
-export const useSlotForm = (
-  defaultPowerRate: string,
-  defaultStopSOC: string,
-) => {
+const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   const [powerRate, setPowerRate] = useState(defaultPowerRate);
   const [stopSOC, setStopSOC] = useState(defaultStopSOC);
   const [slots, setSlots] = useState<SlotState[]>([]);
@@ -168,3 +165,8 @@ export const useSlotForm = (
     [powerRate, stopSOC, slots, isDirty, isLoaded],
   );
 };
+
+type SlotForm = ReturnType<typeof useSlotForm>;
+
+export type { SlotForm, SlotState };
+export { sameSettings, useSlotForm };

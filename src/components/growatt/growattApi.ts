@@ -1,14 +1,14 @@
 import SparkMD5 from "spark-md5";
 
-export type SlotParam = {
+type SlotParam = {
   startHour: string;
   startMin: string;
   endHour: string;
   endMin: string;
 } | null;
 
-export type ChargePeriod = { start: string; end: string; enabled: boolean };
-export type ChargePeriods = {
+type ChargePeriod = { start: string; end: string; enabled: boolean };
+type ChargePeriods = {
   powerRate: number;
   stopSOC: number;
   raw: string;
@@ -19,20 +19,20 @@ export type ChargePeriods = {
   period5: ChargePeriod;
   period6: ChargePeriod;
 };
-export type DischargePeriods = ChargePeriods;
+type DischargePeriods = ChargePeriods;
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 // Used by the Node script (passes process.env values + direct Growatt URL).
 // Used by the browser (passes Vite env values + proxy URL builder).
 
-export type GrowattConfig = {
+type GrowattConfig = {
   user: string;
   password: string;
   buildUrl: (path: string) => string;
   cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
 };
 
-export const createGrowattClient = ({
+const createGrowattClient = ({
   user,
   password,
   buildUrl,
@@ -375,11 +375,11 @@ const browserClient = () => {
   return _client;
 };
 
-export const fetchChargePeriods = (serial: string) =>
+const fetchChargePeriods = (serial: string) =>
   browserClient().fetchChargePeriods(serial);
-export const fetchDischargePeriods = (serial: string) =>
+const fetchDischargePeriods = (serial: string) =>
   browserClient().fetchDischargePeriods(serial);
-export const setChargePeriods = (
+const setChargePeriods = (
   serial: string,
   powerRate: string,
   stopSOC: string,
@@ -401,7 +401,7 @@ export const setChargePeriods = (
     p5,
     p6,
   );
-export const setDischargePeriods = (
+const setDischargePeriods = (
   serial: string,
   powerRate: string,
   stopSOC: string,
@@ -423,3 +423,18 @@ export const setDischargePeriods = (
     p5,
     p6,
   );
+
+export type {
+  SlotParam,
+  ChargePeriod,
+  ChargePeriods,
+  DischargePeriods,
+  GrowattConfig,
+};
+export {
+  createGrowattClient,
+  fetchChargePeriods,
+  fetchDischargePeriods,
+  setChargePeriods,
+  setDischargePeriods,
+};

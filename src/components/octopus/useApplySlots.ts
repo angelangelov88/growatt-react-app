@@ -17,7 +17,7 @@ type SlotsData = { plannedDispatches: Dispatch[] } | undefined;
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
-export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
+const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -65,4 +65,6 @@ export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
       slotsData,
     ],
   );
-}
+};
+
+export default useApplySlots;

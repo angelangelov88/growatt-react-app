@@ -23,7 +23,7 @@ const QUERY = `query SavingSessions($account: String!) {
 
 const POWER_DOWN = "TURN_DOWN";
 
-export type PowerDownSession = {
+type PowerDownSession = {
   id: string;
   code: string | null;
   startAt: Date;
@@ -35,7 +35,7 @@ export type PowerDownSession = {
   pointsAwarded: number | null;
 };
 
-export type SavingSessionsData = {
+type SavingSessionsData = {
   region: number | null;
   // Every Power Down event Octopus currently lists, with your joined status.
   events: PowerDownSession[];
@@ -61,7 +61,7 @@ type RawJoined = {
   eventType: string;
 };
 
-export const fetchSavingSessions = async (
+const fetchSavingSessions = async (
   token: string,
   account: string,
 ): Promise<SavingSessionsData> => {
@@ -123,7 +123,7 @@ const JOIN_MUTATION = `mutation JoinSavingSession($input: JoinSavingSessionsEven
 }`;
 
 // Opts the account in to one Power Down session.
-export const joinSession = async (
+const joinSession = async (
   token: string,
   account: string,
   eventCode: string,
@@ -147,7 +147,7 @@ const byStartDesc = (a: PowerDownSession, b: PowerDownSession) =>
   b.startAt.getTime() - a.startAt.getTime();
 
 // All Power Down sessions today (UK) in your region, joined or not, soonest first.
-export const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
+const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
   data.events
     .filter((s) => isSameUkDay(s.startAt, now))
     .filter(
@@ -159,7 +159,7 @@ export const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
     .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
 
 // Sessions you joined that ended within the last `days` days, newest first.
-export const joinedInLastDays = (
+const joinedInLastDays = (
   data: SavingSessionsData,
   days: number,
   now = new Date(),
@@ -170,18 +170,15 @@ export const joinedInLastDays = (
     .sort(byStartDesc);
 };
 
-export type SessionStatus = "upcoming" | "in progress" | "ended";
+type SessionStatus = "upcoming" | "in progress" | "ended";
 
-export const sessionStatus = (
-  s: PowerDownSession,
-  now = new Date(),
-): SessionStatus =>
+const sessionStatus = (s: PowerDownSession, now = new Date()): SessionStatus =>
   now < s.startAt ? "upcoming" : now < s.endAt ? "in progress" : "ended";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
 // The session window as an inverter slot, in UK time.
-export const sessionToSlot = (s: PowerDownSession): SlotState => {
+const sessionToSlot = (s: PowerDownSession): SlotState => {
   const start = toUkMinutes(s.startAt);
   const end = toUkMinutes(s.endAt);
   return {
@@ -190,4 +187,14 @@ export const sessionToSlot = (s: PowerDownSession): SlotState => {
     endHour: pad(Math.floor(end / 60)),
     endMin: pad(end % 60),
   };
+};
+
+export type { PowerDownSession, SavingSessionsData, SessionStatus };
+export {
+  fetchSavingSessions,
+  joinSession,
+  sessionsToday,
+  joinedInLastDays,
+  sessionStatus,
+  sessionToSlot,
 };

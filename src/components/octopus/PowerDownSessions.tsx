@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Spinner from "../Spinner";
+import SectionHeading from "./SectionHeading";
 import { useToast } from "../../contexts/ToastContext";
 import useSavingSessions, { useJoinSession } from "./useSavingSessions";
 import {
@@ -30,12 +31,6 @@ const ukDay = (d: Date) =>
 // Octopus takes a few days to award points, so this is only shown in History.
 const points = (s: PowerDownSession) =>
   s.pointsAwarded !== null ? `${s.pointsAwarded} pts` : "pending";
-
-const SectionHeading = ({ children }: { children: string }) => (
-  <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-    {children}
-  </h3>
-);
 
 const smallButton =
   "px-2.5 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors";

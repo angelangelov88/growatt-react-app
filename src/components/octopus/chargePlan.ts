@@ -12,11 +12,11 @@ import type { ChargePeriods, SlotParam } from "../growatt/growattApi";
 // - The inverter has 6 slots, so at most 5 Octopus periods are kept, soonest first.
 // - All times are UK local time, whatever time zone the machine is in.
 
-export type Dispatch = { startDt: string; endDt: string };
+type Dispatch = { startDt: string; endDt: string };
 
 type Slots = [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam];
 
-export type ChargePlan = {
+type ChargePlan = {
   powerRate: string;
   stopSOC: string;
   // The fixed window first, then Octopus periods, padded with null.
@@ -43,7 +43,7 @@ const ukTime = new Intl.DateTimeFormat("en-GB", {
   hourCycle: "h23",
 });
 
-export const toUkMinutes = (date: Date) => {
+const toUkMinutes = (date: Date) => {
   const parts = ukTime.formatToParts(date);
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value);
@@ -102,7 +102,7 @@ const merge = (pieces: Piece[]): Piece[] => {
   return merged;
 };
 
-export const buildChargePlan = (
+const buildChargePlan = (
   dispatches: Dispatch[],
   now = new Date(),
 ): ChargePlan => {
@@ -132,14 +132,14 @@ const formatSlot = (s: NonNullable<SlotParam>) =>
   `${s.startHour}:${s.startMin}-${s.endHour}:${s.endMin}`;
 
 // e.g. "01:00-05:00, 18:00-19:00"
-export const describePlan = (plan: ChargePlan) =>
+const describePlan = (plan: ChargePlan) =>
   plan.slots
     .filter((s): s is NonNullable<SlotParam> => s !== null)
     .map(formatSlot)
     .join(", ");
 
 // True when the inverter already has exactly this plan, so there's nothing to write.
-export const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
+const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
   if (
     String(current.powerRate) !== plan.powerRate ||
     String(current.stopSOC) !== plan.stopSOC
@@ -157,3 +157,6 @@ export const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
     .map((p) => `${p.start}-${p.end}`);
   return describePlan(plan) === have.join(", ");
 };
+
+export type { Dispatch, ChargePlan };
+export { toUkMinutes, buildChargePlan, describePlan, planMatches };

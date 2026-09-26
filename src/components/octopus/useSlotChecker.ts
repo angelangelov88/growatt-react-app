@@ -15,11 +15,7 @@ interface Time {
   minutes: number;
 }
 
-export default function useSlotChecker({
-  slotsData,
-}: {
-  slotsData: SlotsData;
-}) {
+const useSlotChecker = ({ slotsData }: { slotsData: SlotsData }) => {
   const [message, setMessage] = useState<string>("");
 
   // Helper function to convert string date to time (24-hour format)
@@ -89,4 +85,6 @@ export default function useSlotChecker({
     }),
     [message],
   );
-}
+};
+
+export default useSlotChecker;
