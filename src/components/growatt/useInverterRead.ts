@@ -23,6 +23,8 @@ const useInverterRead = (
   useEffect(() => {
     const data = query.data;
     const prev = prevData.current;
+    // Only act on new data; the other dependencies change on every form edit.
+    if (data === prev) return;
     prevData.current = data;
     if (!data) return;
     const isUserRead = userRead.current;
@@ -47,13 +49,13 @@ const useInverterRead = (
         "The inverter reports different settings to what was saved — showing the inverter's values",
         "error",
       );
-  }, [query.data]);
+  }, [query.data, form, hasUnsavedChanges, showToast]);
 
   useEffect(() => {
     if (!query.isError) return;
     userRead.current = false;
     showToast(`Couldn't load settings: ${query.error.message}`, "error");
-  }, [query.errorUpdatedAt]);
+  }, [query.isError, query.error, query.errorUpdatedAt, showToast]);
 
   // `confirmed` skips the prompt when the caller has already asked (Load all).
   const read = ({ confirmed = false }: { confirmed?: boolean } = {}) => {
