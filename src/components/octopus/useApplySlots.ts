@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setChargePeriods } from "../growatt/growattApi";
 import useToast from "../../contexts/useToast";
@@ -54,15 +53,12 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
     ? `${String(plan.skipped)} Octopus period(s) not applied — the inverter only has 6 slots`
     : null;
 
-  return useMemo(
-    () => ({
-      applySlots,
-      planSummary,
-      extraSlotsMessage,
-      isPending: mutation.isPending,
-    }),
-    [mutation.isPending, planSummary, extraSlotsMessage, slotsData],
-  );
+  return {
+    applySlots,
+    planSummary,
+    extraSlotsMessage,
+    isPending: mutation.isPending,
+  };
 };
 
 export default useApplySlots;

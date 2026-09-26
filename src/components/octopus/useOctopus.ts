@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { GraphQLResponse } from "../../types/GraphQL";
 import useToast from "../../contexts/useToast";
@@ -66,25 +65,16 @@ const useOctopus = () => {
     return `${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", timeZone: "Europe/London" })} ${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Europe/London" })}`;
   };
 
-  return useMemo(
-    () => ({
-      slotsLoading: tokenMutation.isPending || slotsQuery.isFetching,
-      // Queries have no onError, so the caller toasts these. errorUpdatedAt changes on
-      // every failure, even when the error is the same.
-      slotsError: slotsQuery.error,
-      slotsErrorUpdatedAt: slotsQuery.errorUpdatedAt,
-      slotsData: slotsQuery.data,
-      handleAuthAndFetchSlots,
-      formatDate,
-    }),
-    [
-      tokenMutation.isPending,
-      slotsQuery.isFetching,
-      slotsQuery.error,
-      slotsQuery.errorUpdatedAt,
-      slotsQuery.data,
-    ],
-  );
+  return {
+    slotsLoading: tokenMutation.isPending || slotsQuery.isFetching,
+    // Queries have no onError, so the caller toasts these. errorUpdatedAt changes on
+    // every failure, even when the error is the same.
+    slotsError: slotsQuery.error,
+    slotsErrorUpdatedAt: slotsQuery.errorUpdatedAt,
+    slotsData: slotsQuery.data,
+    handleAuthAndFetchSlots,
+    formatDate,
+  };
 };
 
 export { fetchToken };
