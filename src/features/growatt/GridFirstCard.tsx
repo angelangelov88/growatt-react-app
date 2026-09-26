@@ -61,8 +61,8 @@ const GridFirstCard = ({
             </span>
           )}
           {isVerifying && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <Spinner className="text-gray-500" />
+            <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <Spinner className="text-emerald-400" />
               Verifying…
             </span>
           )}
