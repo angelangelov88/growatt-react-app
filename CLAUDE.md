@@ -77,6 +77,8 @@ export default ActionButton;
 
 - `src/components/` — shared components used across features (`Spinner.tsx`, `TriggerUpdate.tsx`).
 - `src/features/<feature>/` — a feature's components and hooks (`growatt/`, `octopus/`).
+  - A component starts in the feature that uses it. Move it to `src/components/` only when a second feature actually uses it, not because it might be reused. When you move it, give it a neutral props type in `src/types/Common.ts`.
+  - Keep feature folders flat. Add `components/` and `hooks/` subfolders only once a feature has around 15 or more files.
 - `src/lib/` — React-free modules shared with the GitHub Action: API clients and domain logic (`growattApi.ts`, `chargePlan.ts`, `savingSessions.ts`).
 - `src/contexts/` — React Context providers.
 - `src/types/` — all TypeScript types and interfaces, one file per feature.
