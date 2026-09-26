@@ -28,11 +28,6 @@ type TimePickerProps = {
   onChange: (field: keyof SlotState, value: string) => void;
 };
 
-type NotReadYetProps = {
-  isReading: boolean;
-  hint: string;
-};
-
 export type {
   SlotForm,
   InverterRead,
@@ -40,5 +35,4 @@ export type {
   GridFirstProps,
   SlotListProps,
   TimePickerProps,
-  NotReadYetProps,
 };

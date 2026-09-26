@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Spinner from "../../components/Spinner";
+import NotReadYet from "../../components/NotReadYet";
 import SectionHeading from "./SectionHeading";
 import useToast from "../../contexts/useToast";
 import useSavingSessions, { useJoinSession } from "./useSavingSessions";
@@ -82,9 +83,13 @@ const PowerDownSessions = ({
   const today = data ? sessionsToday(data, now) : [];
   const history = data ? joinedInLastDays(data, historyDays, now) : [];
   const withPoints = history.filter((s) => s.pointsAwarded !== null);
+  // Faded and locked while loading or joining, like the inverter cards.
+  const isDisabled = query.isFetching || join.isPending;
 
   return (
-    <div className="rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6">
+    <div
+      className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-white">
@@ -99,7 +104,7 @@ const PowerDownSessions = ({
         </div>
         <button
           onClick={load}
-          disabled={query.isFetching}
+          disabled={isDisabled}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Load
@@ -107,21 +112,12 @@ const PowerDownSessions = ({
       </div>
 
       {!data ? (
-        <div className="rounded-xl border border-dashed border-gray-700 px-4 py-6 text-center">
-          {query.isFetching ? (
-            <p className="flex items-center justify-center gap-2 text-sm text-gray-400">
-              <Spinner />
-              Loading sessions from Octopus…
-            </p>
-          ) : (
-            <>
-              <p className="text-sm text-gray-300">Sessions not loaded yet</p>
-              <p className="text-xs text-gray-500 mt-1">
-                Press Load to get your Power Down sessions from Octopus.
-              </p>
-            </>
-          )}
-        </div>
+        <NotReadYet
+          isReading={query.isFetching}
+          loadingMessage="Loading sessions from Octopus…"
+          emptyMessage="Sessions not loaded yet"
+          hint="Press Load to get your Power Down sessions from Octopus."
+        />
       ) : (
         <>
           {/* Today: every session in your region, with the actions */}

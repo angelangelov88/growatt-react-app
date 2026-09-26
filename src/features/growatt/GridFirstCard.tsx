@@ -2,7 +2,7 @@ import type { Preset } from "../../types/Growatt";
 import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../../components/Spinner";
-import NotReadYet from "./NotReadYet";
+import NotReadYet from "../../components/NotReadYet";
 import SlotList from "./SlotList";
 import { PRESETS, RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
 
@@ -92,6 +92,8 @@ const GridFirstCard = ({
       {!form.isLoaded ? (
         <NotReadYet
           isReading={isLoading}
+          loadingMessage="Loading settings from your inverter…"
+          emptyMessage="Settings not loaded yet"
           hint="Press Load to get the current settings from your inverter."
         />
       ) : (

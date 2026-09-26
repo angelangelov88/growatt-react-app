@@ -9,6 +9,7 @@ import GridFirstCard from "./GridFirstCard";
 import { PRESETS } from "./slotOptions";
 import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
+import useSavingSessions from "../octopus/useSavingSessions";
 import { sessionToSlot } from "../../lib/savingSessions";
 
 // A slot as [start, end) minutes, with end past midnight (above 1440) if it wraps.
@@ -43,6 +44,8 @@ const Growatt = () => {
   const chargeReader = useInverterRead(chargePeriodsQuery, chargeForm);
   const dischargeForm = useSlotForm("95", "20");
   const dischargeReader = useInverterRead(dischargePeriodsQuery, dischargeForm);
+  // Same query as the Power Down card, so refetching here updates the card.
+  const sessionsQuery = useSavingSessions();
 
   const { showToast } = useToast();
   const gridFirstRef = useRef<HTMLDivElement>(null);
@@ -107,9 +110,12 @@ const Growatt = () => {
     chargeReader.isReading ||
     dischargeReader.isReading ||
     setChargePeriodsMutation.isPending ||
-    setDischargeMutation.isPending;
+    setDischargeMutation.isPending ||
+    sessionsQuery.isFetching;
 
-  // Both reads go through the client's queue, so they run one after the other.
+  // Both inverter reads go through the client's queue, so they run one after the
+  // other. The Power Down sessions come from Octopus, so they load alongside them;
+  // the card toasts any error.
   const readAll = () => {
     if (
       (chargeReader.hasUnsavedChanges || dischargeReader.hasUnsavedChanges) &&
@@ -120,6 +126,7 @@ const Growatt = () => {
       return;
     chargeReader.read({ confirmed: true });
     dischargeReader.read({ confirmed: true });
+    void sessionsQuery.refetch({ cancelRefetch: false });
   };
 
   return (

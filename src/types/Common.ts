@@ -1,3 +1,10 @@
 type SpinnerProps = { className?: string };
 
-export type { SpinnerProps };
+type NotReadYetProps = {
+  isReading: boolean;
+  loadingMessage: string;
+  emptyMessage: string;
+  hint: string;
+};
+
+export type { SpinnerProps, NotReadYetProps };
