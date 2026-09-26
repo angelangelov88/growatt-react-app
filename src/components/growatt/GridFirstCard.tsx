@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type useGrowatt from "./useGrowatt";
 import type { SlotForm } from "./useSlotForm";
 import type { InverterRead } from "./useInverterRead";
@@ -30,30 +29,29 @@ const GridFirstCard = ({
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
-  useEffect(() => {
-    if (setDischargeMutation.isError)
-      showToast(
-        `Grid First failed: ${setDischargeMutation.error.message}`,
-        "error",
-      );
-    if (setDischargeMutation.isSuccess) {
-      showToast("Grid First settings applied", "success");
-      verify();
-    }
-  }, [setDischargeMutation.isError, setDischargeMutation.isSuccess]);
-
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
-    setDischargeMutation.mutate({
-      powerRate: form.powerRate,
-      stopSOC: form.stopSOC,
-      p1,
-      p2,
-      p3,
-      p4,
-      p5,
-      p6,
-    });
+    setDischargeMutation.mutate(
+      {
+        powerRate: form.powerRate,
+        stopSOC: form.stopSOC,
+        p1,
+        p2,
+        p3,
+        p4,
+        p5,
+        p6,
+      },
+      {
+        onSuccess: () => {
+          showToast("Grid First settings applied", "success");
+          verify();
+        },
+        onError: (error) => {
+          showToast(`Grid First failed: ${error.message}`, "error");
+        },
+      },
+    );
   };
 
   return (

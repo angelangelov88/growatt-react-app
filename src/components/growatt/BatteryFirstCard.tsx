@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import type useGrowatt from "./useGrowatt";
 import type { SlotForm } from "./useSlotForm";
 import type { InverterRead } from "./useInverterRead";
@@ -26,25 +25,24 @@ const BatteryFirstCard = ({
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
-  useEffect(() => {
-    if (setChargePeriodsMutation.isError)
-      showToast(
-        `Apply failed: ${setChargePeriodsMutation.error.message}`,
-        "error",
-      );
-    if (setChargePeriodsMutation.isSuccess) {
-      showToast("Battery First settings applied", "success");
-      verify();
-    }
-  }, [setChargePeriodsMutation.isError, setChargePeriodsMutation.isSuccess]);
-
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
-    setChargePeriodsMutation.mutate({
-      powerRate: form.powerRate,
-      stopSOC: form.stopSOC,
-      slots: [p1, p2, p3, p4, p5, p6],
-    });
+    setChargePeriodsMutation.mutate(
+      {
+        powerRate: form.powerRate,
+        stopSOC: form.stopSOC,
+        slots: [p1, p2, p3, p4, p5, p6],
+      },
+      {
+        onSuccess: () => {
+          showToast("Battery First settings applied", "success");
+          verify();
+        },
+        onError: (error) => {
+          showToast(`Apply failed: ${error.message}`, "error");
+        },
+      },
+    );
   };
 
   return (
