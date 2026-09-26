@@ -39,6 +39,34 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
   },
   {
+    // The GitHub Action imports these, so they must not depend on React or the UI.
+    files: [
+      "src/lib/**/*.ts",
+      "src/types/Growatt.ts",
+      "src/types/Octopus.ts",
+      "src/types/GraphQL.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["react", "react-dom", "@tanstack/*"],
+              message:
+                "Keep this module React-free: the GitHub Action imports it.",
+            },
+            {
+              group: ["**/components/**", "**/features/**", "**/contexts/**"],
+              message:
+                "Keep this module React-free: the GitHub Action imports it.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["scripts/**/*.ts", "api/**/*.ts", "vite.config.ts"],
     languageOptions: { globals: globals.node },
   },

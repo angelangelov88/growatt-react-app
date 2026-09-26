@@ -1,5 +1,5 @@
-import type { ChargePeriods, SlotParam } from "../../types/Growatt";
-import type { ChargePlan, Dispatch, Piece, Slots } from "../../types/Octopus";
+import type { ChargePeriods, SlotParam } from "../types/Growatt";
+import type { ChargePlan, Dispatch, Piece, Slots } from "../types/Octopus";
 
 // Decides what charge periods to write to the inverter from Octopus dispatches.
 // Shared by the "Apply Slots to Growatt" button and the GitHub Action script, so it

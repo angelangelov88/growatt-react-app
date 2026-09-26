@@ -1,6 +1,6 @@
-import type useGrowatt from "../components/growatt/useGrowatt";
-import type { useSlotForm } from "../components/growatt/useSlotForm";
-import type useInverterRead from "../components/growatt/useInverterRead";
+import type useGrowatt from "../features/growatt/useGrowatt";
+import type { useSlotForm } from "../features/growatt/useSlotForm";
+import type useInverterRead from "../features/growatt/useInverterRead";
 import type { SlotState } from "./Growatt";
 
 type SlotForm = ReturnType<typeof useSlotForm>;

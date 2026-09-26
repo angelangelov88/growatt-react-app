@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setChargePeriods } from "../growatt/growattApi";
+import { setChargePeriods } from "../../lib/growattApi";
 import useToast from "../../contexts/useToast";
 import {
   CHARGE_KEY,
   chargePeriodsQueryOptions,
   toPeriods,
 } from "../growatt/useGrowatt";
-import { buildChargePlan, describePlan } from "./chargePlan";
+import { buildChargePlan, describePlan } from "../../lib/chargePlan";
 import type { ChargePlan, SlotsData } from "../../types/Octopus";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;

@@ -9,7 +9,7 @@ import {
   setChargePeriods,
   fetchDischargePeriods,
   setDischargePeriods,
-} from "./growattApi";
+} from "../../lib/growattApi";
 import type {
   ChargePeriod,
   ChargePeriods,

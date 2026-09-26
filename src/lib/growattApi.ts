@@ -6,7 +6,7 @@ import type {
   GrowattConfig,
   GrowattResponse,
   SlotParam,
-} from "../../types/Growatt";
+} from "../types/Growatt";
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 // Used by the Node script (passes process.env values + direct Growatt URL).

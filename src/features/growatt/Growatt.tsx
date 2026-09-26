@@ -9,7 +9,7 @@ import GridFirstCard from "./GridFirstCard";
 import { PRESETS } from "./slotOptions";
 import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
-import { sessionToSlot } from "../octopus/savingSessions";
+import { sessionToSlot } from "../../lib/savingSessions";
 
 // A slot as [start, end) minutes, with end past midnight (above 1440) if it wraps.
 const slotRange = (s: SlotState): [number, number] => {

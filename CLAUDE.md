@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. `scripts/update-growatt.ts` runs in a GitHub Action and reuses the React-free modules, so keep `*Api.ts`, `chargePlan.ts` and `savingSessions.ts` free of React and browser-only globals.
+React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `src/lib/growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. `scripts/update-growatt.ts` runs in a GitHub Action and reuses the React-free modules in `src/lib/`, so keep them free of React and browser-only globals (ESLint blocks React, TanStack Query, component and context imports there).
 
 ## Coding Style
 
@@ -75,8 +75,9 @@ export default ActionButton;
 
 ## Folder Structure
 
-- `src/components/` — shared components (`Spinner.tsx`, `TriggerUpdate.tsx`).
-- `src/components/<feature>/` — a feature's components, hooks and API modules (`growatt/`, `octopus/`).
+- `src/components/` — shared components used across features (`Spinner.tsx`, `TriggerUpdate.tsx`).
+- `src/features/<feature>/` — a feature's components and hooks (`growatt/`, `octopus/`).
+- `src/lib/` — React-free modules shared with the GitHub Action: API clients and domain logic (`growattApi.ts`, `chargePlan.ts`, `savingSessions.ts`).
 - `src/contexts/` — React Context providers.
 - `src/types/` — all TypeScript types and interfaces, one file per feature.
 - `scripts/` — Node scripts run by GitHub Actions.

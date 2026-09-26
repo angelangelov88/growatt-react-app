@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Spinner from "../Spinner";
+import Spinner from "../../components/Spinner";
 import SectionHeading from "./SectionHeading";
 import useToast from "../../contexts/useToast";
 import useSavingSessions, { useJoinSession } from "./useSavingSessions";
@@ -7,7 +7,7 @@ import {
   joinedInLastDays,
   sessionStatus,
   sessionsToday,
-} from "./savingSessions";
+} from "../../lib/savingSessions";
 import type {
   HistoryDays,
   PowerDownSession,

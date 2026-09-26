@@ -1,41 +1,35 @@
-import type { Preset } from "../../types/Growatt";
-import type { GridFirstProps } from "../../types/GrowattForm";
+import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
-import Spinner from "../Spinner";
+import Spinner from "../../components/Spinner";
 import NotReadYet from "./NotReadYet";
 import SlotList from "./SlotList";
-import { PRESETS, RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
+import { RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
 
-const GridFirstCard = ({
+const BatteryFirstCard = ({
   form,
   reader,
-  setDischargeMutation,
-}: GridFirstProps) => {
+  setChargePeriodsMutation,
+}: BatteryFirstProps) => {
   const { showToast } = useToast();
   const { read, verify, isReading: isLoading, isVerifying } = reader;
-  const isApplying = setDischargeMutation.isPending;
+  const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
 
   const handleApply = () => {
     const [p1, p2, p3, p4, p5, p6] = form.toParams();
-    setDischargeMutation.mutate(
+    setChargePeriodsMutation.mutate(
       {
         powerRate: form.powerRate,
         stopSOC: form.stopSOC,
-        p1,
-        p2,
-        p3,
-        p4,
-        p5,
-        p6,
+        slots: [p1, p2, p3, p4, p5, p6],
       },
       {
         onSuccess: () => {
-          showToast("Grid First settings applied", "success");
+          showToast("Battery First settings applied", "success");
           verify();
         },
         onError: (error) => {
-          showToast(`Grid First failed: ${error.message}`, "error");
+          showToast(`Apply failed: ${error.message}`, "error");
         },
       },
     );
@@ -47,7 +41,7 @@ const GridFirstCard = ({
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">Grid First</h2>
+          <h2 className="text-base font-semibold text-white">Battery First</h2>
           {isLoading && (
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <Spinner />
@@ -79,12 +73,17 @@ const GridFirstCard = ({
           </button>
           <button
             onClick={() => {
-              form.disableAll("95", "20");
+              form.setDefaults("35", "95", {
+                startHour: "01",
+                startMin: "00",
+                endHour: "05",
+                endMin: "00",
+              });
             }}
             disabled={isDisabled || !form.isLoaded}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Disable All
+            Defaults
           </button>
         </div>
       </div>
@@ -96,27 +95,10 @@ const GridFirstCard = ({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {(
-              Object.entries(PRESETS) as [Preset, (typeof PRESETS)[Preset]][]
-            ).map(([key, p]) => (
-              <button
-                key={key}
-                onClick={() => {
-                  form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot);
-                }}
-                className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
-              >
-                <p className="text-sm font-medium text-white">{p.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{p.desc}</p>
-              </button>
-            ))}
-          </div>
-
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div>
               <label className="text-xs text-gray-400 block mb-1.5">
-                Discharge rate %
+                Charge rate %
               </label>
               <select
                 value={form.powerRate}
@@ -157,9 +139,9 @@ const GridFirstCard = ({
           <button
             onClick={handleApply}
             disabled={isDisabled || !form.isDirty}
-            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {isApplying ? "Applying…" : "Apply Grid First"}
+            {isApplying ? "Applying…" : "Apply Battery First"}
           </button>
         </>
       )}
@@ -167,4 +149,4 @@ const GridFirstCard = ({
   );
 };
 
-export default GridFirstCard;
+export default BatteryFirstCard;

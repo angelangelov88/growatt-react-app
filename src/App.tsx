@@ -1,5 +1,5 @@
-import Growatt from "./components/growatt/Growatt";
-import Octopus from "./components/octopus/Octopus";
+import Growatt from "./features/growatt/Growatt";
+import Octopus from "./features/octopus/Octopus";
 import TriggerUpdate from "./components/TriggerUpdate";
 
 const App = () => {

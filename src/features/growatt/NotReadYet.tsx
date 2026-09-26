@@ -1,4 +1,4 @@
-import Spinner from "../Spinner";
+import Spinner from "../../components/Spinner";
 import type { NotReadYetProps } from "../../types/GrowattForm";
 
 const NotReadYet = ({ isReading, hint }: NotReadYetProps) => (

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchToken } from "./useOctopus";
-import { fetchSavingSessions, joinSession } from "./savingSessions";
+import { fetchSavingSessions, joinSession } from "../../lib/savingSessions";
 
 const account = import.meta.env.VITE_OCTOPUS_ACCOUNT;
 

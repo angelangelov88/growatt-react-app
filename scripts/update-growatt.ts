@@ -1,9 +1,9 @@
-import { createGrowattClient } from "../src/components/growatt/growattApi";
+import { createGrowattClient } from "../src/lib/growattApi";
 import {
   buildChargePlan,
   describePlan,
   planMatches,
-} from "../src/components/octopus/chargePlan";
+} from "../src/lib/chargePlan";
 import type { Dispatch } from "../src/types/Octopus";
 import type { GraphQLResponse } from "../src/types/GraphQL";
 

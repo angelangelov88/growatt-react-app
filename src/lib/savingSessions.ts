@@ -1,12 +1,12 @@
-import type { SlotState } from "../../types/Growatt";
+import type { SlotState } from "../types/Growatt";
 import type {
   PowerDownSession,
   RawSavingSessions,
   SavingSessionsData,
   SessionStatus,
-} from "../../types/Octopus";
+} from "../types/Octopus";
 import { toUkMinutes } from "./chargePlan";
-import type { GraphQLResponse } from "../../types/GraphQL";
+import type { GraphQLResponse } from "../types/GraphQL";
 
 // Octopus Saving Sessions, now branded "Power Down" (eventType TURN_DOWN).
 // They are only available on Octopus's backend GraphQL API, which is undocumented
