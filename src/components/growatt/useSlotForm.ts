@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import type { ChargePeriods, SlotParam } from "./growattApi";
 
 type SlotState = {
@@ -71,7 +71,9 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   const [slots, setSlots] = useState<SlotState[]>([]);
   // False until the form holds real values — from an inverter read or a preset the user picked.
   const [isLoaded, setIsLoaded] = useState(false);
-  const lastRead = useRef<Snapshot | null>(null);
+  // The last values loaded from the inverter. State, not a ref, because isDirty
+  // (which enables Apply) is derived from it.
+  const [lastRead, setLastRead] = useState<Snapshot | null>(null);
 
   const updateSlot = (index: number, field: keyof SlotState, value: string) => {
     setSlots((prev) =>
@@ -94,7 +96,7 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
     setStopSOC(next.stopSOC);
     setSlots(next.slots);
     setIsLoaded(true);
-    lastRead.current = next;
+    setLastRead(next);
   };
 
   // True when the form already shows exactly these values.
@@ -136,7 +138,7 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
     return [get(0), get(1), get(2), get(3), get(4), get(5)];
   };
 
-  const isDirty = !snapshotsEqual(lastRead.current, {
+  const isDirty = !snapshotsEqual(lastRead, {
     powerRate,
     stopSOC,
     slots,
