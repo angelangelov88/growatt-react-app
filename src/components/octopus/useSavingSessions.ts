@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchToken } from "./useOctopus";
 import { fetchSavingSessions, joinSession } from "./savingSessions";
 
-const account = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
+const account = import.meta.env.VITE_OCTOPUS_ACCOUNT;
 
 // Loaded on demand with refetch(), like the inverter cards.
 const useSavingSessions = () =>

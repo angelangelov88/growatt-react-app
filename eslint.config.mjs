@@ -26,6 +26,11 @@ export default tseslint.config(
     },
   },
   {
+    // Declaration files extend library types, which needs `interface` merging.
+    files: ["**/*.d.ts"],
+    rules: { "@typescript-eslint/consistent-type-definitions": "off" },
+  },
+  {
     files: ["src/**/*.{ts,tsx}"],
     extends: [
       reactHooks.configs.flat["recommended-latest"],

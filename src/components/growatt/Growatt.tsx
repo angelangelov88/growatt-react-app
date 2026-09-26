@@ -5,7 +5,7 @@ import useInverterRead from "./useInverterRead";
 import BatteryFirstCard from "./BatteryFirstCard";
 import GridFirstCard from "./GridFirstCard";
 import { PRESETS } from "./slotOptions";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
 import {
   sessionToSlot,
@@ -82,7 +82,10 @@ const Growatt = () => {
 
   const exportDuringSession = (session: PowerDownSession) => {
     const slot = sessionToSlot(session);
-    if (dischargeForm.isLoaded) return addSessionSlot(slot);
+    if (dischargeForm.isLoaded) {
+      addSessionSlot(slot);
+      return;
+    }
     setPendingSessionSlot(slot);
     dischargeReader.read();
   };

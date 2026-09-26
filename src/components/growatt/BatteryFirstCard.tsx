@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type useGrowatt from "./useGrowatt";
 import type { SlotForm } from "./useSlotForm";
 import type { InverterRead } from "./useInverterRead";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 import Spinner from "../Spinner";
 import NotReadYet from "./NotReadYet";
 import SlotList from "./SlotList";
@@ -29,7 +29,7 @@ const BatteryFirstCard = ({
   useEffect(() => {
     if (setChargePeriodsMutation.isError)
       showToast(
-        `Apply failed: ${(setChargePeriodsMutation.error as Error).message}`,
+        `Apply failed: ${setChargePeriodsMutation.error.message}`,
         "error",
       );
     if (setChargePeriodsMutation.isSuccess) {
@@ -75,21 +75,23 @@ const BatteryFirstCard = ({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => read()}
+            onClick={() => {
+              read();
+            }}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Load
           </button>
           <button
-            onClick={() =>
+            onClick={() => {
               form.setDefaults("35", "95", {
                 startHour: "01",
                 startMin: "00",
                 endHour: "05",
                 endMin: "00",
-              })
-            }
+              });
+            }}
             disabled={isDisabled || !form.isLoaded}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -112,7 +114,9 @@ const BatteryFirstCard = ({
               </label>
               <select
                 value={form.powerRate}
-                onChange={(e) => form.setPowerRate(e.target.value)}
+                onChange={(e) => {
+                  form.setPowerRate(e.target.value);
+                }}
                 className={selectClass}
               >
                 {RATE_OPTIONS.map((v) => (
@@ -128,7 +132,9 @@ const BatteryFirstCard = ({
               </label>
               <select
                 value={form.stopSOC}
-                onChange={(e) => form.setStopSOC(e.target.value)}
+                onChange={(e) => {
+                  form.setStopSOC(e.target.value);
+                }}
                 className={selectClass}
               >
                 {SOC_OPTIONS.map((v) => (

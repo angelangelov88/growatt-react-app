@@ -16,7 +16,9 @@ const SlotList = ({ form }: { form: SlotForm }) => (
               Slot {i + 1}
             </span>
             <button
-              onClick={() => form.removeSlot(i)}
+              onClick={() => {
+                form.removeSlot(i);
+              }}
               className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
             >
               Remove
@@ -24,7 +26,9 @@ const SlotList = ({ form }: { form: SlotForm }) => (
           </div>
           <TimePicker
             slot={slot}
-            onChange={(field, value) => form.updateSlot(i, field, value)}
+            onChange={(field, value) => {
+              form.updateSlot(i, field, value);
+            }}
           />
         </div>
       ))}

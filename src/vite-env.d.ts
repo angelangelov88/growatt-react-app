@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_GROWATT_PASSWORD: string;
   readonly VITE_GROWATT_TOKEN: string;
   readonly VITE_GROWATT_SERIAL: string;
+  readonly VITE_GITHUB_TOKEN?: string;
+  readonly VITE_GITHUB_REPO?: string;
 }
 
 interface ImportMeta {

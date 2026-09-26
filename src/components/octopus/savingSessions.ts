@@ -1,5 +1,6 @@
 import type { SlotState } from "../growatt/useSlotForm";
 import { toUkMinutes } from "./chargePlan";
+import type { GraphQLResponse } from "../../types/GraphQL";
 
 // Octopus Saving Sessions, now branded "Power Down" (eventType TURN_DOWN).
 // They are only available on Octopus's backend GraphQL API, which is undocumented
@@ -61,6 +62,16 @@ type RawJoined = {
   eventType: string;
 };
 
+type RawSavingSessions = {
+  savingSessions: {
+    events: RawEvent[] | null;
+    account: {
+      signedUpMeterPoint: { regionId: number } | null;
+      joinedEvents: RawJoined[] | null;
+    } | null;
+  } | null;
+};
+
 const fetchSavingSessions = async (
   token: string,
   account: string,
@@ -70,17 +81,17 @@ const fetchSavingSessions = async (
     headers: { "Content-Type": "application/json", Authorization: token },
     body: JSON.stringify({ query: QUERY, variables: { account } }),
   });
-  const json = await res.json();
+  const json = (await res.json()) as GraphQLResponse<RawSavingSessions>;
   if (json.errors?.length) throw new Error(json.errors[0].message);
   const data = json.data?.savingSessions;
   if (!data) throw new Error("No Power Down data returned from Octopus");
 
-  const joinedRaw = ((data.account?.joinedEvents ?? []) as RawJoined[]).filter(
+  const joinedRaw = (data.account?.joinedEvents ?? []).filter(
     (e) => e.eventType === POWER_DOWN,
   );
   const joinedById = new Map(joinedRaw.map((e) => [String(e.eventId), e]));
 
-  const events = ((data.events ?? []) as RawEvent[])
+  const events = (data.events ?? [])
     .filter((e) => e.eventType === POWER_DOWN)
     .map((e): PowerDownSession => {
       const joined = joinedById.get(String(e.id));
@@ -136,7 +147,7 @@ const joinSession = async (
       variables: { input: { accountNumber: account, eventCode } },
     }),
   });
-  const json = await res.json();
+  const json = (await res.json()) as GraphQLResponse<unknown>;
   if (json.errors?.length) throw new Error(json.errors[0].message);
 };
 

@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { GraphQLResponse } from "../../types/GraphQL";
 
-const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT as string;
-const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY as string;
-const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT as string;
+const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT;
+const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY;
+const octopusAccount = import.meta.env.VITE_OCTOPUS_ACCOUNT;
 
 const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
   const res = await fetch(ENDPOINT, {
@@ -14,13 +15,16 @@ const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
     },
     body: JSON.stringify({ query }),
   });
-  const json = await res.json();
+  const json = (await res.json()) as GraphQLResponse<T>;
   if (json.errors?.length) throw new Error(json.errors[0].message);
+  if (!json.data) throw new Error("No data returned from Octopus");
   return json.data;
 };
 
 const fetchToken = async (): Promise<string> => {
-  const data = await octopusRequest<{ obtainKrakenToken: { token: string } }>(
+  const data = await octopusRequest<{
+    obtainKrakenToken: { token: string } | null;
+  }>(
     `mutation { obtainKrakenToken(input: { APIKey: "${apiKey}" }) { token } }`,
   );
   const token = data.obtainKrakenToken?.token;
@@ -38,14 +42,15 @@ const useOctopus = () => {
         plannedDispatches: { startDt: string; endDt: string }[];
       }>(
         `query { plannedDispatches(accountNumber: "${octopusAccount}") { startDt endDt } }`,
-        tokenMutation.data!,
+        tokenMutation.data,
       ),
     enabled: !!tokenMutation.data,
     retry: false,
   });
 
-  const handleAuthAndFetchSlots = async () => {
-    await tokenMutation.mutateAsync(undefined);
+  // Errors show through slotsError, so mutate (which never rejects) is enough.
+  const handleAuthAndFetchSlots = () => {
+    tokenMutation.mutate(undefined);
   };
 
   const formatDate = (dateString: string) => {

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 
 const Octopus = () => {
   const {
@@ -21,13 +21,11 @@ const Octopus = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (slotsError)
-      showToast(`Octopus error: ${(slotsError as Error).message}`, "error");
+    if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
   }, [slotsError]);
 
   useEffect(() => {
-    if (applyError)
-      showToast(`Apply failed: ${(applyError as Error).message}`, "error");
+    if (applyError) showToast(`Apply failed: ${applyError.message}`, "error");
   }, [applyError]);
 
   useEffect(() => {
@@ -61,7 +59,7 @@ const Octopus = () => {
         <div className="flex flex-col gap-2 mb-4">
           {slots.map((item, index) => (
             <div
-              key={`slot-${index}`}
+              key={`${item.startDt}-${item.endDt}`}
               className="flex items-center justify-between bg-gray-800 rounded-xl px-4 py-3"
             >
               <span className="text-xs text-gray-400 font-medium">

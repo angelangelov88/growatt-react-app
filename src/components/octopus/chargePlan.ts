@@ -83,7 +83,7 @@ const outsideWindow = (piece: Piece): Piece[] =>
 const merge = (pieces: Piece[]): Piece[] => {
   const merged: Piece[] = [];
   for (const piece of [...pieces].sort((a, b) => a.start - b.start)) {
-    const last = merged[merged.length - 1];
+    const last = merged.length > 0 ? merged[merged.length - 1] : null;
     if (last && piece.start <= last.end) {
       last.end = Math.max(last.end, piece.end);
       last.firstStart = Math.min(last.firstStart, piece.firstStart);

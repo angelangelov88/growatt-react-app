@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import type useGrowatt from "./useGrowatt";
 import type { SlotForm } from "./useSlotForm";
 import type { InverterRead } from "./useInverterRead";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 import Spinner from "../Spinner";
 import NotReadYet from "./NotReadYet";
 import SlotList from "./SlotList";
@@ -33,7 +33,7 @@ const GridFirstCard = ({
   useEffect(() => {
     if (setDischargeMutation.isError)
       showToast(
-        `Grid First failed: ${(setDischargeMutation.error as Error).message}`,
+        `Grid First failed: ${setDischargeMutation.error.message}`,
         "error",
       );
     if (setDischargeMutation.isSuccess) {
@@ -84,14 +84,18 @@ const GridFirstCard = ({
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => read()}
+            onClick={() => {
+              read();
+            }}
             disabled={isDisabled}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Load
           </button>
           <button
-            onClick={() => form.disableAll("95", "20")}
+            onClick={() => {
+              form.disableAll("95", "20");
+            }}
             disabled={isDisabled || !form.isLoaded}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -113,9 +117,9 @@ const GridFirstCard = ({
             ).map(([key, p]) => (
               <button
                 key={key}
-                onClick={() =>
-                  form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot)
-                }
+                onClick={() => {
+                  form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot);
+                }}
                 className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
               >
                 <p className="text-sm font-medium text-white">{p.label}</p>
@@ -131,7 +135,9 @@ const GridFirstCard = ({
               </label>
               <select
                 value={form.powerRate}
-                onChange={(e) => form.setPowerRate(e.target.value)}
+                onChange={(e) => {
+                  form.setPowerRate(e.target.value);
+                }}
                 className={selectClass}
               >
                 {RATE_OPTIONS.map((v) => (
@@ -147,7 +153,9 @@ const GridFirstCard = ({
               </label>
               <select
                 value={form.stopSOC}
-                onChange={(e) => form.setStopSOC(e.target.value)}
+                onChange={(e) => {
+                  form.setStopSOC(e.target.value);
+                }}
                 className={selectClass}
               >
                 {SOC_OPTIONS.map((v) => (

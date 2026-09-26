@@ -11,7 +11,9 @@ const TimePicker = ({
   <div className="flex items-center gap-1">
     <select
       value={slot.startHour}
-      onChange={(e) => onChange("startHour", e.target.value)}
+      onChange={(e) => {
+        onChange("startHour", e.target.value);
+      }}
       className={selectClass}
     >
       {HOURS.map((h) => (
@@ -23,7 +25,9 @@ const TimePicker = ({
     <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
     <select
       value={slot.startMin}
-      onChange={(e) => onChange("startMin", e.target.value)}
+      onChange={(e) => {
+        onChange("startMin", e.target.value);
+      }}
       className={selectClass}
     >
       {minuteOptions(slot.startMin).map((m) => (
@@ -35,7 +39,9 @@ const TimePicker = ({
     <span className="text-gray-500 font-mono text-xs shrink-0 px-1">–</span>
     <select
       value={slot.endHour}
-      onChange={(e) => onChange("endHour", e.target.value)}
+      onChange={(e) => {
+        onChange("endHour", e.target.value);
+      }}
       className={selectClass}
     >
       {HOURS.map((h) => (
@@ -47,7 +53,9 @@ const TimePicker = ({
     <span className="text-gray-400 font-mono text-sm shrink-0">:</span>
     <select
       value={slot.endMin}
-      onChange={(e) => onChange("endMin", e.target.value)}
+      onChange={(e) => {
+        onChange("endMin", e.target.value);
+      }}
       className={selectClass}
     >
       {minuteOptions(slot.endMin).map((m) => (

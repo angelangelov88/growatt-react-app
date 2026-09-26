@@ -25,15 +25,15 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
       setChargePeriods(serial, plan.powerRate, plan.stopSOC, ...plan.slots),
     onSuccess: (_, plan) => {
       // Show the new charge periods on the Battery First card straight away, then
-      // check them against the inverter in the background. fetchQuery is used because
+      // check them against the inverter in the background. query() is used because
       // refetchQueries skips queries with enabled: false.
       queryClient.setQueryData(
         CHARGE_KEY,
         toPeriods(plan.powerRate, plan.stopSOC, plan.slots),
       );
       queryClient
-        .fetchQuery({ ...chargePeriodsQueryOptions, staleTime: 0 })
-        .catch(() => {});
+        .query({ ...chargePeriodsQueryOptions, staleTime: 0 })
+        .catch(() => undefined);
     },
   });
 
@@ -46,7 +46,7 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
 
   const planSummary = plan ? describePlan(plan) : null;
   const extraSlotsMessage = plan?.skipped
-    ? `${plan.skipped} Octopus period(s) not applied — the inverter only has 6 slots`
+    ? `${String(plan.skipped)} Octopus period(s) not applied — the inverter only has 6 slots`
     : null;
 
   return useMemo(

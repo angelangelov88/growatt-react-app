@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useToast } from "../contexts/ToastContext";
+import useToast from "../contexts/useToast";
 
 const triggerUpdate = async () => {
   if (import.meta.env.DEV) {
@@ -20,13 +20,13 @@ const triggerUpdate = async () => {
         body: JSON.stringify({ ref: "main" }),
       },
     );
-    if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+    if (!res.ok) throw new Error(`GitHub API error: ${String(res.status)}`);
     return;
   }
   const res = await fetch("/api/trigger", { method: "POST" });
   if (!res.ok && res.status !== 204) {
-    const json = await res.json().catch(() => ({}));
-    throw new Error(json.error ?? `Failed with status ${res.status}`);
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(json.error ?? `Failed with status ${String(res.status)}`);
   }
 };
 
@@ -36,10 +36,7 @@ const TriggerUpdate = () => {
 
   useEffect(() => {
     if (mutation.isError)
-      showToast(
-        `Trigger failed: ${(mutation.error as Error).message}`,
-        "error",
-      );
+      showToast(`Trigger failed: ${mutation.error.message}`, "error");
   }, [mutation.isError]);
 
   useEffect(() => {
@@ -60,7 +57,9 @@ const TriggerUpdate = () => {
           </p>
         </div>
         <button
-          onClick={() => mutation.mutate()}
+          onClick={() => {
+            mutation.mutate();
+          }}
           disabled={mutation.isPending || mutation.isSuccess}
           className="px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >

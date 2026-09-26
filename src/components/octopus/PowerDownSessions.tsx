@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Spinner from "../Spinner";
 import SectionHeading from "./SectionHeading";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 import useSavingSessions, { useJoinSession } from "./useSavingSessions";
 import {
   joinedInLastDays,
@@ -30,7 +30,7 @@ const ukDay = (d: Date) =>
 
 // Octopus takes a few days to award points, so this is only shown in History.
 const points = (s: PowerDownSession) =>
-  s.pointsAwarded !== null ? `${s.pointsAwarded} pts` : "pending";
+  s.pointsAwarded !== null ? `${String(s.pointsAwarded)} pts` : "pending";
 
 const smallButton =
   "px-2.5 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
@@ -55,10 +55,15 @@ const PowerDownSessions = ({
   useEffect(() => {
     if (query.isError)
       showToast(
-        `Couldn't load Power Down sessions: ${(query.error as Error).message}`,
+        `Couldn't load Power Down sessions: ${query.error.message}`,
         "error",
       );
   }, [query.errorUpdatedAt]);
+
+  // refetch never rejects; errors come through query.error.
+  const load = () => {
+    void query.refetch({ cancelRefetch: false });
+  };
 
   const handleJoin = (session: PowerDownSession) => {
     if (!session.code) return;
@@ -66,13 +71,14 @@ const PowerDownSessions = ({
     join.mutate(session.code, {
       onSuccess: () => {
         showToast(`Joined the ${timeRange} Power Down session`, "success");
-        query.refetch({ cancelRefetch: false });
+        load();
       },
-      onError: (error) =>
+      onError: (error) => {
         showToast(
           `Couldn't join the ${timeRange} session: ${error.message}`,
           "error",
-        ),
+        );
+      },
     });
   };
 
@@ -96,7 +102,7 @@ const PowerDownSessions = ({
           )}
         </div>
         <button
-          onClick={() => query.refetch({ cancelRefetch: false })}
+          onClick={load}
           disabled={query.isFetching}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -148,7 +154,7 @@ const PowerDownSessions = ({
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         {s.rewardPerKwh !== null
-                          ? `${s.rewardPerKwh} pts/kWh`
+                          ? `${String(s.rewardPerKwh)} pts/kWh`
                           : "rate unknown"}{" "}
                         · {status}
                       </p>
@@ -161,7 +167,9 @@ const PowerDownSessions = ({
                     <div className="flex-1 flex justify-end">
                       {canJoin && (
                         <button
-                          onClick={() => handleJoin(s)}
+                          onClick={() => {
+                            handleJoin(s);
+                          }}
                           disabled={join.isPending || query.isFetching}
                           className={`${smallButton} bg-blue-600 hover:bg-blue-500 disabled:hover:bg-blue-600`}
                         >
@@ -170,7 +178,9 @@ const PowerDownSessions = ({
                       )}
                       {canExport && (
                         <button
-                          onClick={() => onExportDuringSession(s)}
+                          onClick={() => {
+                            onExportDuringSession(s);
+                          }}
                           disabled={exportDisabled}
                           className={`${smallButton} bg-emerald-600 hover:bg-emerald-500 disabled:hover:bg-emerald-600`}
                         >
@@ -195,7 +205,9 @@ const PowerDownSessions = ({
                   role="switch"
                   aria-checked={showHistory}
                   aria-label="Show history"
-                  onClick={() => setShowHistory((v) => !v)}
+                  onClick={() => {
+                    setShowHistory((v) => !v);
+                  }}
                   className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                     showHistory ? "bg-emerald-600" : "bg-gray-700"
                   }`}
@@ -212,7 +224,9 @@ const PowerDownSessions = ({
                   {HISTORY_DAYS.map((days) => (
                     <button
                       key={days}
-                      onClick={() => setHistoryDays(days)}
+                      onClick={() => {
+                        setHistoryDays(days);
+                      }}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                         historyDays === days
                           ? "bg-gray-600 text-white"
@@ -259,7 +273,7 @@ const PowerDownSessions = ({
                             </p>
                             <p className="text-xs text-gray-400 mt-0.5">
                               {s.rewardPerKwh !== null
-                                ? `${s.rewardPerKwh} pts/kWh`
+                                ? `${String(s.rewardPerKwh)} pts/kWh`
                                 : "rate unknown"}
                             </p>
                           </div>

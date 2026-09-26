@@ -3,7 +3,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { isSavedData } from "./useGrowatt";
 import type { ChargePeriods } from "./growattApi";
 import { sameSettings, type SlotForm } from "./useSlotForm";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 
 // A Read the user presses locks the card and always loads the result. Any other data
 // change (values written to the cache after a save — from this card or the Octopus
@@ -27,7 +27,10 @@ const useInverterRead = (
     if (!data) return;
     const isUserRead = userRead.current;
     userRead.current = false;
-    if (isUserRead || form.matches(data)) return form.load(data);
+    if (isUserRead || form.matches(data)) {
+      form.load(data);
+      return;
+    }
     // A real read following a save is the check of that save. If it agrees, nothing to do.
     const isSaveCheck = !!prev && isSavedData(prev) && !isSavedData(data);
     if (isSaveCheck && sameSettings(prev, data)) return;
@@ -49,10 +52,7 @@ const useInverterRead = (
   useEffect(() => {
     if (!query.isError) return;
     userRead.current = false;
-    showToast(
-      `Couldn't load settings: ${(query.error as Error).message}`,
-      "error",
-    );
+    showToast(`Couldn't load settings: ${query.error.message}`, "error");
   }, [query.errorUpdatedAt]);
 
   // `confirmed` skips the prompt when the caller has already asked (Load all).
@@ -68,7 +68,7 @@ const useInverterRead = (
     const before = query.data;
     userRead.current = true;
     setIsReading(true);
-    query
+    void query
       .refetch({ cancelRefetch: false })
       .then((result) => {
         // Identical data keeps the same reference, so the effect above won't run — load it here.
@@ -77,11 +77,15 @@ const useInverterRead = (
           form.load(result.data);
         }
       })
-      .finally(() => setIsReading(false));
+      .finally(() => {
+        setIsReading(false);
+      });
   };
 
   // Checks the inverter in the background without locking the card.
-  const verify = () => query.refetch({ cancelRefetch: false });
+  const verify = () => {
+    void query.refetch({ cancelRefetch: false });
+  };
 
   return {
     read,
