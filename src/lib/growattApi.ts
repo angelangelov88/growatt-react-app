@@ -1,38 +1,18 @@
 import SparkMD5 from "spark-md5";
-
-export type SlotParam = {
-  startHour: string;
-  startMin: string;
-  endHour: string;
-  endMin: string;
-} | null;
-
-export type ChargePeriod = { start: string; end: string; enabled: boolean };
-export type ChargePeriods = {
-  powerRate: number;
-  stopSOC: number;
-  raw: string;
-  period1: ChargePeriod;
-  period2: ChargePeriod;
-  period3: ChargePeriod;
-  period4: ChargePeriod;
-  period5: ChargePeriod;
-  period6: ChargePeriod;
-};
-export type DischargePeriods = ChargePeriods;
+import type {
+  ChargePeriod,
+  ChargePeriods,
+  DischargePeriods,
+  GrowattConfig,
+  GrowattResponse,
+  SlotParam,
+} from "../types/Growatt";
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 // Used by the Node script (passes process.env values + direct Growatt URL).
 // Used by the browser (passes Vite env values + proxy URL builder).
 
-export type GrowattConfig = {
-  user: string;
-  password: string;
-  buildUrl: (path: string) => string;
-  cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
-};
-
-export const createGrowattClient = ({
+const createGrowattClient = ({
   user,
   password,
   buildUrl,
@@ -48,7 +28,7 @@ export const createGrowattClient = ({
     path: string,
     body?: Record<string, string>,
     isRetry = false,
-  ): Promise<any> => {
+  ): Promise<GrowattResponse> => {
     const headers: Record<string, string> = {};
     if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
     if (sessionCookie) headers[cookieHeader] = sessionCookie;
@@ -62,7 +42,7 @@ export const createGrowattClient = ({
     const setCookie =
       res.headers.get("x-set-cookie") ?? res.headers.get("set-cookie");
     if (setCookie) {
-      const match = setCookie.match(/JSESSIONID=[^;]+/);
+      const match = /JSESSIONID=[^;]+/.exec(setCookie);
       if (match) {
         sessionCookie = match[0];
         storage?.setItem(STORAGE_KEY, sessionCookie);
@@ -71,19 +51,18 @@ export const createGrowattClient = ({
 
     const text = await res.text();
     console.log(`${body ? "POST" : "GET"} ${path}:`, text);
-    let json: any;
+    let json: GrowattResponse;
     try {
-      json = JSON.parse(text);
+      json = JSON.parse(text) as GrowattResponse;
     } catch {
       throw new Error(`Unexpected response: ${text.slice(0, 100)}`);
     }
 
     // Detect session expiry and retry once
+    const msg = json.msg?.toLowerCase() ?? "";
     const isAuthError =
-      json?.success === false &&
-      typeof json?.msg === "string" &&
-      (json.msg.toLowerCase().includes("login") ||
-        json.msg.toLowerCase().includes("session"));
+      json.success === false &&
+      (msg.includes("login") || msg.includes("session"));
 
     if (!isRetry && isAuthError) {
       sessionCookie = "";
@@ -93,33 +72,29 @@ export const createGrowattClient = ({
       return request(path, body, true);
     }
 
-    if (isAuthError) throw new Error(json.msg);
-
-    if (json?.success === false) throw new Error(json?.msg ?? "Request failed");
+    if (json.success === false) throw new Error(json.msg ?? "Request failed");
 
     return json;
   };
 
   const ensureLoggedIn = () => {
     if (sessionCookie) return Promise.resolve();
-    if (!loginPromise) {
-      loginPromise = request("/login", {
-        account: user,
-        password: "",
-        passwordCrc: SparkMD5.hash(password),
-        validateCode: "",
-        isReadPact: "0",
-        type: "1",
+    loginPromise ??= request("/login", {
+      account: user,
+      password: "",
+      passwordCrc: SparkMD5.hash(password),
+      validateCode: "",
+      isReadPact: "0",
+      type: "1",
+    })
+      .then((data) => {
+        loginPromise = null;
+        if (data.result !== 1) throw new Error(data.msg ?? "Login failed");
       })
-        .then((data) => {
-          loginPromise = null;
-          if (data.result !== 1) throw new Error(data.msg ?? "Login failed");
-        })
-        .catch((err) => {
-          loginPromise = null;
-          throw err;
-        });
-    }
+      .catch((err: unknown) => {
+        loginPromise = null;
+        throw err;
+      });
     return loginPromise;
   };
 
@@ -134,7 +109,7 @@ export const createGrowattClient = ({
   const enqueue = <T>(fn: () => Promise<T>): Promise<T> => {
     const run = queue.then(fn, fn);
     queue = run
-      .catch(() => {})
+      .catch(() => undefined)
       .then(() => new Promise((resolve) => setTimeout(resolve, QUEUE_GAP_MS)));
     return run;
   };
@@ -146,7 +121,7 @@ export const createGrowattClient = ({
   };
 
   const safe = (v: number[], offset: number): ChargePeriod =>
-    v[offset] !== undefined
+    offset < v.length
       ? {
           start: decodeTime(v[offset]),
           end: decodeTime(v[offset + 1]),
@@ -193,7 +168,7 @@ export const createGrowattClient = ({
         startAddr: "-1",
         endAddr: "-1",
       });
-      const msg = (data.msg ?? "") as string;
+      const msg = data.msg ?? "";
       const values = msg.split("-").filter(Boolean).map(Number);
       if (values.length >= minLength && !values.some(Number.isNaN))
         return { msg, values };
@@ -202,7 +177,7 @@ export const createGrowattClient = ({
           `Inverter returned no data for ${paramId} — it may be busy, try again`,
         );
       console.warn(
-        `${paramId}: empty reply (attempt ${attempt}/${READ_ATTEMPTS}), retrying in ${READ_RETRY_MS / 1000}s`,
+        `${paramId}: empty reply (attempt ${String(attempt)}/${String(READ_ATTEMPTS)}), retrying in ${String(READ_RETRY_MS / 1000)}s`,
       );
       await new Promise((resolve) => setTimeout(resolve, READ_RETRY_MS));
     }
@@ -297,7 +272,7 @@ export const createGrowattClient = ({
         });
         if (!p4 && !p5 && !p6) return;
         await writeDelay();
-        return request("/tcpSet.do", {
+        await request("/tcpSet.do", {
           action: "mixSet",
           serialNum: serial,
           type: "mix_ac_charge_time_multi_1",
@@ -342,7 +317,7 @@ export const createGrowattClient = ({
         });
         if (!p4 && !p5 && !p6) return;
         await writeDelay();
-        return request("/tcpSet.do", {
+        await request("/tcpSet.do", {
           action: "mixSet",
           serialNum: serial,
           type: "mix_ac_discharge_time_multi_1",
@@ -360,26 +335,24 @@ export const createGrowattClient = ({
 let _client: ReturnType<typeof createGrowattClient> | null = null;
 
 const browserClient = () => {
-  if (!_client) {
-    _client = createGrowattClient({
-      user: import.meta.env.VITE_GROWATT_USER,
-      password: import.meta.env.VITE_GROWATT_PASSWORD,
-      cookieHeader: "X-Session-Cookie",
-      buildUrl: (path) => {
-        if (import.meta.env.DEV) return `/growatt${path}`;
-        const clean = path.startsWith("/") ? path.slice(1) : path;
-        return `/api/growatt?path=${encodeURIComponent(clean)}`;
-      },
-    });
-  }
+  _client ??= createGrowattClient({
+    user: import.meta.env.VITE_GROWATT_USER,
+    password: import.meta.env.VITE_GROWATT_PASSWORD,
+    cookieHeader: "X-Session-Cookie",
+    buildUrl: (path) => {
+      if (import.meta.env.DEV) return `/growatt${path}`;
+      const clean = path.startsWith("/") ? path.slice(1) : path;
+      return `/api/growatt?path=${encodeURIComponent(clean)}`;
+    },
+  });
   return _client;
 };
 
-export const fetchChargePeriods = (serial: string) =>
+const fetchChargePeriods = (serial: string) =>
   browserClient().fetchChargePeriods(serial);
-export const fetchDischargePeriods = (serial: string) =>
+const fetchDischargePeriods = (serial: string) =>
   browserClient().fetchDischargePeriods(serial);
-export const setChargePeriods = (
+const setChargePeriods = (
   serial: string,
   powerRate: string,
   stopSOC: string,
@@ -401,7 +374,7 @@ export const setChargePeriods = (
     p5,
     p6,
   );
-export const setDischargePeriods = (
+const setDischargePeriods = (
   serial: string,
   powerRate: string,
   stopSOC: string,
@@ -423,3 +396,11 @@ export const setDischargePeriods = (
     p5,
     p6,
   );
+
+export {
+  createGrowattClient,
+  fetchChargePeriods,
+  fetchDischargePeriods,
+  setChargePeriods,
+  setDischargePeriods,
+};

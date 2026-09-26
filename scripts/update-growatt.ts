@@ -1,9 +1,11 @@
-import { createGrowattClient } from "../src/components/growatt/growattApi";
+import { createGrowattClient } from "../src/lib/growattApi";
 import {
   buildChargePlan,
   describePlan,
   planMatches,
-} from "../src/components/octopus/chargePlan";
+} from "../src/lib/chargePlan";
+import type { Dispatch } from "../src/types/Octopus";
+import type { GraphQLResponse } from "../src/types/GraphQL";
 
 const GROWATT_BASE = "https://server.growatt.com";
 const OCTOPUS_ENDPOINT = "https://api.octopus.energy/v1/graphql/";
@@ -32,10 +34,12 @@ const octopusAuth = async () => {
       query: `mutation { obtainKrakenToken(input: { APIKey: "${OCTOPUS_API_KEY}" }) { token } }`,
     }),
   });
-  const json = (await res.json()) as any;
-  const token = json?.data?.obtainKrakenToken?.token;
+  const json = (await res.json()) as GraphQLResponse<{
+    obtainKrakenToken: { token: string } | null;
+  }>;
+  const token = json.data?.obtainKrakenToken?.token;
   if (!token) throw new Error("Octopus auth failed");
-  return token as string;
+  return token;
 };
 
 const fetchSlots = async (token: string) => {
@@ -46,11 +50,10 @@ const fetchSlots = async (token: string) => {
       query: `query { plannedDispatches(accountNumber: "${OCTOPUS_ACCOUNT}") { startDt endDt } }`,
     }),
   });
-  const json = (await res.json()) as any;
-  return (json?.data?.plannedDispatches ?? []) as {
-    startDt: string;
-    endDt: string;
-  }[];
+  const json = (await res.json()) as GraphQLResponse<{
+    plannedDispatches: Dispatch[] | null;
+  }>;
+  return json.data?.plannedDispatches ?? [];
 };
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -64,7 +67,7 @@ const run = async () => {
   console.log(`Plan (UK time): ${describePlan(plan)}`);
   if (plan.skipped) {
     console.log(
-      `Warning: ${plan.skipped} Octopus period(s) not applied — the inverter only has 6 slots`,
+      `Warning: ${String(plan.skipped)} Octopus period(s) not applied — the inverter only has 6 slots`,
     );
   }
 
@@ -84,7 +87,7 @@ const run = async () => {
   console.log("Done");
 };
 
-run().catch((err) => {
-  console.error(err.message);
+run().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });

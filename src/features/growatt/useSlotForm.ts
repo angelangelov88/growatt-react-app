@@ -1,12 +1,10 @@
-import { useState, useMemo, useRef } from "react";
-import type { ChargePeriods, SlotParam } from "./growattApi";
-
-export type SlotState = {
-  startHour: string;
-  startMin: string;
-  endHour: string;
-  endMin: string;
-};
+import { useState, useMemo } from "react";
+import type {
+  ChargePeriods,
+  SlotParam,
+  SlotState,
+  Snapshot,
+} from "../../types/Growatt";
 
 const DEFAULT_SLOT: SlotState = {
   startHour: "00",
@@ -30,8 +28,6 @@ const slotToParam = (s: SlotState): SlotParam => ({
   endHour: s.endHour,
   endMin: s.endMin,
 });
-
-type Snapshot = { powerRate: string; stopSOC: string; slots: SlotState[] };
 
 const toSnapshot = (data: ChargePeriods): Snapshot => ({
   powerRate: String(data.powerRate),
@@ -62,19 +58,18 @@ const snapshotsEqual = (a: Snapshot | null, b: Snapshot): boolean => {
 };
 
 // True when two sets of periods hold the same rate, SOC and enabled slots.
-export const sameSettings = (a: ChargePeriods, b: ChargePeriods) =>
+const sameSettings = (a: ChargePeriods, b: ChargePeriods) =>
   snapshotsEqual(toSnapshot(a), toSnapshot(b));
 
-export const useSlotForm = (
-  defaultPowerRate: string,
-  defaultStopSOC: string,
-) => {
+const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   const [powerRate, setPowerRate] = useState(defaultPowerRate);
   const [stopSOC, setStopSOC] = useState(defaultStopSOC);
   const [slots, setSlots] = useState<SlotState[]>([]);
   // False until the form holds real values — from an inverter read or a preset the user picked.
   const [isLoaded, setIsLoaded] = useState(false);
-  const lastRead = useRef<Snapshot | null>(null);
+  // The last values loaded from the inverter. State, not a ref, because isDirty
+  // (which enables Apply) is derived from it.
+  const [lastRead, setLastRead] = useState<Snapshot | null>(null);
 
   const updateSlot = (index: number, field: keyof SlotState, value: string) => {
     setSlots((prev) =>
@@ -83,7 +78,9 @@ export const useSlotForm = (
   };
 
   const addSlot = () => {
-    if (slots.length < 6) setSlots((prev) => [...prev, { ...DEFAULT_SLOT }]);
+    setSlots((prev) =>
+      prev.length < 6 ? [...prev, { ...DEFAULT_SLOT }] : prev,
+    );
   };
 
   const removeSlot = (index: number) => {
@@ -97,12 +94,8 @@ export const useSlotForm = (
     setStopSOC(next.stopSOC);
     setSlots(next.slots);
     setIsLoaded(true);
-    lastRead.current = next;
+    setLastRead(next);
   };
-
-  // True when the form already shows exactly these values.
-  const matches = (data: ChargePeriods) =>
-    snapshotsEqual(toSnapshot(data), { powerRate, stopSOC, slots });
 
   const setDefaults = (rate: string, soc: string, defaultSlot: SlotState) => {
     setPowerRate(rate);
@@ -126,27 +119,33 @@ export const useSlotForm = (
     setIsLoaded(true);
   };
 
-  const toParams = (): [
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-    SlotParam,
-  ] => {
-    const get = (i: number): SlotParam =>
-      slots[i] ? slotToParam(slots[i]) : null;
-    return [get(0), get(1), get(2), get(3), get(4), get(5)];
-  };
-
-  const isDirty = !snapshotsEqual(lastRead.current, {
+  const isDirty = !snapshotsEqual(lastRead, {
     powerRate,
     stopSOC,
     slots,
   });
 
-  return useMemo(
-    () => ({
+  // matches and toParams read the form values, so they're created inside the memo
+  // and only change when those values do.
+  return useMemo(() => {
+    // True when the form already shows exactly these values.
+    const matches = (data: ChargePeriods) =>
+      snapshotsEqual(toSnapshot(data), { powerRate, stopSOC, slots });
+
+    const toParams = (): [
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+      SlotParam,
+    ] => {
+      const get = (i: number): SlotParam =>
+        slots[i] ? slotToParam(slots[i]) : null;
+      return [get(0), get(1), get(2), get(3), get(4), get(5)];
+    };
+
+    return {
       powerRate,
       setPowerRate,
       stopSOC,
@@ -164,7 +163,8 @@ export const useSlotForm = (
       canAddSlot: slots.length < 6,
       isDirty,
       isLoaded,
-    }),
-    [powerRate, stopSOC, slots, isDirty, isLoaded],
-  );
+    };
+  }, [powerRate, stopSOC, slots, isDirty, isLoaded]);
 };
+
+export { sameSettings, useSlotForm };

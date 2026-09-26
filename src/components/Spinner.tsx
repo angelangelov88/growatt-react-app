@@ -1,4 +1,6 @@
-const Spinner = ({ className = "text-gray-400" }: { className?: string }) => (
+import type { SpinnerProps } from "../types/Common";
+
+const Spinner = ({ className = "text-gray-400" }: SpinnerProps) => (
   <svg
     className={`animate-spin h-4 w-4 shrink-0 ${className}`}
     xmlns="http://www.w3.org/2000/svg"

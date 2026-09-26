@@ -1,10 +1,15 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  _req: VercelRequest,
+  res: VercelResponse,
+) {
   const { GITHUB_TOKEN, GITHUB_REPO } = process.env;
 
   if (!GITHUB_TOKEN || !GITHUB_REPO) {
-    return res.status(500).json({ error: "Missing GITHUB_TOKEN or GITHUB_REPO env vars" });
+    return res
+      .status(500)
+      .json({ error: "Missing GITHUB_TOKEN or GITHUB_REPO env vars" });
   }
 
   const response = await fetch(

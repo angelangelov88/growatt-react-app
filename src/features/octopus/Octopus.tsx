@@ -1,38 +1,28 @@
 import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
-import { useToast } from "../../contexts/ToastContext";
+import useToast from "../../contexts/useToast";
 
 const Octopus = () => {
   const {
     slotsLoading,
     slotsError,
+    slotsErrorUpdatedAt,
     slotsData,
     formatDate,
     handleAuthAndFetchSlots,
   } = useOctopus();
-  const {
-    applySlots,
-    planSummary,
-    extraSlotsMessage,
-    isPending,
-    error: applyError,
-  } = useApplySlots({ slotsData });
+  const { applySlots, planSummary, extraSlotsMessage, isPending } =
+    useApplySlots({ slotsData });
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (slotsError)
-      showToast(`Octopus error: ${(slotsError as Error).message}`, "error");
-  }, [slotsError]);
-
-  useEffect(() => {
-    if (applyError)
-      showToast(`Apply failed: ${(applyError as Error).message}`, "error");
-  }, [applyError]);
+    if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
+  }, [slotsError, slotsErrorUpdatedAt, showToast]);
 
   useEffect(() => {
     if (extraSlotsMessage) showToast(extraSlotsMessage, "info");
-  }, [extraSlotsMessage]);
+  }, [extraSlotsMessage, showToast]);
 
   const slots = slotsData?.plannedDispatches ?? [];
 
@@ -61,7 +51,7 @@ const Octopus = () => {
         <div className="flex flex-col gap-2 mb-4">
           {slots.map((item, index) => (
             <div
-              key={`slot-${index}`}
+              key={`${item.startDt}-${item.endDt}`}
               className="flex items-center justify-between bg-gray-800 rounded-xl px-4 py-3"
             >
               <span className="text-xs text-gray-400 font-medium">

@@ -9,18 +9,20 @@ import {
   setChargePeriods,
   fetchDischargePeriods,
   setDischargePeriods,
-  type ChargePeriod,
-  type ChargePeriods,
-  type SlotParam,
-} from "./growattApi";
+} from "../../lib/growattApi";
+import type {
+  ChargePeriod,
+  ChargePeriods,
+  SlotParam,
+} from "../../types/Growatt";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
-export const CHARGE_KEY = ["growatt", "chargePeriods"];
-export const DISCHARGE_KEY = ["growatt", "dischargePeriods"];
+const CHARGE_KEY = ["growatt", "chargePeriods"];
+const DISCHARGE_KEY = ["growatt", "dischargePeriods"];
 
 // Shared with the Octopus card, which also writes charge periods.
-export const chargePeriodsQueryOptions = queryOptions({
+const chargePeriodsQueryOptions = queryOptions({
   queryKey: CHARGE_KEY,
   queryFn: () => fetchChargePeriods(serial),
   retry: false,
@@ -30,11 +32,11 @@ export const chargePeriodsQueryOptions = queryOptions({
 // Marks cache data that was written after a save rather than read from the inverter,
 // so the next real read can be recognised as the check of that save.
 const SAVED_RAW = "(saved)";
-export const isSavedData = (data: ChargePeriods) => data.raw === SAVED_RAW;
+const isSavedData = (data: ChargePeriods) => data.raw === SAVED_RAW;
 
 // Builds what a read would return for the values just written, so the cache
 // reflects a successful save straight away instead of waiting for the inverter.
-export const toPeriods = (
+const toPeriods = (
   powerRate: string,
   stopSOC: string,
   slots: SlotParam[],
@@ -60,7 +62,7 @@ export const toPeriods = (
   };
 };
 
-function useGrowatt() {
+const useGrowatt = () => {
   const queryClient = useQueryClient();
 
   const setChargePeriodsMutation = useMutation({
@@ -144,6 +146,13 @@ function useGrowatt() {
     dischargePeriodsQuery,
     setDischargeMutation,
   };
-}
+};
 
+export {
+  CHARGE_KEY,
+  DISCHARGE_KEY,
+  chargePeriodsQueryOptions,
+  isSavedData,
+  toPeriods,
+};
 export default useGrowatt;

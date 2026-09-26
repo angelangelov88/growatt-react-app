@@ -1,39 +1,37 @@
-import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setChargePeriods } from "../growatt/growattApi";
+import { setChargePeriods } from "../../lib/growattApi";
+import useToast from "../../contexts/useToast";
 import {
   CHARGE_KEY,
   chargePeriodsQueryOptions,
   toPeriods,
 } from "../growatt/useGrowatt";
-import {
-  buildChargePlan,
-  describePlan,
-  type ChargePlan,
-  type Dispatch,
-} from "./chargePlan";
-
-type SlotsData = { plannedDispatches: Dispatch[] } | undefined;
+import { buildChargePlan, describePlan } from "../../lib/chargePlan";
+import type { ChargePlan, SlotsData } from "../../types/Octopus";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
-export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
+const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (plan: ChargePlan) =>
       setChargePeriods(serial, plan.powerRate, plan.stopSOC, ...plan.slots),
     onSuccess: (_, plan) => {
       // Show the new charge periods on the Battery First card straight away, then
-      // check them against the inverter in the background. fetchQuery is used because
+      // check them against the inverter in the background. query() is used because
       // refetchQueries skips queries with enabled: false.
       queryClient.setQueryData(
         CHARGE_KEY,
         toPeriods(plan.powerRate, plan.stopSOC, plan.slots),
       );
       queryClient
-        .fetchQuery({ ...chargePeriodsQueryOptions, staleTime: 0 })
-        .catch(() => {});
+        .query({ ...chargePeriodsQueryOptions, staleTime: 0 })
+        .catch(() => undefined);
+    },
+    onError: (error) => {
+      showToast(`Apply failed: ${error.message}`, "error");
     },
   });
 
@@ -46,23 +44,15 @@ export default function useApplySlots({ slotsData }: { slotsData: SlotsData }) {
 
   const planSummary = plan ? describePlan(plan) : null;
   const extraSlotsMessage = plan?.skipped
-    ? `${plan.skipped} Octopus period(s) not applied — the inverter only has 6 slots`
+    ? `${String(plan.skipped)} Octopus period(s) not applied — the inverter only has 6 slots`
     : null;
 
-  return useMemo(
-    () => ({
-      applySlots,
-      planSummary,
-      extraSlotsMessage,
-      isPending: mutation.isPending,
-      error: mutation.error,
-    }),
-    [
-      mutation.isPending,
-      mutation.error,
-      planSummary,
-      extraSlotsMessage,
-      slotsData,
-    ],
-  );
-}
+  return {
+    applySlots,
+    planSummary,
+    extraSlotsMessage,
+    isPending: mutation.isPending,
+  };
+};
+
+export default useApplySlots;

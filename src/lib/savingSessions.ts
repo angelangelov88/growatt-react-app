@@ -1,5 +1,12 @@
-import type { SlotState } from "../growatt/useSlotForm";
+import type { SlotState } from "../types/Growatt";
+import type {
+  PowerDownSession,
+  RawSavingSessions,
+  SavingSessionsData,
+  SessionStatus,
+} from "../types/Octopus";
 import { toUkMinutes } from "./chargePlan";
+import type { GraphQLResponse } from "../types/GraphQL";
 
 // Octopus Saving Sessions, now branded "Power Down" (eventType TURN_DOWN).
 // They are only available on Octopus's backend GraphQL API, which is undocumented
@@ -23,45 +30,7 @@ const QUERY = `query SavingSessions($account: String!) {
 
 const POWER_DOWN = "TURN_DOWN";
 
-export type PowerDownSession = {
-  id: string;
-  code: string | null;
-  startAt: Date;
-  endAt: Date;
-  rewardPerKwh: number | null;
-  // Empty means every region.
-  regions: number[];
-  joined: boolean;
-  pointsAwarded: number | null;
-};
-
-export type SavingSessionsData = {
-  region: number | null;
-  // Every Power Down event Octopus currently lists, with your joined status.
-  events: PowerDownSession[];
-  // Every Power Down event you joined, including older ones no longer listed.
-  joined: PowerDownSession[];
-};
-
-type RawEvent = {
-  id: string | number;
-  code: string;
-  rewardPerKwhInOctoPoints: number | null;
-  startAt: string;
-  endAt: string;
-  eventType: string;
-  targetRegion: { regionId: number }[] | null;
-};
-
-type RawJoined = {
-  eventId: string | number;
-  startAt: string;
-  endAt: string;
-  rewardGivenInOctoPoints: number | null;
-  eventType: string;
-};
-
-export const fetchSavingSessions = async (
+const fetchSavingSessions = async (
   token: string,
   account: string,
 ): Promise<SavingSessionsData> => {
@@ -70,17 +39,17 @@ export const fetchSavingSessions = async (
     headers: { "Content-Type": "application/json", Authorization: token },
     body: JSON.stringify({ query: QUERY, variables: { account } }),
   });
-  const json = await res.json();
+  const json = (await res.json()) as GraphQLResponse<RawSavingSessions>;
   if (json.errors?.length) throw new Error(json.errors[0].message);
   const data = json.data?.savingSessions;
   if (!data) throw new Error("No Power Down data returned from Octopus");
 
-  const joinedRaw = ((data.account?.joinedEvents ?? []) as RawJoined[]).filter(
+  const joinedRaw = (data.account?.joinedEvents ?? []).filter(
     (e) => e.eventType === POWER_DOWN,
   );
   const joinedById = new Map(joinedRaw.map((e) => [String(e.eventId), e]));
 
-  const events = ((data.events ?? []) as RawEvent[])
+  const events = (data.events ?? [])
     .filter((e) => e.eventType === POWER_DOWN)
     .map((e): PowerDownSession => {
       const joined = joinedById.get(String(e.id));
@@ -123,7 +92,7 @@ const JOIN_MUTATION = `mutation JoinSavingSession($input: JoinSavingSessionsEven
 }`;
 
 // Opts the account in to one Power Down session.
-export const joinSession = async (
+const joinSession = async (
   token: string,
   account: string,
   eventCode: string,
@@ -136,7 +105,7 @@ export const joinSession = async (
       variables: { input: { accountNumber: account, eventCode } },
     }),
   });
-  const json = await res.json();
+  const json = (await res.json()) as GraphQLResponse<unknown>;
   if (json.errors?.length) throw new Error(json.errors[0].message);
 };
 
@@ -147,7 +116,7 @@ const byStartDesc = (a: PowerDownSession, b: PowerDownSession) =>
   b.startAt.getTime() - a.startAt.getTime();
 
 // All Power Down sessions today (UK) in your region, joined or not, soonest first.
-export const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
+const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
   data.events
     .filter((s) => isSameUkDay(s.startAt, now))
     .filter(
@@ -159,7 +128,7 @@ export const sessionsToday = (data: SavingSessionsData, now = new Date()) =>
     .sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
 
 // Sessions you joined that ended within the last `days` days, newest first.
-export const joinedInLastDays = (
+const joinedInLastDays = (
   data: SavingSessionsData,
   days: number,
   now = new Date(),
@@ -170,18 +139,13 @@ export const joinedInLastDays = (
     .sort(byStartDesc);
 };
 
-export type SessionStatus = "upcoming" | "in progress" | "ended";
-
-export const sessionStatus = (
-  s: PowerDownSession,
-  now = new Date(),
-): SessionStatus =>
+const sessionStatus = (s: PowerDownSession, now = new Date()): SessionStatus =>
   now < s.startAt ? "upcoming" : now < s.endAt ? "in progress" : "ended";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
 // The session window as an inverter slot, in UK time.
-export const sessionToSlot = (s: PowerDownSession): SlotState => {
+const sessionToSlot = (s: PowerDownSession): SlotState => {
   const start = toUkMinutes(s.startAt);
   const end = toUkMinutes(s.endAt);
   return {
@@ -190,4 +154,13 @@ export const sessionToSlot = (s: PowerDownSession): SlotState => {
     endHour: pad(Math.floor(end / 60)),
     endMin: pad(end % 60),
   };
+};
+
+export {
+  fetchSavingSessions,
+  joinSession,
+  sessionsToday,
+  joinedInLastDays,
+  sessionStatus,
+  sessionToSlot,
 };

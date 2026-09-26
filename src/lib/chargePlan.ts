@@ -1,4 +1,5 @@
-import type { ChargePeriods, SlotParam } from "../growatt/growattApi";
+import type { ChargePeriods, SlotParam } from "../types/Growatt";
+import type { ChargePlan, Dispatch, Piece, Slots } from "../types/Octopus";
 
 // Decides what charge periods to write to the inverter from Octopus dispatches.
 // Shared by the "Apply Slots to Growatt" button and the GitHub Action script, so it
@@ -12,29 +13,12 @@ import type { ChargePeriods, SlotParam } from "../growatt/growattApi";
 // - The inverter has 6 slots, so at most 5 Octopus periods are kept, soonest first.
 // - All times are UK local time, whatever time zone the machine is in.
 
-export type Dispatch = { startDt: string; endDt: string };
-
-type Slots = [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam];
-
-export type ChargePlan = {
-  powerRate: string;
-  stopSOC: string;
-  // The fixed window first, then Octopus periods, padded with null.
-  slots: Slots;
-  // Octopus periods left out because the inverter only has 6 slots.
-  skipped: number;
-};
-
 const POWER_RATE = "35";
 const STOP_SOC = "95";
 const MAX_SLOTS = 6;
 const DAY = 24 * 60;
 const WINDOW_START = 1 * 60; // 01:00
 const WINDOW_END = 5 * 60; // 05:00
-
-// A period in minutes past midnight, within a single day (0 to DAY).
-// `firstStart` is the earliest real start time it came from, for "soonest first".
-type Piece = { start: number; end: number; firstStart: number };
 
 const ukTime = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/London",
@@ -43,7 +27,7 @@ const ukTime = new Intl.DateTimeFormat("en-GB", {
   hourCycle: "h23",
 });
 
-export const toUkMinutes = (date: Date) => {
+const toUkMinutes = (date: Date) => {
   const parts = ukTime.formatToParts(date);
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value);
@@ -83,7 +67,7 @@ const outsideWindow = (piece: Piece): Piece[] =>
 const merge = (pieces: Piece[]): Piece[] => {
   const merged: Piece[] = [];
   for (const piece of [...pieces].sort((a, b) => a.start - b.start)) {
-    const last = merged[merged.length - 1];
+    const last = merged.length > 0 ? merged[merged.length - 1] : null;
     if (last && piece.start <= last.end) {
       last.end = Math.max(last.end, piece.end);
       last.firstStart = Math.min(last.firstStart, piece.firstStart);
@@ -102,7 +86,7 @@ const merge = (pieces: Piece[]): Piece[] => {
   return merged;
 };
 
-export const buildChargePlan = (
+const buildChargePlan = (
   dispatches: Dispatch[],
   now = new Date(),
 ): ChargePlan => {
@@ -132,14 +116,14 @@ const formatSlot = (s: NonNullable<SlotParam>) =>
   `${s.startHour}:${s.startMin}-${s.endHour}:${s.endMin}`;
 
 // e.g. "01:00-05:00, 18:00-19:00"
-export const describePlan = (plan: ChargePlan) =>
+const describePlan = (plan: ChargePlan) =>
   plan.slots
     .filter((s): s is NonNullable<SlotParam> => s !== null)
     .map(formatSlot)
     .join(", ");
 
 // True when the inverter already has exactly this plan, so there's nothing to write.
-export const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
+const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
   if (
     String(current.powerRate) !== plan.powerRate ||
     String(current.stopSOC) !== plan.stopSOC
@@ -157,3 +141,5 @@ export const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
     .map((p) => `${p.start}-${p.end}`);
   return describePlan(plan) === have.join(", ");
 };
+
+export { toUkMinutes, buildChargePlan, describePlan, planMatches };
