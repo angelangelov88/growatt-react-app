@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import useGrowatt from "./useGrowatt";
 import { useSlotForm, type SlotState } from "./useSlotForm";
 import useInverterRead from "./useInverterRead";
@@ -47,38 +47,42 @@ const Growatt = () => {
 
   const { showToast } = useToast();
   const gridFirstRef = useRef<HTMLDivElement>(null);
-  // A session window waiting to be added once Grid First has loaded.
-  const [pendingSessionSlot, setPendingSessionSlot] =
-    useState<SlotState | null>(null);
+  // A session slot to add once Grid First finishes loading. A ref, not state:
+  // it doesn't affect rendering, it's just a pending action.
+  const pendingSessionSlot = useRef<SlotState | null>(null);
 
   // Fills the Grid First form only; the user reviews it and presses Apply.
-  const addSessionSlot = (slot: SlotState) => {
-    const clash = dischargeForm.slots.find((s) => slotsOverlap(s, slot));
-    if (clash) {
-      showToast(
-        `Grid First already has ${formatSlot(clash)}, which overlaps this session`,
-        "error",
+  // Memoised because the pending-slot effect below depends on it.
+  const addSessionSlot = useCallback(
+    (slot: SlotState) => {
+      const clash = dischargeForm.slots.find((s) => slotsOverlap(s, slot));
+      if (clash) {
+        showToast(
+          `Grid First already has ${formatSlot(clash)}, which overlaps this session`,
+          "error",
+        );
+        return;
+      }
+      if (!dischargeForm.canAddSlot) {
+        showToast("Grid First already has 6 slots — remove one first", "error");
+        return;
+      }
+      dischargeForm.appendSlot(
+        PRESETS.high.powerRate,
+        PRESETS.high.stopSOC,
+        slot,
       );
-      return;
-    }
-    if (!dischargeForm.canAddSlot) {
-      showToast("Grid First already has 6 slots — remove one first", "error");
-      return;
-    }
-    dischargeForm.appendSlot(
-      PRESETS.high.powerRate,
-      PRESETS.high.stopSOC,
-      slot,
-    );
-    showToast(
-      `Added ${formatSlot(slot)} to Grid First with High Export — review it and press Apply`,
-      "info",
-    );
-    gridFirstRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
+      showToast(
+        `Added ${formatSlot(slot)} to Grid First with High Export — review it and press Apply`,
+        "info",
+      );
+      gridFirstRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    },
+    [dischargeForm, showToast],
+  );
 
   const exportDuringSession = (session: PowerDownSession) => {
     const slot = sessionToSlot(session);
@@ -86,21 +90,19 @@ const Growatt = () => {
       addSessionSlot(slot);
       return;
     }
-    setPendingSessionSlot(slot);
+    pendingSessionSlot.current = slot;
     dischargeReader.read();
   };
 
   // Once Grid First has loaded, add the waiting slot; drop it if the load failed
-  // (the card already shows the read error).
+  // (the card already shows the read error). This runs after the render that
+  // loaded the form, so the overlap check sees the loaded slots.
   useEffect(() => {
-    if (!pendingSessionSlot) return;
-    if (dischargeForm.isLoaded) {
-      addSessionSlot(pendingSessionSlot);
-      setPendingSessionSlot(null);
-    } else if (!dischargeReader.isReading) {
-      setPendingSessionSlot(null);
-    }
-  }, [dischargeForm.isLoaded, dischargeReader.isReading]);
+    const slot = pendingSessionSlot.current;
+    if (!slot || dischargeReader.isReading) return;
+    pendingSessionSlot.current = null;
+    if (dischargeForm.isLoaded) addSessionSlot(slot);
+  }, [dischargeForm.isLoaded, dischargeReader.isReading, addSessionSlot]);
 
   const isBusy =
     chargeReader.isReading ||
@@ -141,9 +143,7 @@ const Growatt = () => {
       <PowerDownSessions
         onExportDuringSession={exportDuringSession}
         exportDisabled={
-          dischargeReader.isReading ||
-          setDischargeMutation.isPending ||
-          !!pendingSessionSlot
+          dischargeReader.isReading || setDischargeMutation.isPending
         }
       />
       <div ref={gridFirstRef} className="scroll-mt-4">
