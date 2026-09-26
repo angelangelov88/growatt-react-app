@@ -19,7 +19,7 @@ const octopusRequest = async <T>(query: string, token?: string): Promise<T> => {
   return json.data;
 };
 
-const fetchToken = async (): Promise<string> => {
+export const fetchToken = async (): Promise<string> => {
   const data = await octopusRequest<{ obtainKrakenToken: { token: string } }>(
     `mutation { obtainKrakenToken(input: { APIKey: "${apiKey}" }) { token } }`,
   );
