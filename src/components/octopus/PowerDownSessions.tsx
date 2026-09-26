@@ -58,7 +58,7 @@ const PowerDownSessions = ({
         `Couldn't load Power Down sessions: ${query.error.message}`,
         "error",
       );
-  }, [query.errorUpdatedAt]);
+  }, [query.isError, query.error, query.errorUpdatedAt, showToast]);
 
   // refetch never rejects; errors come through query.error.
   const load = () => {
