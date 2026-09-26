@@ -30,7 +30,7 @@ React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls
 ### Hooks
 
 - Custom hooks are prefixed with `use` and are camelCase.
-- All variables and state returned from hooks are wrapped in `useMemo`.
+- Use `useMemo` / `useCallback` only when there's a real need (an expensive calculation, or a value passed to a memoised child or used as an effect dependency). Don't memoise by default.
 
 ### Imports
 
@@ -101,6 +101,17 @@ export default ActionButton;
 - Semantic HTML, proper ARIA labels, correct heading hierarchy, proper focus management.
 - All interactive elements focusable, sensible tab order, focus trapped in modals, keyboard shortcuts where useful.
 - WCAG 2.1 colour contrast, text alternatives, support for zoom and text resizing, visible focus indicators.
+
+## Formatting and Linting
+
+- Prettier formats the code using its defaults (`.prettierrc` is empty): double quotes, semicolons, trailing commas, 80-character lines, 2-space indent.
+- ESLint (`eslint.config.mjs`) uses the recommended JS rules, typescript-eslint `strictTypeChecked` + `stylisticTypeChecked`, `react-hooks` (including the React Compiler rules) and `react-refresh`. `eslint-config-prettier` turns off style rules so the two don't conflict.
+- Write code that passes ESLint. Don't add `eslint-disable` comments without explaining why on the same line.
+- After editing, format and lint only the files you changed, so unrelated files don't pick up diffs:
+  `npx prettier --write <files> && npx eslint <files>`
+- Before finishing, type-check: `npx tsc --noEmit -p . && npx tsc --noEmit -p scripts && npx tsc --noEmit -p api`.
+- Scripts: `pnpm lint`, `pnpm lint:fix`, `pnpm format`, `pnpm format:check`.
+- Use pnpm, not npm. Don't commit build output (`dist/`).
 
 ## Working with Claude Code
 
