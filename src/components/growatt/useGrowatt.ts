@@ -9,10 +9,12 @@ import {
   setChargePeriods,
   fetchDischargePeriods,
   setDischargePeriods,
-  type ChargePeriod,
-  type ChargePeriods,
-  type SlotParam,
 } from "./growattApi";
+import type {
+  ChargePeriod,
+  ChargePeriods,
+  SlotParam,
+} from "../../types/Growatt";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 

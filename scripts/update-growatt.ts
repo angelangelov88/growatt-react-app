@@ -3,8 +3,8 @@ import {
   buildChargePlan,
   describePlan,
   planMatches,
-  type Dispatch,
 } from "../src/components/octopus/chargePlan";
+import type { Dispatch } from "../src/types/Octopus";
 import type { GraphQLResponse } from "../src/types/GraphQL";
 
 const GROWATT_BASE = "https://server.growatt.com";

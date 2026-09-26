@@ -1,43 +1,16 @@
 import SparkMD5 from "spark-md5";
-
-type SlotParam = {
-  startHour: string;
-  startMin: string;
-  endHour: string;
-  endMin: string;
-} | null;
-
-type ChargePeriod = { start: string; end: string; enabled: boolean };
-type ChargePeriods = {
-  powerRate: number;
-  stopSOC: number;
-  raw: string;
-  period1: ChargePeriod;
-  period2: ChargePeriod;
-  period3: ChargePeriod;
-  period4: ChargePeriod;
-  period5: ChargePeriod;
-  period6: ChargePeriod;
-};
-type DischargePeriods = ChargePeriods;
-
-// The fields of a Growatt JSON reply that this client reads.
-type GrowattResponse = {
-  success?: boolean;
-  msg?: string;
-  result?: number;
-};
+import type {
+  ChargePeriod,
+  ChargePeriods,
+  DischargePeriods,
+  GrowattConfig,
+  GrowattResponse,
+  SlotParam,
+} from "../../types/Growatt";
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
 // Used by the Node script (passes process.env values + direct Growatt URL).
 // Used by the browser (passes Vite env values + proxy URL builder).
-
-type GrowattConfig = {
-  user: string;
-  password: string;
-  buildUrl: (path: string) => string;
-  cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
-};
 
 const createGrowattClient = ({
   user,
@@ -424,13 +397,6 @@ const setDischargePeriods = (
     p6,
   );
 
-export type {
-  SlotParam,
-  ChargePeriod,
-  ChargePeriods,
-  DischargePeriods,
-  GrowattConfig,
-};
 export {
   createGrowattClient,
   fetchChargePeriods,

@@ -1,13 +1,7 @@
-import type { SlotState } from "./useSlotForm";
+import type { TimePickerProps } from "../../types/GrowattForm";
 import { HOURS, minuteOptions, selectClass } from "./slotOptions";
 
-const TimePicker = ({
-  slot,
-  onChange,
-}: {
-  slot: SlotState;
-  onChange: (field: keyof SlotState, value: string) => void;
-}) => (
+const TimePicker = ({ slot, onChange }: TimePickerProps) => (
   <div className="flex items-center gap-1">
     <select
       value={slot.startHour}

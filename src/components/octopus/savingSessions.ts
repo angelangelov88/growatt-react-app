@@ -1,4 +1,10 @@
-import type { SlotState } from "../growatt/useSlotForm";
+import type { SlotState } from "../../types/Growatt";
+import type {
+  PowerDownSession,
+  RawSavingSessions,
+  SavingSessionsData,
+  SessionStatus,
+} from "../../types/Octopus";
 import { toUkMinutes } from "./chargePlan";
 import type { GraphQLResponse } from "../../types/GraphQL";
 
@@ -23,54 +29,6 @@ const QUERY = `query SavingSessions($account: String!) {
 }`;
 
 const POWER_DOWN = "TURN_DOWN";
-
-type PowerDownSession = {
-  id: string;
-  code: string | null;
-  startAt: Date;
-  endAt: Date;
-  rewardPerKwh: number | null;
-  // Empty means every region.
-  regions: number[];
-  joined: boolean;
-  pointsAwarded: number | null;
-};
-
-type SavingSessionsData = {
-  region: number | null;
-  // Every Power Down event Octopus currently lists, with your joined status.
-  events: PowerDownSession[];
-  // Every Power Down event you joined, including older ones no longer listed.
-  joined: PowerDownSession[];
-};
-
-type RawEvent = {
-  id: string | number;
-  code: string;
-  rewardPerKwhInOctoPoints: number | null;
-  startAt: string;
-  endAt: string;
-  eventType: string;
-  targetRegion: { regionId: number }[] | null;
-};
-
-type RawJoined = {
-  eventId: string | number;
-  startAt: string;
-  endAt: string;
-  rewardGivenInOctoPoints: number | null;
-  eventType: string;
-};
-
-type RawSavingSessions = {
-  savingSessions: {
-    events: RawEvent[] | null;
-    account: {
-      signedUpMeterPoint: { regionId: number } | null;
-      joinedEvents: RawJoined[] | null;
-    } | null;
-  } | null;
-};
 
 const fetchSavingSessions = async (
   token: string,
@@ -181,8 +139,6 @@ const joinedInLastDays = (
     .sort(byStartDesc);
 };
 
-type SessionStatus = "upcoming" | "in progress" | "ended";
-
 const sessionStatus = (s: PowerDownSession, now = new Date()): SessionStatus =>
   now < s.startAt ? "upcoming" : now < s.endAt ? "in progress" : "ended";
 
@@ -200,7 +156,6 @@ const sessionToSlot = (s: PowerDownSession): SlotState => {
   };
 };
 
-export type { PowerDownSession, SavingSessionsData, SessionStatus };
 export {
   fetchSavingSessions,
   joinSession,

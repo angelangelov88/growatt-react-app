@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { isSavedData } from "./useGrowatt";
-import type { ChargePeriods } from "./growattApi";
-import { sameSettings, type SlotForm } from "./useSlotForm";
+import type { ChargePeriods } from "../../types/Growatt";
+import type { SlotForm } from "../../types/GrowattForm";
+import { sameSettings } from "./useSlotForm";
 import useToast from "../../contexts/useToast";
 
 // A Read the user presses locks the card and always loads the result. Any other data
@@ -98,7 +99,4 @@ const useInverterRead = (
   };
 };
 
-type InverterRead = ReturnType<typeof useInverterRead>;
-
-export type { InverterRead };
 export default useInverterRead;

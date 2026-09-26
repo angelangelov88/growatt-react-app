@@ -7,10 +7,12 @@ import {
   joinedInLastDays,
   sessionStatus,
   sessionsToday,
-  type PowerDownSession,
 } from "./savingSessions";
-
-type HistoryDays = 7 | 30 | 365;
+import type {
+  HistoryDays,
+  PowerDownSession,
+  PowerDownSessionsProps,
+} from "../../types/Octopus";
 
 const HISTORY_DAYS: HistoryDays[] = [7, 30, 365];
 
@@ -35,16 +37,10 @@ const points = (s: PowerDownSession) =>
 const smallButton =
   "px-2.5 py-1 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
-type Props = {
-  // Adds the session window to Grid First with High Export settings.
-  onExportDuringSession: (session: PowerDownSession) => void;
-  exportDisabled: boolean;
-};
-
 const PowerDownSessions = ({
   onExportDuringSession,
   exportDisabled,
-}: Props) => {
+}: PowerDownSessionsProps) => {
   const { showToast } = useToast();
   const query = useSavingSessions();
   const join = useJoinSession();

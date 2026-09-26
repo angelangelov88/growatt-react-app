@@ -6,14 +6,8 @@ import {
   chargePeriodsQueryOptions,
   toPeriods,
 } from "../growatt/useGrowatt";
-import {
-  buildChargePlan,
-  describePlan,
-  type ChargePlan,
-  type Dispatch,
-} from "./chargePlan";
-
-type SlotsData = { plannedDispatches: Dispatch[] } | undefined;
+import { buildChargePlan, describePlan } from "./chargePlan";
+import type { ChargePlan, SlotsData } from "../../types/Octopus";
 
 const serial = import.meta.env.VITE_GROWATT_SERIAL;
 

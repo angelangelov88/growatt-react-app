@@ -1,4 +1,4 @@
-import type { SlotState } from "./useSlotForm";
+import type { Preset, SlotState } from "../../types/Growatt";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 // 5-minute steps; minuteOptions adds any other value read from the inverter.
@@ -18,7 +18,6 @@ const minuteOptions = (current: string) => {
   return opts;
 };
 
-type Preset = "high" | "low";
 const PRESETS: Record<
   Preset,
   {

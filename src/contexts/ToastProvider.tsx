@@ -1,15 +1,10 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import ToastContext, { type ToastType } from "./ToastContext";
-
-type Toast = {
-  id: number;
-  message: string;
-  type: ToastType;
-};
+import { useCallback, useMemo, useState } from "react";
+import ToastContext from "./ToastContext";
+import type { Toast, ToastProviderProps, ToastType } from "../types/Toast";
 
 let nextId = 0;
 
-const ToastProvider = ({ children }: { children: ReactNode }) => {
+const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((message: string, type: ToastType = "info") => {

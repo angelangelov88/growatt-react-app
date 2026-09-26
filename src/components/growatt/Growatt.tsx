@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useRef } from "react";
 import useGrowatt from "./useGrowatt";
-import { useSlotForm, type SlotState } from "./useSlotForm";
+import { useSlotForm } from "./useSlotForm";
+import type { SlotState } from "../../types/Growatt";
+import type { PowerDownSession } from "../../types/Octopus";
 import useInverterRead from "./useInverterRead";
 import BatteryFirstCard from "./BatteryFirstCard";
 import GridFirstCard from "./GridFirstCard";
 import { PRESETS } from "./slotOptions";
 import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
-import {
-  sessionToSlot,
-  type PowerDownSession,
-} from "../octopus/savingSessions";
+import { sessionToSlot } from "../octopus/savingSessions";
 
 // A slot as [start, end) minutes, with end past midnight (above 1440) if it wraps.
 const slotRange = (s: SlotState): [number, number] => {

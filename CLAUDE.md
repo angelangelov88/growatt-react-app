@@ -27,6 +27,12 @@ React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls
   export default MyComponent;
   ```
 
+### Types
+
+- **All `type` and `interface` declarations live in `src/types/`**, grouped by feature (`Growatt.ts`, `GrowattForm.ts`, `Octopus.ts`, `Toast.ts`, `GraphQL.ts`, `Common.ts`). This includes component props (named `<Component>Props`) and types used by only one file. Import them with `import type`.
+- Types imported by the GitHub Action (`Growatt.ts`, `Octopus.ts`, `GraphQL.ts`) must stay free of React.
+- Exception: `src/vite-env.d.ts` stays where it is, because Vite needs it there.
+
 ### Hooks
 
 - Custom hooks are prefixed with `use` and are camelCase.
@@ -41,14 +47,9 @@ React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls
 
 ```tsx
 import classNames from "classnames";
+import type { ActionButtonProps } from "../types/Common";
 
-type Props = {
-  label: string;
-  isEnabled: boolean;
-  onAction: () => void;
-};
-
-const ActionButton = ({ label, isEnabled, onAction }: Props) => (
+const ActionButton = ({ label, isEnabled, onAction }: ActionButtonProps) => (
   <button
     onClick={onAction}
     className={classNames("px-3 py-1.5 rounded-xl", {
@@ -77,7 +78,7 @@ export default ActionButton;
 - `src/components/` — shared components (`Spinner.tsx`, `TriggerUpdate.tsx`).
 - `src/components/<feature>/` — a feature's components, hooks and API modules (`growatt/`, `octopus/`).
 - `src/contexts/` — React Context providers.
-- `src/types/` — shared TypeScript types.
+- `src/types/` — all TypeScript types and interfaces, one file per feature.
 - `scripts/` — Node scripts run by GitHub Actions.
 
 ## Styling

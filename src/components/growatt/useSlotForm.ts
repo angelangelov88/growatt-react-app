@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
-import type { ChargePeriods, SlotParam } from "./growattApi";
-
-type SlotState = {
-  startHour: string;
-  startMin: string;
-  endHour: string;
-  endMin: string;
-};
+import type {
+  ChargePeriods,
+  SlotParam,
+  SlotState,
+  Snapshot,
+} from "../../types/Growatt";
 
 const DEFAULT_SLOT: SlotState = {
   startHour: "00",
@@ -30,8 +28,6 @@ const slotToParam = (s: SlotState): SlotParam => ({
   endHour: s.endHour,
   endMin: s.endMin,
 });
-
-type Snapshot = { powerRate: string; stopSOC: string; slots: SlotState[] };
 
 const toSnapshot = (data: ChargePeriods): Snapshot => ({
   powerRate: String(data.powerRate),
@@ -171,7 +167,4 @@ const useSlotForm = (defaultPowerRate: string, defaultStopSOC: string) => {
   }, [powerRate, stopSOC, slots, isDirty, isLoaded]);
 };
 
-type SlotForm = ReturnType<typeof useSlotForm>;
-
-export type { SlotForm, SlotState };
 export { sameSettings, useSlotForm };

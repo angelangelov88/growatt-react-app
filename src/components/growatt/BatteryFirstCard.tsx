@@ -1,19 +1,9 @@
-import type useGrowatt from "./useGrowatt";
-import type { SlotForm } from "./useSlotForm";
-import type { InverterRead } from "./useInverterRead";
+import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../Spinner";
 import NotReadYet from "./NotReadYet";
 import SlotList from "./SlotList";
 import { RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
-
-type BatteryFirstProps = {
-  form: SlotForm;
-  reader: InverterRead;
-  setChargePeriodsMutation: ReturnType<
-    typeof useGrowatt
-  >["setChargePeriodsMutation"];
-};
 
 const BatteryFirstCard = ({
   form,

@@ -1,4 +1,5 @@
-import type { ChargePeriods, SlotParam } from "../growatt/growattApi";
+import type { ChargePeriods, SlotParam } from "../../types/Growatt";
+import type { ChargePlan, Dispatch, Piece, Slots } from "../../types/Octopus";
 
 // Decides what charge periods to write to the inverter from Octopus dispatches.
 // Shared by the "Apply Slots to Growatt" button and the GitHub Action script, so it
@@ -12,29 +13,12 @@ import type { ChargePeriods, SlotParam } from "../growatt/growattApi";
 // - The inverter has 6 slots, so at most 5 Octopus periods are kept, soonest first.
 // - All times are UK local time, whatever time zone the machine is in.
 
-type Dispatch = { startDt: string; endDt: string };
-
-type Slots = [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam];
-
-type ChargePlan = {
-  powerRate: string;
-  stopSOC: string;
-  // The fixed window first, then Octopus periods, padded with null.
-  slots: Slots;
-  // Octopus periods left out because the inverter only has 6 slots.
-  skipped: number;
-};
-
 const POWER_RATE = "35";
 const STOP_SOC = "95";
 const MAX_SLOTS = 6;
 const DAY = 24 * 60;
 const WINDOW_START = 1 * 60; // 01:00
 const WINDOW_END = 5 * 60; // 05:00
-
-// A period in minutes past midnight, within a single day (0 to DAY).
-// `firstStart` is the earliest real start time it came from, for "soonest first".
-type Piece = { start: number; end: number; firstStart: number };
 
 const ukTime = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/London",
@@ -158,5 +142,4 @@ const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
   return describePlan(plan) === have.join(", ");
 };
 
-export type { Dispatch, ChargePlan };
 export { toUkMinutes, buildChargePlan, describePlan, planMatches };

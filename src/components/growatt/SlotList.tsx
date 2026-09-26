@@ -1,7 +1,7 @@
 import TimePicker from "./TimePicker";
-import type { SlotForm } from "./useSlotForm";
+import type { SlotListProps } from "../../types/GrowattForm";
 
-const SlotList = ({ form }: { form: SlotForm }) => (
+const SlotList = ({ form }: SlotListProps) => (
   <>
     <div className="flex flex-col gap-3 mb-4">
       {form.slots.length === 0 && (

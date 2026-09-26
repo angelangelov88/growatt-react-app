@@ -1,23 +1,10 @@
-import type useGrowatt from "./useGrowatt";
-import type { SlotForm } from "./useSlotForm";
-import type { InverterRead } from "./useInverterRead";
+import type { Preset } from "../../types/Growatt";
+import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../Spinner";
 import NotReadYet from "./NotReadYet";
 import SlotList from "./SlotList";
-import {
-  PRESETS,
-  RATE_OPTIONS,
-  SOC_OPTIONS,
-  selectClass,
-  type Preset,
-} from "./slotOptions";
-
-type GridFirstProps = {
-  form: SlotForm;
-  reader: InverterRead;
-  setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
-};
+import { PRESETS, RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
 
 const GridFirstCard = ({
   form,
