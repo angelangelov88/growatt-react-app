@@ -7,30 +7,22 @@ const Octopus = () => {
   const {
     slotsLoading,
     slotsError,
+    slotsErrorUpdatedAt,
     slotsData,
     formatDate,
     handleAuthAndFetchSlots,
   } = useOctopus();
-  const {
-    applySlots,
-    planSummary,
-    extraSlotsMessage,
-    isPending,
-    error: applyError,
-  } = useApplySlots({ slotsData });
+  const { applySlots, planSummary, extraSlotsMessage, isPending } =
+    useApplySlots({ slotsData });
   const { showToast } = useToast();
 
   useEffect(() => {
     if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
-  }, [slotsError]);
-
-  useEffect(() => {
-    if (applyError) showToast(`Apply failed: ${applyError.message}`, "error");
-  }, [applyError]);
+  }, [slotsError, slotsErrorUpdatedAt, showToast]);
 
   useEffect(() => {
     if (extraSlotsMessage) showToast(extraSlotsMessage, "info");
-  }, [extraSlotsMessage]);
+  }, [extraSlotsMessage, showToast]);
 
   const slots = slotsData?.plannedDispatches ?? [];
 

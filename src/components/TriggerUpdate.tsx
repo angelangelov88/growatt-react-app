@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import useToast from "../contexts/useToast";
 
@@ -32,20 +31,18 @@ const triggerUpdate = async () => {
 
 const TriggerUpdate = () => {
   const { showToast } = useToast();
-  const mutation = useMutation({ mutationFn: triggerUpdate });
-
-  useEffect(() => {
-    if (mutation.isError)
-      showToast(`Trigger failed: ${mutation.error.message}`, "error");
-  }, [mutation.isError]);
-
-  useEffect(() => {
-    if (mutation.isSuccess)
+  const mutation = useMutation({
+    mutationFn: triggerUpdate,
+    onError: (error) => {
+      showToast(`Trigger failed: ${error.message}`, "error");
+    },
+    onSuccess: () => {
       showToast(
         "Automation triggered — check GitHub Actions for progress",
         "success",
       );
-  }, [mutation.isSuccess]);
+    },
+  });
 
   return (
     <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { setChargePeriods } from "../growatt/growattApi";
+import useToast from "../../contexts/useToast";
 import {
   CHARGE_KEY,
   chargePeriodsQueryOptions,
@@ -19,6 +20,7 @@ const serial = import.meta.env.VITE_GROWATT_SERIAL;
 
 const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const mutation = useMutation({
     mutationFn: (plan: ChargePlan) =>
@@ -34,6 +36,9 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
       queryClient
         .query({ ...chargePeriodsQueryOptions, staleTime: 0 })
         .catch(() => undefined);
+    },
+    onError: (error) => {
+      showToast(`Apply failed: ${error.message}`, "error");
     },
   });
 
@@ -55,15 +60,8 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
       planSummary,
       extraSlotsMessage,
       isPending: mutation.isPending,
-      error: mutation.error,
     }),
-    [
-      mutation.isPending,
-      mutation.error,
-      planSummary,
-      extraSlotsMessage,
-      slotsData,
-    ],
+    [mutation.isPending, planSummary, extraSlotsMessage, slotsData],
   );
 };
 

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { GraphQLResponse } from "../../types/GraphQL";
+import useToast from "../../contexts/useToast";
 
 const ENDPOINT = import.meta.env.VITE_OCTOPUS_API_ENDPOINT;
 const apiKey = import.meta.env.VITE_OCTOPUS_API_KEY;
@@ -33,7 +34,13 @@ const fetchToken = async (): Promise<string> => {
 };
 
 const useOctopus = () => {
-  const tokenMutation = useMutation({ mutationFn: fetchToken });
+  const { showToast } = useToast();
+  const tokenMutation = useMutation({
+    mutationFn: fetchToken,
+    onError: (error) => {
+      showToast(`Octopus error: ${error.message}`, "error");
+    },
+  });
 
   const slotsQuery = useQuery({
     queryKey: ["octopus", "slots", tokenMutation.data],
@@ -48,7 +55,8 @@ const useOctopus = () => {
     retry: false,
   });
 
-  // Errors show through slotsError, so mutate (which never rejects) is enough.
+  // Token errors are toasted in onError and slot errors via slotsError, so mutate
+  // (which never rejects) is enough.
   const handleAuthAndFetchSlots = () => {
     tokenMutation.mutate(undefined);
   };
@@ -61,16 +69,19 @@ const useOctopus = () => {
   return useMemo(
     () => ({
       slotsLoading: tokenMutation.isPending || slotsQuery.isFetching,
-      slotsError: tokenMutation.error ?? slotsQuery.error,
+      // Queries have no onError, so the caller toasts these. errorUpdatedAt changes on
+      // every failure, even when the error is the same.
+      slotsError: slotsQuery.error,
+      slotsErrorUpdatedAt: slotsQuery.errorUpdatedAt,
       slotsData: slotsQuery.data,
       handleAuthAndFetchSlots,
       formatDate,
     }),
     [
       tokenMutation.isPending,
-      tokenMutation.error,
       slotsQuery.isFetching,
       slotsQuery.error,
+      slotsQuery.errorUpdatedAt,
       slotsQuery.data,
     ],
   );
