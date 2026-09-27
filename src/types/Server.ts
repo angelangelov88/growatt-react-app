@@ -21,10 +21,4 @@ type SessionUser = {
   supabase: SupabaseClient;
 };
 
-// The JSON body of every error response.
-type ApiError = {
-  code: string;
-  message: string;
-};
-
-export type { Tx, Provider, EncryptedSecret, SessionUser, ApiError };
+export type { Tx, Provider, EncryptedSecret, SessionUser };
