@@ -1,5 +1,11 @@
 import type { z } from "zod";
-import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
+import type {
+  loginSchema,
+  mfaSchema,
+  newPasswordSchema,
+  resetRequestSchema,
+  signupSchema,
+} from "../lib/authSchemas";
 import type { credentialsSchema } from "../lib/credentialSchemas";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
@@ -17,6 +23,9 @@ type ApiError = {
 type LoginBody = z.infer<typeof loginSchema>;
 type SignupBody = z.infer<typeof signupSchema>;
 type MfaBody = z.infer<typeof mfaSchema>;
+// POST and PUT /api/auth/password.
+type ResetRequestBody = z.infer<typeof resetRequestSchema>;
+type NewPasswordBody = z.infer<typeof newPasswordSchema>;
 // PUT /api/credentials. Sent once to be checked and saved; never sent back.
 type CredentialsBody = z.infer<typeof credentialsSchema>;
 
@@ -73,6 +82,8 @@ export type {
   LoginBody,
   SignupBody,
   MfaBody,
+  ResetRequestBody,
+  NewPasswordBody,
   CredentialsBody,
   Me,
   MfaEnrollment,

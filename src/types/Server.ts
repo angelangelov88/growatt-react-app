@@ -33,6 +33,7 @@ type Handler = (
 type AuditAction =
   | "mfa_enrolled"
   | "mfa_removed"
+  | "password_changed"
   | "credentials_saved"
   | "credentials_deleted"
   | "credentials_check_failed"

@@ -20,6 +20,12 @@ const signupSchema = z.object({ email, password: newPassword });
 // Login doesn't re-check the rules: they may have changed since sign-up.
 const loginSchema = z.object({ email, password: z.string().min(1).max(72) });
 
+// Forgot password: where to send the reset link.
+const resetRequestSchema = z.object({ email });
+
+// A new password, after the reset link or from Settings.
+const newPasswordSchema = z.object({ password: newPassword });
+
 // The 6-digit code from an authenticator app.
 const totpCode = z.string().regex(/^\d{6}$/, "Enter the 6-digit code");
 
@@ -28,4 +34,10 @@ const mfaSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("verify"), code: totpCode }),
 ]);
 
-export { signupSchema, loginSchema, mfaSchema };
+export {
+  signupSchema,
+  loginSchema,
+  resetRequestSchema,
+  newPasswordSchema,
+  mfaSchema,
+};

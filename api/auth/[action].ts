@@ -5,6 +5,7 @@ import login from "../_handlers/auth/login";
 import logout from "../_handlers/auth/logout";
 import me from "../_handlers/auth/me";
 import mfa from "../_handlers/auth/mfa";
+import password from "../_handlers/auth/password";
 import signup from "../_handlers/auth/signup";
 import { createRouter } from "../_lib/router";
 
@@ -17,5 +18,6 @@ export default createRouter({
   logout,
   me,
   mfa,
+  password,
   signup,
 });
