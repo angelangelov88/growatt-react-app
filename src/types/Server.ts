@@ -35,7 +35,8 @@ type AuditAction =
   | "mfa_removed"
   | "credentials_saved"
   | "credentials_deleted"
-  | "credentials_check_failed";
+  | "credentials_check_failed"
+  | "settings_saved";
 
 export type {
   Tx,

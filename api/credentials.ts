@@ -113,7 +113,7 @@ const save = async (tx: Tx, userId: string, body: CredentialsBody) => {
 // GET → Credentials.
 // PUT CredentialsBody → Credentials. Needs a recent step-up; checks the
 //   credentials with Growatt or Octopus before saving them encrypted.
-// DELETE ?provider=growatt|octopus → Credentials.
+// DELETE ?provider=growatt|octopus → Credentials. Also turns automation off.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (
     !allowMethods(req, res, ["GET", "PUT", "DELETE"]) ||
@@ -138,10 +138,14 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     const status = await withUser(userId, async (tx) => {
       const deleted = await tx`
         delete from private.user_credentials where provider = ${provider.data}`;
-      if (deleted.count > 0)
+      if (deleted.count > 0) {
+        // Automation needs both, so it stops rather than failing every run.
+        await tx`
+          update private.user_settings set automation_enabled = false`;
         await audit(tx, req, userId, "credentials_deleted", {
           provider: provider.data,
         });
+      }
       return readStatus(tx);
     });
     res.json(status);

@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
 import type { credentialsSchema } from "../lib/credentialSchemas";
+import type { settingsSchema } from "../lib/settingsSchema";
 
 // Shared by the api/ functions and the app.
 
@@ -34,6 +35,9 @@ type MfaEnrollment = {
   secret: string;
 };
 
+// GET and PUT /api/settings.
+type Settings = z.infer<typeof settingsSchema>;
+
 // GET /api/credentials, and the reply to PUT and DELETE. Never the secrets.
 type Credentials = {
   growatt: { serial: string; verifiedAt: string } | null;
@@ -49,4 +53,5 @@ export type {
   Me,
   MfaEnrollment,
   Credentials,
+  Settings,
 };
