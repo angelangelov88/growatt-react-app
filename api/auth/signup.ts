@@ -18,6 +18,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     );
     return;
   }
+  // The confirmation email links to /api/auth/confirm (set in Supabase's templates).
   const { error } = await createSupabase(req, res).auth.signUp(body.data);
   if (error?.code === "weak_password") {
     sendError(res, 400, "weak_password", error.message);
