@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { signupSchema } from "../../src/lib/authSchemas";
-import { checkOrigin } from "../_lib/csrf";
-import { allowMethods, sendError } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { signupSchema } from "../../../src/lib/authSchemas";
+import { checkOrigin } from "../../_lib/csrf";
+import { allowMethods, sendError } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 // POST { email, password } → 202. Always the same answer, whether or not the
 // email is already registered, so it can't be used to find accounts.

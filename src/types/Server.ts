@@ -1,5 +1,6 @@
 import type postgres from "postgres";
 import type { JwtPayload, SupabaseClient } from "@supabase/supabase-js";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 // Types for the Vercel functions in api/. Server-only: never imported by the app.
 
@@ -21,4 +22,21 @@ type SessionUser = {
   supabase: SupabaseClient;
 };
 
-export type { Tx, Provider, EncryptedSecret, SessionUser };
+// One endpoint. Several share a Vercel function through a router, because the
+// Hobby plan allows at most 12 functions per deployment.
+type Handler = (
+  req: VercelRequest,
+  res: VercelResponse,
+) => Promise<void> | void;
+
+// What private.audit_log records.
+type AuditAction = "mfa_enrolled" | "mfa_removed";
+
+export type {
+  Tx,
+  Provider,
+  EncryptedSecret,
+  SessionUser,
+  Handler,
+  AuditAction,
+};

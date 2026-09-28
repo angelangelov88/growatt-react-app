@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { checkOrigin } from "../_lib/csrf";
-import { allowMethods } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { checkOrigin } from "../../_lib/csrf";
+import { allowMethods } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 // POST → 204. Revokes this session's refresh token and clears the cookies.
 const handler = async (req: VercelRequest, res: VercelResponse) => {

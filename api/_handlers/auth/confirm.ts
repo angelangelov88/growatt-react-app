@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { allowMethods } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { allowMethods } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 const TYPES: EmailOtpType[] = ["signup", "email", "recovery", "email_change"];
 

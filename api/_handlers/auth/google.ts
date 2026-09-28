@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { allowMethods } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { allowMethods } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 // GET → redirect to Google. The PKCE verifier is stored in an httpOnly cookie,
 // so only this browser can finish the login in /api/auth/callback.

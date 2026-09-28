@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { allowMethods } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { allowMethods } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 // GET ?code=... after Google. Swaps the code (plus the PKCE verifier cookie)
 // for a session. Always lands on "/", never on a URL from the query.

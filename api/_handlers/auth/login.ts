@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { loginSchema } from "../../src/lib/authSchemas";
-import { checkOrigin } from "../_lib/csrf";
-import { allowMethods, sendError } from "../_lib/http";
-import { createSupabase } from "../_lib/session";
+import { loginSchema } from "../../../src/lib/authSchemas";
+import { checkOrigin } from "../../_lib/csrf";
+import { allowMethods, sendError } from "../../_lib/http";
+import { createSupabase } from "../../_lib/session";
 
 // POST { email, password } → 204 and session cookies.
 const handler = async (req: VercelRequest, res: VercelResponse) => {

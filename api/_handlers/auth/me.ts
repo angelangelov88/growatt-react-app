@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type { Me } from "../../src/types/Api";
-import { withUser } from "../_lib/db";
-import { allowMethods } from "../_lib/http";
-import { requireUser } from "../_lib/session";
+import type { Me } from "../../../src/types/Api";
+import { withUser } from "../../_lib/db";
+import { allowMethods } from "../../_lib/http";
+import { requireUser } from "../../_lib/session";
 
 // GET → who is logged in, and what they have set up. Never any secrets.
 const handler = async (req: VercelRequest, res: VercelResponse) => {

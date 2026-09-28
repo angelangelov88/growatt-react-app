@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { loginSchema, signupSchema } from "../lib/authSchemas";
+import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
 
 // Shared by the api/ functions and the app.
 
@@ -11,6 +11,7 @@ type ApiError = {
 
 type LoginBody = z.infer<typeof loginSchema>;
 type SignupBody = z.infer<typeof signupSchema>;
+type MfaBody = z.infer<typeof mfaSchema>;
 
 // GET /api/auth/me
 type Me = {
@@ -22,4 +23,12 @@ type Me = {
   hasOctopus: boolean;
 };
 
-export type { ApiError, LoginBody, SignupBody, Me };
+// POST /api/auth/mfa { action: "enroll" }. Shown once, to add the app.
+type MfaEnrollment = {
+  // A data: URL of an SVG QR code, for an <img>.
+  qrCode: string;
+  // The same secret as text, for typing in by hand.
+  secret: string;
+};
+
+export type { ApiError, LoginBody, SignupBody, MfaBody, Me, MfaEnrollment };
