@@ -1,12 +1,14 @@
 name: CI
 
-# Checks every push, and once a week for database changes made outside the
-# migrations. This repo is public, and so are these logs: the
-# steps print names and counts, never secret values.
+# Checks every PR into main (again on each push to it), and once a week for
+# database changes made outside the migrations. Merging to main deploys to
+# production, so this runs before the merge, not after. This repo is public,
+# and so are these logs: the steps print names and counts, never secret values.
 # Actions are pinned to commits, so a moved tag can't change what runs here.
 
 on:
-  push:
+  pull_request:
+    branches: [main]
   schedule:
     - cron: "0 6 * * 1" # Mondays 6am UTC
   workflow_dispatch:
@@ -47,6 +49,8 @@ jobs:
       # Dependency updates and advisories are checked by hand (CLAUDE.md).
 
   database:
+    # PRs from forks don't get the secrets.
+    if: ${{ !github.event.pull_request.head.repo.fork }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
