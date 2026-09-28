@@ -8,6 +8,8 @@ import { sendError } from "./http";
 const createRouter =
   (handlers: Record<string, Handler>) =>
   async (req: VercelRequest, res: VercelResponse) => {
+    // No reply from these endpoints should be cached; handlers can override it.
+    res.setHeader("Cache-Control", "private, no-store");
     const name = new URL(req.url ?? "/", "http://localhost").pathname
       .split("/")
       .at(-1);

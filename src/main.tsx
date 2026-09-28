@@ -1,3 +1,4 @@
+import "./lib/zodConfig";
 import ReactDOM from "react-dom/client";
 import {
   MutationCache,

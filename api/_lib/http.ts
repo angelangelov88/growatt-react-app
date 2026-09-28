@@ -2,13 +2,16 @@ import { isIP } from "node:net";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { ApiError } from "../../src/types/Api";
 
-// Every error has the same shape, and never includes internal details.
+// Every error has the same shape, and never includes internal details. Errors
+// can come before requireUser (bad origin, rate limit), so they set no-store
+// here: Vercel's default for function replies lets caches keep them.
 const sendError = (
   res: VercelResponse,
   status: number,
   code: string,
   message: string,
 ) => {
+  res.setHeader("Cache-Control", "private, no-store");
   const body: ApiError = { code, message };
   res.status(status).json(body);
 };
