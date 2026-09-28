@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `src/lib/growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. `scripts/update-growatt.ts` runs in a GitHub Action and reuses the React-free modules in `src/lib/`, so keep them free of React and browser-only globals (ESLint blocks React, TanStack Query, component and context imports there).
+React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `src/lib/growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. The Vercel functions in `api/` (including the scheduled job, `api/cron/update.ts`, which a GitHub Action calls) reuse the React-free modules in `src/lib/`, so keep them free of React and browser-only globals (ESLint blocks React, TanStack Query, component and context imports there).
 
 ## Coding Style
 
@@ -30,7 +30,7 @@ React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls
 ### Types
 
 - **All `type` and `interface` declarations live in `src/types/`**, grouped by feature (`Growatt.ts`, `GrowattForm.ts`, `Octopus.ts`, `Toast.ts`, `GraphQL.ts`, `Common.ts`). This includes component props (named `<Component>Props`) and types used by only one file. Import them with `import type`.
-- Types imported by the GitHub Action (`Growatt.ts`, `Octopus.ts`, `GraphQL.ts`) must stay free of React.
+- Types imported by the server (`Growatt.ts`, `Octopus.ts`, `GraphQL.ts`) must stay free of React.
 - Exception: `src/vite-env.d.ts` stays where it is, because Vite needs it there.
 
 ### Hooks
@@ -79,10 +79,10 @@ export default ActionButton;
 - `src/features/<feature>/` — a feature's components and hooks (`growatt/`, `octopus/`).
   - A component starts in the feature that uses it. Move it to `src/components/` only when a second feature actually uses it, not because it might be reused. When you move it, give it a neutral props type in `src/types/Common.ts`.
   - Keep feature folders flat. Add `components/` and `hooks/` subfolders only once a feature has around 15 or more files.
-- `src/lib/` — React-free modules shared with the GitHub Action: API clients and domain logic (`growattApi.ts`, `chargePlan.ts`, `savingSessions.ts`).
+- `src/lib/` — React-free modules shared with the server: API clients and domain logic (`growattApi.ts`, `chargePlan.ts`, `savingSessions.ts`).
 - `src/contexts/` — React Context providers.
 - `src/types/` — all TypeScript types and interfaces, one file per feature.
-- `scripts/` — Node scripts run by GitHub Actions.
+- `scripts/` — Node scripts for local checks.
 
 ## Styling
 

@@ -1,4 +1,4 @@
-// Growatt inverter types. Kept free of React: the GitHub Action imports them.
+// Growatt inverter types. Kept free of React: the server imports them.
 
 type SlotParam = {
   startHour: string;

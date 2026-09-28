@@ -40,7 +40,15 @@ type AuditAction =
   | "credentials_check_failed"
   | "settings_saved"
   | "growatt_write"
-  | "octopus_join";
+  | "octopus_join"
+  | "automation_run";
+
+// What the scheduled job did for one user. skipped: automation was turned off
+// after the job listed the users.
+type AutomationResult = "applied" | "unchanged" | "skipped" | "failed";
+
+// The /api/cron/update reply. Counts only: GitHub Actions logs are public.
+type CronSummary = { users: number } & Record<AutomationResult, number>;
 
 export type {
   Tx,
@@ -49,4 +57,6 @@ export type {
   SessionUser,
   Handler,
   AuditAction,
+  AutomationResult,
+  CronSummary,
 };

@@ -1,31 +1,29 @@
 name: Update Growatt Charge Times
 
+# Asks the app to apply Octopus slots for every user with automatic charging on.
+# The work runs in /api/cron/update; this only holds the schedule and the secret.
+
 on:
   schedule:
-    - cron: '0 19-23 * * *'      # every hour 7pm-11pm UTC (8pm-midnight GMT / BST)
-    - cron: '0 0-3 * * *'        # every hour midnight-3am UTC
-    - cron: '0,30 4-10 * * *'    # every 30 mins 4am-10am UTC (5am-11am GMT / BST)
-    - cron: '0 11 * * *'         # once at 11am UTC
+    - cron: "0 19-23 * * *" # every hour 7pm-11pm UTC (8pm-midnight GMT / BST)
+    - cron: "0 0-3 * * *" # every hour midnight-3am UTC
+    - cron: "0,30 4-10 * * *" # every 30 mins 4am-10am UTC (5am-11am GMT / BST)
+    - cron: "0 11 * * *" # once at 11am UTC
   workflow_dispatch:
+
+permissions: {}
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm install spark-md5 tsx
-
-      - name: Run update script
+      - name: Run automatic charging
         env:
-          GROWATT_USER: ${{ secrets.GROWATT_USER }}
-          GROWATT_PASSWORD: ${{ secrets.GROWATT_PASSWORD }}
-          GROWATT_SERIAL: ${{ secrets.GROWATT_SERIAL }}
-          OCTOPUS_API_KEY: ${{ secrets.OCTOPUS_API_KEY }}
-          OCTOPUS_ACCOUNT: ${{ secrets.OCTOPUS_ACCOUNT }}
-        run: npx tsx scripts/update-growatt.ts
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        # The header goes in on stdin, so the secret isn't on the command line.
+        # The reply is counts only (this repo's logs are public).
+        run: |
+          printf 'Authorization: Bearer %s' "$CRON_SECRET" |
+            curl --fail-with-body --silent --show-error --max-time 90 \
+              --header @- https://growatt.angelov.uk/api/cron/update

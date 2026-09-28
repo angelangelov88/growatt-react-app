@@ -132,4 +132,4 @@ const periodsHandler =
     res.status(204).end();
   };
 
-export { periodsHandler };
+export { growattMessage, periodsHandler };

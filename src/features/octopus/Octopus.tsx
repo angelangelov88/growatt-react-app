@@ -14,13 +14,27 @@ const Octopus = ({ canApply }: OctopusProps) => {
     formatDate,
     fetchSlots,
   } = useOctopus();
-  const { applySlots, planSummary, extraSlotsMessage, isPending } =
-    useApplySlots({ slotsData });
+  const {
+    applySlots,
+    canBuildPlan,
+    settingsError,
+    planSummary,
+    extraSlotsMessage,
+    isPending,
+  } = useApplySlots({ slotsData });
   const { showToast } = useToast();
 
   useEffect(() => {
     if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
   }, [slotsError, slotsErrorUpdatedAt, showToast]);
+
+  useEffect(() => {
+    if (settingsError)
+      showToast(
+        `Couldn't load your settings: ${settingsError.message}`,
+        "error",
+      );
+  }, [settingsError, showToast]);
 
   useEffect(() => {
     if (extraSlotsMessage) showToast(extraSlotsMessage, "info");
@@ -77,11 +91,13 @@ const Octopus = ({ canApply }: OctopusProps) => {
         <>
           <p className="text-xs text-gray-400 mb-3">
             Will apply (UK time):{" "}
-            <span className="font-mono text-gray-200">{planSummary}</span>
+            <span className="font-mono text-gray-200">
+              {planSummary ?? "…"}
+            </span>
           </p>
           <button
             onClick={applySlots}
-            disabled={isPending}
+            disabled={isPending || !canBuildPlan}
             className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isPending

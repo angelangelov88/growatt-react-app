@@ -30,7 +30,7 @@ const settingsSchema = z
     path: ["chargeEnd"],
   });
 
-// Until the user saves their own. Matches the values in chargePlan.ts.
+// Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   chargeStart: "01:00",
   chargeEnd: "05:00",

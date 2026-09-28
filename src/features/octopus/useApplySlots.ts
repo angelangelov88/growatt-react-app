@@ -6,6 +6,7 @@ import {
   putPeriods,
   toPeriods,
 } from "../growatt/useGrowatt";
+import useSettings from "../settings/useSettings";
 import { buildChargePlan, describePlan } from "../../lib/chargePlan";
 import type { ChargePlan, SlotsData } from "../../types/Octopus";
 
@@ -29,11 +30,16 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
     },
   });
 
-  const plan = slotsData ? buildChargePlan(slotsData.plannedDispatches) : null;
+  // The plan uses the saved window, power and stop level, like the scheduled job.
+  const { data: settings, error: settingsError } = useSettings();
+  const plan =
+    slotsData && settings
+      ? buildChargePlan(slotsData.plannedDispatches, settings)
+      : null;
 
   const applySlots = () => {
-    if (slotsData)
-      mutation.mutate(buildChargePlan(slotsData.plannedDispatches));
+    if (slotsData && settings)
+      mutation.mutate(buildChargePlan(slotsData.plannedDispatches, settings));
   };
 
   const planSummary = plan ? describePlan(plan) : null;
@@ -43,6 +49,8 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
 
   return {
     applySlots,
+    canBuildPlan: plan !== null,
+    settingsError,
     planSummary,
     extraSlotsMessage,
     isPending: mutation.isPending,

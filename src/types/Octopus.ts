@@ -1,15 +1,22 @@
+import type { Settings } from "./Api";
 import type { SlotParam } from "./Growatt";
 
-// Octopus types. Kept free of React: the GitHub Action imports them.
+// Octopus types. Kept free of React: the server imports them.
 
 type Dispatch = { startDt: string; endDt: string };
 
 type Slots = [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam];
 
+// The saved settings the charge plan is built from.
+type ChargeSettings = Pick<
+  Settings,
+  "chargeStart" | "chargeEnd" | "powerRate" | "stopSOC"
+>;
+
 type ChargePlan = {
   powerRate: string;
   stopSOC: string;
-  // The fixed window first, then Octopus periods, padded with null.
+  // The overnight window first, then Octopus periods, padded with null.
   slots: Slots;
   // Octopus periods left out because the inverter only has 6 slots.
   skipped: number;
@@ -86,6 +93,7 @@ type SectionHeadingProps = { children: string };
 export type {
   Dispatch,
   Slots,
+  ChargeSettings,
   ChargePlan,
   Piece,
   SlotsData,
