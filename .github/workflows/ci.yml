@@ -1,7 +1,7 @@
 name: CI
 
-# Checks every push, and once a week for new advisories and database changes
-# made outside the migrations. This repo is public, and so are these logs: the
+# Checks every push, and once a week for database changes made outside the
+# migrations. This repo is public, and so are these logs: the
 # steps print names and counts, never secret values.
 # Actions are pinned to commits, so a moved tag can't change what runs here.
 
@@ -44,14 +44,9 @@ jobs:
         run: pnpm build
       - name: No secrets or server code in the bundle
         run: pnpm check:bundle
-      # Dev tools (vite, eslint, the vercel CLI) never reach users; Dependabot
-      # keeps them up to date instead.
-      - name: No known high or critical issues in production dependencies
-        run: pnpm audit --prod --audit-level high
+      # Dependency updates and advisories are checked by hand (CLAUDE.md).
 
   database:
-    # Dependabot's runs don't get these secrets.
-    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
