@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { deleteAccountSchema } from "../src/lib/authSchemas";
 import type { AccountExport } from "../src/types/Api";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
@@ -18,8 +19,10 @@ type AuditRow = {
 };
 
 // GET → AccountExport, as a download.
-// DELETE → 204. Deletes the user; their credentials, settings and audit log go
-//   with them (on delete cascade). Needs a recent step-up. Clears the cookies.
+// DELETE DeleteAccountBody (optional) → 204. Deletes the user; their
+//   credentials, settings and audit log go with them (on delete cascade). Needs
+//   a step-up: the MFA code, the current password, or a recent login. Clears
+//   the cookies.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "DELETE"]) || !checkOrigin(req, res))
     return;
@@ -78,7 +81,24 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     return;
   }
 
-  if (!(await requireStepUp(user, res))) return;
+  if (!(await rateLimit(res, "accountDelete", userId))) return;
+  // The body is optional: without one, a recent login has to do.
+  const body = deleteAccountSchema.safeParse(req.body ?? {});
+  if (!body.success) {
+    sendError(
+      res,
+      400,
+      "invalid_input",
+      body.error.issues[0]?.message ?? "Invalid input",
+    );
+    return;
+  }
+  if (
+    !(await requireStepUp(user, res, {
+      currentPassword: body.data.currentPassword,
+    }))
+  )
+    return;
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
   if (error) {
     console.error("account delete failed:", error.code ?? error.name);

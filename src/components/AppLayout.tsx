@@ -8,7 +8,8 @@ const AppLayout = () => {
   const logout = useLogout();
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
+      {/* Stays at the top while the page scrolls; toasts (z-50) stay above. */}
+      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
         <Link
           to="/"
           className="text-lg font-semibold tracking-tight text-white"

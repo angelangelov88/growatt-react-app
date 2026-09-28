@@ -1,5 +1,6 @@
 import AutomationCard from "./AutomationCard";
 import CredentialsCard from "./CredentialsCard";
+import DangerZoneCard from "./DangerZoneCard";
 import PasswordCard from "./PasswordCard";
 import SecurityCard from "./SecurityCard";
 
@@ -10,6 +11,7 @@ const SettingsPage = () => (
     <AutomationCard />
     <PasswordCard />
     <SecurityCard />
+    <DangerZoneCard />
   </main>
 );
 

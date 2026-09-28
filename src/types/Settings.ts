@@ -36,6 +36,8 @@ type ChargeSettingsFormProps = { saved: Settings };
 
 type AutomationSwitchProps = { saved: Settings; canTurnOn: boolean };
 
+type DeleteAccountFormProps = { onCancel: () => void };
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
@@ -44,4 +46,5 @@ export type {
   CredentialsRowProps,
   ChargeSettingsFormProps,
   AutomationSwitchProps,
+  DeleteAccountFormProps,
 };

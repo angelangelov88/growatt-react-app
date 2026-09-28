@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type {
+  deleteAccountSchema,
   loginSchema,
   mfaSchema,
   newPasswordSchema,
@@ -76,6 +77,9 @@ type JoinBody = z.infer<typeof joinSchema>;
 // GET and PUT /api/settings.
 type Settings = z.infer<typeof settingsSchema>;
 
+// DELETE /api/account.
+type DeleteAccountBody = z.infer<typeof deleteAccountSchema>;
+
 // GET /api/account: everything stored about the user (UK GDPR access request).
 // Never any secrets.
 type AccountExport = {
@@ -126,4 +130,5 @@ export type {
   SavingSessions,
   JoinBody,
   AccountExport,
+  DeleteAccountBody,
 };

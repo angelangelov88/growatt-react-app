@@ -43,6 +43,12 @@ const changePasswordSchema = z.object({
   password: newPassword,
 });
 
+// DELETE /api/account. currentPassword as for the password change; nothing
+// else, the account goes as a whole.
+const deleteAccountSchema = z.object({
+  currentPassword: currentPassword.optional(),
+});
+
 // The 6-digit code from an authenticator app.
 const totpCode = z.string().regex(/^\d{6}$/, "Enter the 6-digit code");
 
@@ -58,5 +64,6 @@ export {
   newPasswordSchema,
   changePasswordSchema,
   mfaSchema,
+  deleteAccountSchema,
   currentPassword,
 };
