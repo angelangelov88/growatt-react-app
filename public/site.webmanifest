@@ -1,6 +1,6 @@
 {
-  "name": "Energy Dashboard",
-  "short_name": "Energy",
+  "name": "Kelpwatt",
+  "short_name": "Kelpwatt",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030712",

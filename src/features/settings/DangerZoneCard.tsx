@@ -13,7 +13,7 @@ const download = (data: AccountExport) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `energy-dashboard-data-${data.exportedAt.slice(0, 10)}.json`;
+  link.download = `kelpwatt-data-${data.exportedAt.slice(0, 10)}.json`;
   link.click();
   // After the click has started the download.
   setTimeout(() => {

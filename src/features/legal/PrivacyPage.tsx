@@ -9,19 +9,17 @@ import { OPERATOR, SITE } from "./legalInfo";
 const PrivacyPage = () => (
   <LegalPage title="Privacy notice">
     <p>
-      This notice explains what personal data Energy Dashboard ({SITE})
-      collects, why, who it&apos;s shared with and the rights you have. In
-      short: we collect only what the app needs to work, we never sell it or use
-      it for advertising, and you can download or delete it at any time from
-      Settings.
+      This notice explains what personal data Kelpwatt ({SITE}) collects, why,
+      who it&apos;s shared with and the rights you have. In short: we collect
+      only what the app needs to work, we never sell it or use it for
+      advertising, and you can download or delete it at any time from Settings.
     </p>
 
     <LegalSection title="Who we are">
       <p>
-        Energy Dashboard is a personal, non-commercial project run by {OPERATOR}
-        , who is the data controller for the personal data described here. For
-        any question about your data, or to use your rights, email{" "}
-        <ContactLink />.
+        Kelpwatt is a personal, non-commercial project run by {OPERATOR}, who is
+        the data controller for the personal data described here. For any
+        question about your data, or to use your rights, email <ContactLink />.
       </p>
     </LegalSection>
 

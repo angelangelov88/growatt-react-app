@@ -3,6 +3,7 @@ import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
 import AppLogo from "./AppLogo";
 import LegalLinks from "./LegalLinks";
+import Wordmark from "./Wordmark";
 
 // The frame around every page for a logged-in user.
 const AppLayout = () => {
@@ -17,7 +18,7 @@ const AppLayout = () => {
           className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"
         >
           <AppLogo className="size-7 shrink-0" />
-          Energy Dashboard
+          <Wordmark />
         </Link>
         <div className="flex items-center gap-4 min-w-0">
           {me?.email && (

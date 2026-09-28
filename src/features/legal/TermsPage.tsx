@@ -7,16 +7,16 @@ import { OPERATOR, SITE } from "./legalInfo";
 const TermsPage = () => (
   <LegalPage title="Terms of use">
     <p>
-      These terms apply when you use Energy Dashboard ({SITE}). By creating an
-      account or using the app, you agree to them. Please read them, in
-      particular the parts about your inverter and our liability.
+      These terms apply when you use Kelpwatt ({SITE}). By creating an account
+      or using the app, you agree to them. Please read them, in particular the
+      parts about your inverter and our liability.
     </p>
 
     <LegalSection title="Who we are">
       <p>
-        Energy Dashboard is a free, personal, non-commercial project run by{" "}
-        {OPERATOR}. You can reach us at <ContactLink />. How we handle your data
-        is explained in the{" "}
+        Kelpwatt is a free, personal, non-commercial project run by {OPERATOR}.
+        You can reach us at <ContactLink />. How we handle your data is
+        explained in the{" "}
         <Link to="/privacy" className="text-violet-400 hover:underline">
           privacy notice
         </Link>
@@ -34,8 +34,8 @@ const TermsPage = () => (
         from your planned charging times.
       </p>
       <p>
-        Energy Dashboard is independent. It isn&apos;t made, endorsed or
-        supported by Growatt or Octopus Energy.
+        Kelpwatt is independent. It isn&apos;t made, endorsed or supported by
+        Growatt or Octopus Energy.
       </p>
       <p>
         <strong className="text-gray-100">

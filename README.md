@@ -1,8 +1,16 @@
-# ⚡ Energy Dashboard
+<img src="public/icon-192.png" alt="" width="64" height="64">
+
+# Kelpwatt
 
 A web app that connects a **Growatt** solar/battery inverter to an **Octopus Energy** account. It shows the inverter's charge settings next to Octopus's planned charging times (Intelligent Octopus dispatches) and can apply those times to the inverter, by hand or automatically through the night. It also lists Octopus saving sessions ("Power Down") and lets you join them.
 
 Live at **https://growatt.angelov.uk**. Anyone can sign up; each user connects their own Growatt and Octopus accounts.
+
+## About the name
+
+**Kelpwatt** sits between the two services the app joins. Kelp is a seaweed that grows very fast, a nod to the sea (Octopus) and to growing (Growatt). Watt is the unit of power, and the end of Growatt's name. The name deliberately avoids using either company's name, because the app isn't made or endorsed by them.
+
+The logo shows energy flowing into a battery (the violet arrow) and back out to the home or grid (the emerald arrow), like the app's Battery First and Grid First settings. The name uses the same two colours: "Kelp" in emerald, "watt" in violet.
 
 ## Features
 
