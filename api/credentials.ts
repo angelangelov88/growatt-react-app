@@ -4,41 +4,35 @@ import {
   credentialsSchema,
   providerSchema,
 } from "../src/lib/credentialSchemas";
-import { checkAccount, obtainToken } from "../src/lib/octopusApi";
-import type { Credentials, CredentialsBody } from "../src/types/Api";
-import type { Provider, Tx } from "../src/types/Server";
+import { OctopusError, checkAccount, obtainToken } from "../src/lib/octopusApi";
+import type { CredentialsBody } from "../src/types/Api";
+import type { Tx } from "../src/types/Server";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
 import { allowMethods, sendError } from "./_lib/http";
+import { rateLimit } from "./_lib/rateLimit";
 import { requireUser } from "./_lib/session";
 import { requireStepUp } from "./_lib/stepUp";
 import { growattClientFor, sealSecret } from "./_lib/userConfig";
+import { readStatus } from "./_lib/userData";
 
 // Failed checks allowed per user per hour, so this endpoint can't be used to
 // guess other people's Growatt or Octopus logins.
 const MAX_FAILED_CHECKS_PER_HOUR = 5;
 
-type Problem = { code: string; message: string };
+// unavailable: Growatt or Octopus didn't answer, so it says nothing about the
+// credentials and doesn't count as a failed check.
+type Problem = { code: string; message: string; unavailable?: boolean };
+
+// A timeout, network error or HTML error page, rather than a rejection.
+const isOutage = (err: unknown) =>
+  err instanceof TypeError ||
+  (err instanceof Error &&
+    (err.name === "TimeoutError" ||
+      err.message.startsWith("Unexpected response")));
 
 const md5 = (text: string) => createHash("md5").update(text).digest("hex");
-
-// What's saved, never the secrets.
-const readStatus = async (tx: Tx): Promise<Credentials> => {
-  const rows = await tx<
-    { provider: Provider; identifier: string; verified_at: Date }[]
-  >`select provider, identifier, verified_at from private.user_credentials`;
-  const find = (provider: Provider) => {
-    const row = rows.find((r) => r.provider === provider);
-    return row && { id: row.identifier, at: row.verified_at.toISOString() };
-  };
-  const growatt = find("growatt");
-  const octopus = find("octopus");
-  return {
-    growatt: growatt ? { serial: growatt.id, verifiedAt: growatt.at } : null,
-    octopus: octopus ? { account: octopus.id, verifiedAt: octopus.at } : null,
-  };
-};
 
 // Tries the credentials for real (read-only). Returns what went wrong, or null.
 const check = async (body: CredentialsBody): Promise<Problem | null> => {
@@ -49,7 +43,13 @@ const check = async (body: CredentialsBody): Promise<Problem | null> => {
     });
     try {
       await client.login();
-    } catch {
+    } catch (err) {
+      if (isOutage(err))
+        return {
+          code: "growatt_unavailable",
+          message: "Growatt didn't respond, try again",
+          unavailable: true,
+        };
       return {
         code: "growatt_login_failed",
         message: "Growatt didn't accept that username and password",
@@ -57,7 +57,13 @@ const check = async (body: CredentialsBody): Promise<Problem | null> => {
     }
     try {
       await client.fetchChargePeriods(body.serial);
-    } catch {
+    } catch (err) {
+      if (isOutage(err))
+        return {
+          code: "growatt_unavailable",
+          message: "Growatt didn't respond, try again",
+          unavailable: true,
+        };
       return {
         code: "growatt_serial_failed",
         message: `Logged in, but couldn't read inverter ${body.serial}. Check the serial number and that the inverter is online`,
@@ -68,7 +74,13 @@ const check = async (body: CredentialsBody): Promise<Problem | null> => {
   let token: string;
   try {
     token = await obtainToken(body.apiKey);
-  } catch {
+  } catch (err) {
+    if (!(err instanceof OctopusError))
+      return {
+        code: "octopus_unavailable",
+        message: "Octopus didn't respond, try again",
+        unavailable: true,
+      };
     return {
       code: "octopus_key_failed",
       message: "Octopus didn't accept that API key",
@@ -76,7 +88,13 @@ const check = async (body: CredentialsBody): Promise<Problem | null> => {
   }
   try {
     await checkAccount(token, body.account);
-  } catch {
+  } catch (err) {
+    if (!(err instanceof OctopusError))
+      return {
+        code: "octopus_unavailable",
+        message: "Octopus didn't respond, try again",
+        unavailable: true,
+      };
     return {
       code: "octopus_account_failed",
       message: `That API key can't see account ${body.account}`,
@@ -162,6 +180,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     );
     return;
   }
+  if (!(await rateLimit(res, "credentials", userId))) return;
   if (!(await requireStepUp(user, res))) return;
 
   const [{ failures }] = await withUser(
@@ -177,6 +196,10 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   }
 
   const problem = await check(body.data);
+  if (problem?.unavailable) {
+    sendError(res, 502, problem.code, problem.message);
+    return;
+  }
   if (problem) {
     await withUser(userId, (tx) =>
       audit(tx, req, userId, "credentials_check_failed", {

@@ -34,6 +34,7 @@ type AuditAction =
   | "mfa_enrolled"
   | "mfa_removed"
   | "password_changed"
+  | "account_exported"
   | "credentials_saved"
   | "credentials_deleted"
   | "credentials_check_failed"

@@ -2,12 +2,14 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { loginSchema } from "../../../src/lib/authSchemas";
 import { checkOrigin } from "../../_lib/csrf";
 import { allowMethods, sendError } from "../../_lib/http";
+import { limitByIp } from "../../_lib/rateLimit";
 import { createSupabase } from "../../_lib/session";
 
 // POST { email, password } → 204 and session cookies.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["POST"]) || !checkOrigin(req, res)) return;
   res.setHeader("Cache-Control", "private, no-store");
+  if (!(await limitByIp(req, res, "login"))) return;
   const body = loginSchema.safeParse(req.body);
   if (!body.success) {
     sendError(res, 400, "invalid_input", "Enter your email and password");

@@ -1,37 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { defaultSettings, settingsSchema } from "../src/lib/settingsSchema";
-import type { Settings } from "../src/types/Api";
-import type { Tx } from "../src/types/Server";
+import { settingsSchema } from "../src/lib/settingsSchema";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
 import { allowMethods, sendError } from "./_lib/http";
 import { requireUser } from "./_lib/session";
-
-type SettingsRow = {
-  charge_start: string | null;
-  charge_end: string | null;
-  power_rate: number | null;
-  stop_soc: number | null;
-  automation_enabled: boolean;
-};
-
-// The user's settings, or the defaults for anything not saved yet.
-const readSettings = async (tx: Tx): Promise<Settings> => {
-  const rows = await tx<SettingsRow[]>`
-    select charge_start::text as charge_start, charge_end::text as charge_end,
-      power_rate, stop_soc, automation_enabled
-    from private.user_settings`;
-  const row = rows.at(0);
-  return {
-    // Postgres gives HH:MM:SS.
-    chargeStart: row?.charge_start?.slice(0, 5) ?? defaultSettings.chargeStart,
-    chargeEnd: row?.charge_end?.slice(0, 5) ?? defaultSettings.chargeEnd,
-    powerRate: row?.power_rate ?? defaultSettings.powerRate,
-    stopSOC: row?.stop_soc ?? defaultSettings.stopSOC,
-    automationEnabled: row?.automation_enabled ?? false,
-  };
-};
+import { readSettings } from "./_lib/userData";
 
 // GET → Settings.
 // PUT Settings → Settings. Automation can only be turned on once both Growatt

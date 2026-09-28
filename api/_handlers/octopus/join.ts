@@ -5,6 +5,7 @@ import { audit } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { withUser } from "../../_lib/db";
 import { allowMethods, sendError } from "../../_lib/http";
+import { rateLimit } from "../../_lib/rateLimit";
 import { requireUser } from "../../_lib/session";
 import { connectOctopus, octopusMessage } from "./connect";
 
@@ -14,6 +15,7 @@ const handler: Handler = async (req, res) => {
   if (!allowMethods(req, res, ["POST"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
   if (!user) return;
+  if (!(await rateLimit(res, "octopusJoin", user.userId))) return;
   const body = joinSchema.safeParse(req.body);
   if (!body.success) {
     sendError(

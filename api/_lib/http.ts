@@ -1,3 +1,4 @@
+import { isIP } from "node:net";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { ApiError } from "../../src/types/Api";
 
@@ -24,4 +25,10 @@ const allowMethods = (
   return false;
 };
 
-export { sendError, allowMethods };
+// Vercel sets x-real-ip to the caller's address, and callers can't override it.
+const clientIp = (req: VercelRequest) => {
+  const ip = req.headers["x-real-ip"];
+  return typeof ip === "string" && isIP(ip) ? ip : null;
+};
+
+export { sendError, allowMethods, clientIp };

@@ -7,6 +7,7 @@ import { audit } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { withUser } from "../../_lib/db";
 import { allowMethods, sendError } from "../../_lib/http";
+import { limitByIp, rateLimit } from "../../_lib/rateLimit";
 import { createSupabase, requireUser } from "../../_lib/session";
 import { requireStepUp } from "../../_lib/stepUp";
 
@@ -31,6 +32,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
       sendError(res, 400, "invalid_input", "Enter your email");
       return;
     }
+    if (!(await limitByIp(req, res, "resetEmail"))) return;
     const { error } = await createSupabase(req, res).auth.resetPasswordForEmail(
       body.data.email,
     );
@@ -58,6 +60,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     );
     return;
   }
+  if (!(await rateLimit(res, "passwordChange", user.userId))) return;
   if (!(await requireStepUp(user, res))) return;
 
   const { auth } = user.supabase;

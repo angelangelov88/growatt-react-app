@@ -71,6 +71,29 @@ type JoinBody = z.infer<typeof joinSchema>;
 // GET and PUT /api/settings.
 type Settings = z.infer<typeof settingsSchema>;
 
+// GET /api/account: everything stored about the user (UK GDPR access request).
+// Never any secrets.
+type AccountExport = {
+  exportedAt: string;
+  account: {
+    id: string;
+    email: string | null;
+    createdAt: string;
+    lastSignInAt: string | null;
+    // "email", "google".
+    signInMethods: string[];
+    mfaEnrolled: boolean;
+  };
+  settings: Settings;
+  credentials: Credentials;
+  auditLog: {
+    at: string;
+    action: string;
+    details: unknown;
+    ip: string | null;
+  }[];
+};
+
 // GET /api/credentials, and the reply to PUT and DELETE. Never the secrets.
 type Credentials = {
   growatt: { serial: string; verifiedAt: string } | null;
@@ -94,4 +117,5 @@ export type {
   SessionJson,
   SavingSessions,
   JoinBody,
+  AccountExport,
 };

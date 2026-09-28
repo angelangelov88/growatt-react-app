@@ -1,12 +1,6 @@
-import { isIP } from "node:net";
 import type { VercelRequest } from "@vercel/node";
 import type { AuditAction, Tx } from "../../src/types/Server";
-
-// Vercel sets x-real-ip to the caller's address, and callers can't override it.
-const clientIp = (req: VercelRequest) => {
-  const ip = req.headers["x-real-ip"];
-  return typeof ip === "string" && isIP(ip) ? ip : null;
-};
+import { clientIp } from "./http";
 
 // Records a security-relevant action in private.audit_log. Run it inside
 // withUser. details must never contain a secret.

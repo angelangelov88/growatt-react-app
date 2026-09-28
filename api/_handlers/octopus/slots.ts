@@ -2,6 +2,7 @@ import { fetchPlannedDispatches } from "../../../src/lib/octopusApi";
 import type { OctopusSlots } from "../../../src/types/Api";
 import type { Handler } from "../../../src/types/Server";
 import { allowMethods, sendError } from "../../_lib/http";
+import { rateLimit } from "../../_lib/rateLimit";
 import { requireUser } from "../../_lib/session";
 import { connectOctopus, octopusMessage } from "./connect";
 
@@ -10,6 +11,7 @@ const handler: Handler = async (req, res) => {
   if (!allowMethods(req, res, ["GET"])) return;
   const user = await requireUser(req, res);
   if (!user) return;
+  if (!(await rateLimit(res, "octopusRead", user.userId))) return;
   const octopus = await connectOctopus(user.userId, res);
   if (!octopus) return;
   try {

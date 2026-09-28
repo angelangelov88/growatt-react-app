@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { signupSchema } from "../../../src/lib/authSchemas";
 import { checkOrigin } from "../../_lib/csrf";
 import { allowMethods, sendError } from "../../_lib/http";
+import { limitByIp } from "../../_lib/rateLimit";
 import { createSupabase } from "../../_lib/session";
 
 // POST { email, password } → 202. Always the same answer, whether or not the
@@ -18,6 +19,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     );
     return;
   }
+  if (!(await limitByIp(req, res, "signup"))) return;
   // The confirmation email links to /api/auth/confirm (set in Supabase's templates).
   const { error } = await createSupabase(req, res).auth.signUp(body.data);
   if (error?.code === "weak_password") {

@@ -6,6 +6,7 @@ import { audit } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { withUser } from "../../_lib/db";
 import { allowMethods, sendError } from "../../_lib/http";
+import { rateLimit } from "../../_lib/rateLimit";
 import { requireUser } from "../../_lib/session";
 import { loadGrowatt } from "../../_lib/userConfig";
 
@@ -36,6 +37,8 @@ const periodsHandler =
       return;
     const user = await requireUser(req, res);
     if (!user) return;
+    const limit = req.method === "PUT" ? "growattWrite" : "growattRead";
+    if (!(await rateLimit(res, limit, user.userId))) return;
 
     let body: PeriodsBody | null = null;
     if (req.method === "PUT") {
