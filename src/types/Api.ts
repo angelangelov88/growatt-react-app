@@ -1,6 +1,7 @@
 import type { z } from "zod";
 import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
 import type { credentialsSchema } from "../lib/credentialSchemas";
+import type { periodsSchema } from "../lib/growattSchemas";
 import type { settingsSchema } from "../lib/settingsSchema";
 
 // Shared by the api/ functions and the app.
@@ -35,6 +36,10 @@ type MfaEnrollment = {
   secret: string;
 };
 
+// PUT /api/growatt/charge and /api/growatt/discharge. GET returns the
+// ChargePeriods type from Growatt.ts.
+type PeriodsBody = z.infer<typeof periodsSchema>;
+
 // GET and PUT /api/settings.
 type Settings = z.infer<typeof settingsSchema>;
 
@@ -54,4 +59,5 @@ export type {
   MfaEnrollment,
   Credentials,
   Settings,
+  PeriodsBody,
 };

@@ -36,7 +36,8 @@ type AuditAction =
   | "credentials_saved"
   | "credentials_deleted"
   | "credentials_check_failed"
-  | "settings_saved";
+  | "settings_saved"
+  | "growatt_write";
 
 export type {
   Tx,

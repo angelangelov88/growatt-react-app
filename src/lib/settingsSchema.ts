@@ -2,17 +2,22 @@ import { z } from "zod";
 
 // Shared by /api/settings and the settings form.
 
-const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM");
+const timeSchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM");
+
+// A whole-number percentage, as the inverter takes it.
+const percentSchema = z.int().min(1, "At least 1%").max(100, "At most 100%");
 
 const settingsSchema = z
   .object({
     // The fixed overnight charge window, UK time.
-    chargeStart: time,
-    chargeEnd: time,
+    chargeStart: timeSchema,
+    chargeEnd: timeSchema,
     // Percent of the inverter's maximum power used for AC charging.
-    powerRate: z.int().min(1, "At least 1%").max(100, "At most 100%"),
+    powerRate: percentSchema,
     // Stop charging from the grid at this battery level, in percent.
-    stopSOC: z.int().min(1, "At least 1%").max(100, "At most 100%"),
+    stopSOC: percentSchema,
     // Let the scheduled job apply Octopus slots to the inverter.
     automationEnabled: z.boolean(),
   })
@@ -31,4 +36,4 @@ const defaultSettings: z.infer<typeof settingsSchema> = {
   automationEnabled: false,
 };
 
-export { settingsSchema, defaultSettings };
+export { timeSchema, percentSchema, settingsSchema, defaultSettings };
