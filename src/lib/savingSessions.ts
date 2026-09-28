@@ -6,7 +6,7 @@ import type {
   SessionStatus,
 } from "../types/Octopus";
 import { toUkMinutes } from "./chargePlan";
-import type { GraphQLResponse } from "../types/GraphQL";
+import { OctopusError, octopusRequest } from "./octopusApi";
 
 // Octopus Saving Sessions, now branded "Power Down" (eventType TURN_DOWN).
 // They are only available on Octopus's backend GraphQL API, which is undocumented
@@ -34,15 +34,12 @@ const fetchSavingSessions = async (
   token: string,
   account: string,
 ): Promise<SavingSessionsData> => {
-  const res = await fetch(BACKEND_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: token },
-    body: JSON.stringify({ query: QUERY, variables: { account } }),
-  });
-  const json = (await res.json()) as GraphQLResponse<RawSavingSessions>;
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  const data = json.data?.savingSessions;
-  if (!data) throw new Error("No Power Down data returned from Octopus");
+  const { savingSessions: data } = await octopusRequest<RawSavingSessions>(
+    QUERY,
+    { account },
+    { token, endpoint: BACKEND_ENDPOINT },
+  );
+  if (!data) throw new OctopusError("No Power Down data returned from Octopus");
 
   const joinedRaw = (data.account?.joinedEvents ?? []).filter(
     (e) => e.eventType === POWER_DOWN,
@@ -97,16 +94,11 @@ const joinSession = async (
   account: string,
   eventCode: string,
 ): Promise<void> => {
-  const res = await fetch(BACKEND_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: token },
-    body: JSON.stringify({
-      query: JOIN_MUTATION,
-      variables: { input: { accountNumber: account, eventCode } },
-    }),
-  });
-  const json = (await res.json()) as GraphQLResponse<unknown>;
-  if (json.errors?.length) throw new Error(json.errors[0].message);
+  await octopusRequest(
+    JOIN_MUTATION,
+    { input: { accountNumber: account, eventCode } },
+    { token, endpoint: BACKEND_ENDPOINT },
+  );
 };
 
 const ukDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" });

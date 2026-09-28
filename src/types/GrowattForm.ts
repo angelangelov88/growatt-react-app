@@ -21,6 +21,8 @@ type GridFirstProps = {
   setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
 };
 
+type GrowattProps = { showSessions: boolean };
+
 type SlotListProps = { form: SlotForm };
 
 type TimePickerProps = {
@@ -33,6 +35,7 @@ export type {
   InverterRead,
   BatteryFirstProps,
   GridFirstProps,
+  GrowattProps,
   SlotListProps,
   TimePickerProps,
 };

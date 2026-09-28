@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* The app is dark only: built-in controls (time picker icons, scrollbars,
+   number spinners) use their dark versions. */
+:root {
+  color-scheme: dark;
+}

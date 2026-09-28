@@ -1,4 +1,4 @@
-// Growatt inverter types. Kept free of React: the GitHub Action imports them.
+// Growatt inverter types. Kept free of React: the server imports them.
 
 type SlotParam = {
   startHour: string;
@@ -6,6 +6,10 @@ type SlotParam = {
   endHour: string;
   endMin: string;
 } | null;
+
+// Battery First or Grid First values to write, as the forms hold them. Empty
+// slots are null.
+type PeriodsInput = { powerRate: string; stopSOC: string; slots: SlotParam[] };
 
 type ChargePeriod = { start: string; end: string; enabled: boolean };
 type ChargePeriods = {
@@ -30,9 +34,11 @@ type GrowattResponse = {
 
 type GrowattConfig = {
   user: string;
-  password: string;
+  // MD5 of the password, which is all Growatt's login sends.
+  passwordMd5: string;
   buildUrl: (path: string) => string;
-  cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
+  // Log each reply (never the login one).
+  debug?: boolean;
 };
 
 // A slot as edited in the form.
@@ -49,6 +55,7 @@ type Preset = "high" | "low";
 
 export type {
   SlotParam,
+  PeriodsInput,
   ChargePeriod,
   ChargePeriods,
   DischargePeriods,

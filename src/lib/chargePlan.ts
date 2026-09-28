@@ -1,24 +1,31 @@
 import type { ChargePeriods, SlotParam } from "../types/Growatt";
-import type { ChargePlan, Dispatch, Piece, Slots } from "../types/Octopus";
+import type {
+  ChargePlan,
+  ChargeSettings,
+  Dispatch,
+  Piece,
+  Slots,
+} from "../types/Octopus";
 
 // Decides what charge periods to write to the inverter from Octopus dispatches.
-// Shared by the "Apply Slots to Growatt" button and the GitHub Action script, so it
-// must stay free of browser-only and React code.
+// Shared by the "Apply Slots to Growatt" button and the scheduled job on the
+// server, so it must stay free of browser-only and React code.
 //
-// Rules:
-// - Rate 35%, stop SOC 95%.
-// - Slot 1 is always the fixed overnight window, 01:00–05:00.
+// Rules, from the user's settings:
+// - Their charge power and stop-at-battery level.
+// - Slot 1 is always their overnight window (01:00–05:00 by default). It never
+//   crosses midnight; the settings form doesn't allow it.
 // - Octopus periods are trimmed to the parts outside that window (dropped entirely if
 //   inside it, split in two if they span it), then touching or overlapping ones merged.
 // - The inverter has 6 slots, so at most 5 Octopus periods are kept, soonest first.
 // - All times are UK local time, whatever time zone the machine is in.
 
-const POWER_RATE = "35";
-const STOP_SOC = "95";
 const MAX_SLOTS = 6;
 const DAY = 24 * 60;
-const WINDOW_START = 1 * 60; // 01:00
-const WINDOW_END = 5 * 60; // 05:00
+
+// "HH:MM" → minutes past midnight.
+const toMinutes = (time: string) =>
+  Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
 
 const ukTime = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Europe/London",
@@ -57,12 +64,14 @@ const toPieces = (dispatch: Dispatch): Piece[] => {
   ];
 };
 
-// Keeps only what falls before or after the fixed window.
-const outsideWindow = (piece: Piece): Piece[] =>
-  [
-    { ...piece, end: Math.min(piece.end, WINDOW_START) },
-    { ...piece, start: Math.max(piece.start, WINDOW_END) },
-  ].filter((p) => p.end > p.start);
+// Keeps only what falls before or after the overnight window.
+const outsideWindow =
+  (windowStart: number, windowEnd: number) =>
+  (piece: Piece): Piece[] =>
+    [
+      { ...piece, end: Math.min(piece.end, windowStart) },
+      { ...piece, start: Math.max(piece.start, windowEnd) },
+    ].filter((p) => p.end > p.start);
 
 const merge = (pieces: Piece[]): Piece[] => {
   const merged: Piece[] = [];
@@ -88,25 +97,28 @@ const merge = (pieces: Piece[]): Piece[] => {
 
 const buildChargePlan = (
   dispatches: Dispatch[],
+  settings: ChargeSettings,
   now = new Date(),
 ): ChargePlan => {
+  const windowStart = toMinutes(settings.chargeStart);
+  const windowEnd = toMinutes(settings.chargeEnd);
   const upcoming = dispatches.filter((d) => {
     const start = new Date(d.startDt);
     const end = new Date(d.endDt);
     return end > now && end > start;
   });
-  const periods = merge(upcoming.flatMap(toPieces).flatMap(outsideWindow)).sort(
-    (a, b) => a.firstStart - b.firstStart,
-  );
+  const periods = merge(
+    upcoming.flatMap(toPieces).flatMap(outsideWindow(windowStart, windowEnd)),
+  ).sort((a, b) => a.firstStart - b.firstStart);
   const kept = periods.slice(0, MAX_SLOTS - 1);
   const slots: SlotParam[] = [
-    toSlot(WINDOW_START, WINDOW_END),
+    toSlot(windowStart, windowEnd),
     ...kept.map((p) => toSlot(p.start, p.end)),
   ];
   while (slots.length < MAX_SLOTS) slots.push(null);
   return {
-    powerRate: POWER_RATE,
-    stopSOC: STOP_SOC,
+    powerRate: String(settings.powerRate),
+    stopSOC: String(settings.stopSOC),
     slots: slots as Slots,
     skipped: periods.length - kept.length,
   };

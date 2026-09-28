@@ -1,0 +1,22 @@
+# Weekly update PRs. Minor and patch updates come grouped, so there are a few
+# PRs a week rather than one per package. CI runs on each.
+version: 2
+updates:
+  - package-ecosystem: npm # also reads pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      production:
+        dependency-type: production
+        update-types: [minor, patch]
+      development:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  # The commits the workflows are pinned to.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

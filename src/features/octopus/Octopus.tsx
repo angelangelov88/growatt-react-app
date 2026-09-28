@@ -2,23 +2,39 @@ import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
 import useToast from "../../contexts/useToast";
+import type { OctopusProps } from "../../types/Octopus";
 
-const Octopus = () => {
+// canApply: false until the user has saved their Growatt login.
+const Octopus = ({ canApply }: OctopusProps) => {
   const {
     slotsLoading,
     slotsError,
     slotsErrorUpdatedAt,
     slotsData,
     formatDate,
-    handleAuthAndFetchSlots,
+    fetchSlots,
   } = useOctopus();
-  const { applySlots, planSummary, extraSlotsMessage, isPending } =
-    useApplySlots({ slotsData });
+  const {
+    applySlots,
+    canBuildPlan,
+    settingsError,
+    planSummary,
+    extraSlotsMessage,
+    isPending,
+  } = useApplySlots({ slotsData });
   const { showToast } = useToast();
 
   useEffect(() => {
     if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
   }, [slotsError, slotsErrorUpdatedAt, showToast]);
+
+  useEffect(() => {
+    if (settingsError)
+      showToast(
+        `Couldn't load your settings: ${settingsError.message}`,
+        "error",
+      );
+  }, [settingsError, showToast]);
 
   useEffect(() => {
     if (extraSlotsMessage) showToast(extraSlotsMessage, "info");
@@ -33,7 +49,7 @@ const Octopus = () => {
           Octopus Dispatch Slots
         </h2>
         <button
-          onClick={handleAuthAndFetchSlots}
+          onClick={fetchSlots}
           disabled={slotsLoading}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -65,15 +81,23 @@ const Octopus = () => {
         </div>
       )}
 
-      {slotsData && (
+      {slotsData && !canApply && (
+        <p className="text-xs text-gray-400">
+          Add your Growatt login in Settings to apply these to your inverter.
+        </p>
+      )}
+
+      {slotsData && canApply && (
         <>
           <p className="text-xs text-gray-400 mb-3">
             Will apply (UK time):{" "}
-            <span className="font-mono text-gray-200">{planSummary}</span>
+            <span className="font-mono text-gray-200">
+              {planSummary ?? "…"}
+            </span>
           </p>
           <button
             onClick={applySlots}
-            disabled={isPending}
+            disabled={isPending || !canBuildPlan}
             className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isPending

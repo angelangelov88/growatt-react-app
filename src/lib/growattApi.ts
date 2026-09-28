@@ -1,4 +1,3 @@
-import SparkMD5 from "spark-md5";
 import type {
   ChargePeriod,
   ChargePeriods,
@@ -9,19 +8,18 @@ import type {
 } from "../types/Growatt";
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
-// Used by the Node script (passes process.env values + direct Growatt URL).
-// Used by the browser (passes Vite env values + proxy URL builder).
+// Used by the server (one client per user) and the Node script. Each caller
+// passes its own credentials and URL builder.
 
 const createGrowattClient = ({
   user,
-  password,
+  passwordMd5,
   buildUrl,
-  cookieHeader = "Cookie",
+  debug = false,
 }: GrowattConfig) => {
-  const STORAGE_KEY = "growatt_session";
-  // sessionStorage only exists in the browser; the Node script keeps the session in memory.
-  const storage = typeof sessionStorage !== "undefined" ? sessionStorage : null;
-  let sessionCookie = storage?.getItem(STORAGE_KEY) ?? "";
+  // The session lives only in this client, so on the server one user's Growatt
+  // session can never be used for another.
+  let sessionCookie = "";
   let loginPromise: Promise<void> | null = null;
 
   const request = async (
@@ -31,26 +29,25 @@ const createGrowattClient = ({
   ): Promise<GrowattResponse> => {
     const headers: Record<string, string> = {};
     if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
-    if (sessionCookie) headers[cookieHeader] = sessionCookie;
+    if (sessionCookie) headers.Cookie = sessionCookie;
 
     const res = await fetch(buildUrl(path), {
       method: body ? "POST" : "GET",
       headers,
       body: body ? new URLSearchParams(body) : undefined,
+      signal: AbortSignal.timeout(20_000),
     });
 
-    const setCookie =
-      res.headers.get("x-set-cookie") ?? res.headers.get("set-cookie");
+    const setCookie = res.headers.get("set-cookie");
     if (setCookie) {
       const match = /JSESSIONID=[^;]+/.exec(setCookie);
-      if (match) {
-        sessionCookie = match[0];
-        storage?.setItem(STORAGE_KEY, sessionCookie);
-      }
+      if (match) sessionCookie = match[0];
     }
 
     const text = await res.text();
-    console.log(`${body ? "POST" : "GET"} ${path}:`, text);
+    // Never the login reply: it describes the account.
+    if (debug && path !== "/login")
+      console.log(`${body ? "POST" : "GET"} ${path}:`, text);
     let json: GrowattResponse;
     try {
       json = JSON.parse(text) as GrowattResponse;
@@ -58,15 +55,16 @@ const createGrowattClient = ({
       throw new Error(`Unexpected response: ${text.slice(0, 100)}`);
     }
 
-    // Detect session expiry and retry once
+    // Detect session expiry and retry once. Never for the login itself, which
+    // would otherwise log in again and again.
     const msg = json.msg?.toLowerCase() ?? "";
     const isAuthError =
+      path !== "/login" &&
       json.success === false &&
       (msg.includes("login") || msg.includes("session"));
 
     if (!isRetry && isAuthError) {
       sessionCookie = "";
-      storage?.removeItem(STORAGE_KEY);
       loginPromise = null;
       await ensureLoggedIn();
       return request(path, body, true);
@@ -82,7 +80,7 @@ const createGrowattClient = ({
     loginPromise ??= request("/login", {
       account: user,
       password: "",
-      passwordCrc: SparkMD5.hash(password),
+      passwordCrc: passwordMd5,
       validateCode: "",
       isReadPact: "0",
       type: "1",
@@ -216,6 +214,9 @@ const createGrowattClient = ({
   };
 
   return {
+    // Throws if Growatt rejects the username or password.
+    login: () => enqueue(ensureLoggedIn),
+
     fetchChargePeriods: (serial: string): Promise<ChargePeriods> =>
       enqueue(() =>
         readPeriods(
@@ -327,80 +328,4 @@ const createGrowattClient = ({
   };
 };
 
-// ─── Browser singleton ────────────────────────────────────────────────────────
-// The browser cannot set the Cookie header directly (forbidden header).
-// Instead we store the session cookie in memory and send it via X-Session-Cookie,
-// which the Vercel proxy reads and forwards as Cookie to Growatt.
-
-let _client: ReturnType<typeof createGrowattClient> | null = null;
-
-const browserClient = () => {
-  _client ??= createGrowattClient({
-    user: import.meta.env.VITE_GROWATT_USER,
-    password: import.meta.env.VITE_GROWATT_PASSWORD,
-    cookieHeader: "X-Session-Cookie",
-    buildUrl: (path) => {
-      if (import.meta.env.DEV) return `/growatt${path}`;
-      const clean = path.startsWith("/") ? path.slice(1) : path;
-      return `/api/growatt?path=${encodeURIComponent(clean)}`;
-    },
-  });
-  return _client;
-};
-
-const fetchChargePeriods = (serial: string) =>
-  browserClient().fetchChargePeriods(serial);
-const fetchDischargePeriods = (serial: string) =>
-  browserClient().fetchDischargePeriods(serial);
-const setChargePeriods = (
-  serial: string,
-  powerRate: string,
-  stopSOC: string,
-  p1: SlotParam,
-  p2?: SlotParam,
-  p3?: SlotParam,
-  p4?: SlotParam,
-  p5?: SlotParam,
-  p6?: SlotParam,
-) =>
-  browserClient().setChargePeriods(
-    serial,
-    powerRate,
-    stopSOC,
-    p1,
-    p2,
-    p3,
-    p4,
-    p5,
-    p6,
-  );
-const setDischargePeriods = (
-  serial: string,
-  powerRate: string,
-  stopSOC: string,
-  p1: SlotParam,
-  p2?: SlotParam,
-  p3?: SlotParam,
-  p4?: SlotParam,
-  p5?: SlotParam,
-  p6?: SlotParam,
-) =>
-  browserClient().setDischargePeriods(
-    serial,
-    powerRate,
-    stopSOC,
-    p1,
-    p2,
-    p3,
-    p4,
-    p5,
-    p6,
-  );
-
-export {
-  createGrowattClient,
-  fetchChargePeriods,
-  fetchDischargePeriods,
-  setChargePeriods,
-  setDischargePeriods,
-};
+export { createGrowattClient };

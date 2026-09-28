@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import useGrowatt from "./useGrowatt";
 import { useSlotForm } from "./useSlotForm";
 import type { SlotState } from "../../types/Growatt";
+import type { GrowattProps } from "../../types/GrowattForm";
 import type { PowerDownSession } from "../../types/Octopus";
 import useInverterRead from "./useInverterRead";
 import BatteryFirstCard from "./BatteryFirstCard";
@@ -32,7 +33,8 @@ const slotsOverlap = (a: SlotState, b: SlotState) => {
 const formatSlot = (s: SlotState) =>
   `${s.startHour}:${s.startMin}–${s.endHour}:${s.endMin}`;
 
-const Growatt = () => {
+// showSessions: false until the user has saved their Octopus details.
+const Growatt = ({ showSessions }: GrowattProps) => {
   const {
     setChargePeriodsMutation,
     chargePeriodsQuery,
@@ -113,7 +115,7 @@ const Growatt = () => {
     setDischargeMutation.isPending ||
     sessionsQuery.isFetching;
 
-  // Both inverter reads go through the client's queue, so they run one after the
+  // Both inverter reads go through the queue in useGrowatt, so they run one after the
   // other. The Power Down sessions come from Octopus, so they load alongside them;
   // the card toasts any error.
   const readAll = () => {
@@ -126,7 +128,7 @@ const Growatt = () => {
       return;
     chargeReader.read({ confirmed: true });
     dischargeReader.read({ confirmed: true });
-    void sessionsQuery.refetch({ cancelRefetch: false });
+    if (showSessions) void sessionsQuery.refetch({ cancelRefetch: false });
   };
 
   return (
@@ -146,12 +148,14 @@ const Growatt = () => {
         reader={chargeReader}
         setChargePeriodsMutation={setChargePeriodsMutation}
       />
-      <PowerDownSessions
-        onExportDuringSession={exportDuringSession}
-        exportDisabled={
-          dischargeReader.isReading || setDischargeMutation.isPending
-        }
-      />
+      {showSessions && (
+        <PowerDownSessions
+          onExportDuringSession={exportDuringSession}
+          exportDisabled={
+            dischargeReader.isReading || setDischargeMutation.isPending
+          }
+        />
+      )}
       <div ref={gridFirstRef} className="scroll-mt-4">
         <GridFirstCard
           form={dischargeForm}

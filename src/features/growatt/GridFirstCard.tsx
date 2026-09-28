@@ -17,17 +17,11 @@ const GridFirstCard = ({
   const isDisabled = isLoading || isApplying;
 
   const handleApply = () => {
-    const [p1, p2, p3, p4, p5, p6] = form.toParams();
     setDischargeMutation.mutate(
       {
         powerRate: form.powerRate,
         stopSOC: form.stopSOC,
-        p1,
-        p2,
-        p3,
-        p4,
-        p5,
-        p6,
+        slots: form.toParams(),
       },
       {
         onSuccess: () => {

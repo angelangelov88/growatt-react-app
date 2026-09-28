@@ -16,12 +16,11 @@ const BatteryFirstCard = ({
   const isDisabled = isLoading || isApplying;
 
   const handleApply = () => {
-    const [p1, p2, p3, p4, p5, p6] = form.toParams();
     setChargePeriodsMutation.mutate(
       {
         powerRate: form.powerRate,
         stopSOC: form.stopSOC,
-        slots: [p1, p2, p3, p4, p5, p6],
+        slots: form.toParams(),
       },
       {
         onSuccess: () => {
