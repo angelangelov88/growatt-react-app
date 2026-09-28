@@ -24,7 +24,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "check:bundle": "node scripts/bundle-check.mts",
+    "check:database": "node --env-file-if-exists=.env scripts/database-check.mts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
