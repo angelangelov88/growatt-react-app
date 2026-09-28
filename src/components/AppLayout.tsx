@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router";
 import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
+import LegalLinks from "./LegalLinks";
 
 // The frame around every page for a logged-in user.
 const AppLayout = () => {
@@ -38,6 +39,9 @@ const AppLayout = () => {
         </div>
       </header>
       <Outlet />
+      <footer className="pb-8">
+        <LegalLinks />
+      </footer>
     </div>
   );
 };
