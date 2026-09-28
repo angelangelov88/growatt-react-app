@@ -11,6 +11,8 @@ import { requireUser } from "./_lib/session";
 type SettingsRow = {
   charge_start: string | null;
   charge_end: string | null;
+  power_rate: number | null;
+  stop_soc: number | null;
   automation_enabled: boolean;
 };
 
@@ -18,13 +20,15 @@ type SettingsRow = {
 const readSettings = async (tx: Tx): Promise<Settings> => {
   const rows = await tx<SettingsRow[]>`
     select charge_start::text as charge_start, charge_end::text as charge_end,
-      automation_enabled
+      power_rate, stop_soc, automation_enabled
     from private.user_settings`;
   const row = rows.at(0);
   return {
     // Postgres gives HH:MM:SS.
     chargeStart: row?.charge_start?.slice(0, 5) ?? defaultSettings.chargeStart,
     chargeEnd: row?.charge_end?.slice(0, 5) ?? defaultSettings.chargeEnd,
+    powerRate: row?.power_rate ?? defaultSettings.powerRate,
+    stopSOC: row?.stop_soc ?? defaultSettings.stopSOC,
     automationEnabled: row?.automation_enabled ?? false,
   };
 };
@@ -62,11 +66,14 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     }
     await tx`
       insert into private.user_settings
-        (user_id, charge_start, charge_end, automation_enabled)
+        (user_id, charge_start, charge_end, power_rate, stop_soc,
+          automation_enabled)
       values (${userId}, ${settings.chargeStart}, ${settings.chargeEnd},
+        ${settings.powerRate}, ${settings.stopSOC},
         ${settings.automationEnabled})
       on conflict (user_id) do update set
         charge_start = excluded.charge_start, charge_end = excluded.charge_end,
+        power_rate = excluded.power_rate, stop_soc = excluded.stop_soc,
         automation_enabled = excluded.automation_enabled`;
     await audit(tx, req, userId, "settings_saved", settings);
     return readSettings(tx);
