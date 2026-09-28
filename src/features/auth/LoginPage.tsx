@@ -100,6 +100,11 @@ const LoginPage = () => {
             disabled={login.isPending}
             required
           />
+          <p className="-mt-2 text-sm text-right">
+            <AuthLink to="/forgot-password" disabled={login.isPending}>
+              Forgot password?
+            </AuthLink>
+          </p>
           <SubmitButton
             label="Log in"
             pendingLabel="Logging in…"
