@@ -7,7 +7,10 @@ const timeSchema = z
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:MM");
 
 // A whole-number percentage, as the inverter takes it.
-const percentSchema = z.int().min(1, "At least 1%").max(100, "At most 100%");
+const percentSchema = z
+  .int("Use a whole number")
+  .min(1, "At least 1%")
+  .max(100, "At most 100%");
 
 const settingsSchema = z
   .object({

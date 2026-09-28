@@ -1,4 +1,4 @@
-import type { MfaEnrollment, Provider } from "./Api";
+import type { MfaEnrollment, Provider, Settings } from "./Api";
 
 type MfaSetupProps = {
   enrollment: MfaEnrollment;
@@ -31,10 +31,17 @@ type CredentialsRowProps = {
   onCancel: () => void;
 };
 
+// The saved settings the form starts from.
+type ChargeSettingsFormProps = { saved: Settings };
+
+type AutomationSwitchProps = { saved: Settings; canTurnOn: boolean };
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
   PasswordFormProps,
   CredentialsFormProps,
   CredentialsRowProps,
+  ChargeSettingsFormProps,
+  AutomationSwitchProps,
 };

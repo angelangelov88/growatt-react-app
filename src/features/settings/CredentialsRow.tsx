@@ -8,6 +8,7 @@ import { ME_KEY } from "../auth/useAuth";
 import CredentialsForm from "./CredentialsForm";
 import { PROVIDERS } from "./providers";
 import { CREDENTIALS_KEY } from "./useCredentials";
+import { SETTINGS_KEY } from "./useSettings";
 
 const verifiedDate = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -38,7 +39,11 @@ const CredentialsRow = ({
       }),
     onSuccess: async (status) => {
       queryClient.setQueryData(CREDENTIALS_KEY, status);
-      await queryClient.invalidateQueries({ queryKey: ME_KEY });
+      // Removing either one turns automation off.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ME_KEY }),
+        queryClient.invalidateQueries({ queryKey: SETTINGS_KEY }),
+      ]);
       setIsRemoving(false);
       onDone(`${secret} removed`);
     },
