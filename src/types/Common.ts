@@ -7,4 +7,7 @@ type NotReadYetProps = {
   hint: string;
 };
 
-export type { SpinnerProps, NotReadYetProps };
+// A form's problems: one message per field, by field name.
+type FieldErrors = Partial<Record<string, string>>;
+
+export type { SpinnerProps, NotReadYetProps, FieldErrors };

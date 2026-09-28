@@ -1,20 +1,35 @@
-import Growatt from "./features/growatt/Growatt";
-import Octopus from "./features/octopus/Octopus";
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router";
+import AppLayout from "./components/AppLayout";
+import AuthRoute from "./features/auth/AuthRoute";
+import LoginPage from "./features/auth/LoginPage";
+import MfaPage from "./features/auth/MfaPage";
+import SignUpPage from "./features/auth/SignUpPage";
+import DashboardPage from "./features/dashboard/DashboardPage";
 
-const App = () => {
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      <header className="border-b border-gray-800 px-6 py-4">
-        <h1 className="text-lg font-semibold tracking-tight text-white">
-          ⚡ Energy Dashboard
-        </h1>
-      </header>
-      <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
-        <Octopus />
-        <Growatt />
-      </main>
-    </div>
-  );
-};
+const router = createBrowserRouter([
+  {
+    element: <AuthRoute allow={["signedOut"]} />,
+    children: [
+      { path: "/login", element: <LoginPage /> },
+      { path: "/signup", element: <SignUpPage /> },
+    ],
+  },
+  {
+    element: <AuthRoute allow={["needsMfa"]} />,
+    children: [{ path: "/mfa", element: <MfaPage /> }],
+  },
+  {
+    element: <AuthRoute allow={["signedIn"]} />,
+    children: [
+      {
+        element: <AppLayout />,
+        children: [{ path: "/", element: <DashboardPage /> }],
+      },
+    ],
+  },
+  { path: "*", element: <Navigate to="/" replace /> },
+]);
+
+const App = () => <RouterProvider router={router} />;
 
 export default App;
