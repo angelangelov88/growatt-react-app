@@ -35,9 +35,19 @@ const TermsPage = () => (
       </p>
       <p>
         Energy Dashboard is independent. It isn&apos;t made, endorsed or
-        supported by Growatt or Octopus Energy. It talks to Growatt the same way
-        Growatt&apos;s own website does, not through an official interface, so
-        it may stop working if Growatt changes its service.
+        supported by Growatt or Octopus Energy.
+      </p>
+      <p>
+        <strong className="text-gray-100">
+          Growatt doesn&apos;t offer an official way for apps like this to
+          connect.
+        </strong>{" "}
+        The app talks to Growatt the same way Growatt&apos;s own website does.
+        If Growatt changes or blocks that, reading and changing your inverter
+        settings, including automatic charging, may stop working at any time and
+        without warning, and we may not be able to fix it. Keep a way to manage
+        your inverter without the app, such as Growatt&apos;s own app or
+        website.
       </p>
     </LegalSection>
 
@@ -89,8 +99,9 @@ const TermsPage = () => (
         available&quot;. We work to keep it reliable and secure, but we
         can&apos;t promise it will always be available, free of errors, or that
         it will apply the right settings at the right time. Growatt or Octopus
-        may be unavailable, may change their services, or may give the app wrong
-        or late information, such as changed charging times.
+        may be unavailable, may change or block their services without notice,
+        or may give the app wrong or late information, such as changed charging
+        times.
       </p>
     </LegalSection>
 
