@@ -35,6 +35,8 @@ type Me = {
   // aal2 once the user has passed an MFA check in this session.
   aal: "aal1" | "aal2";
   mfaEnrolled: boolean;
+  // False for Google users until they add one.
+  hasPassword: boolean;
   hasGrowatt: boolean;
   hasOctopus: boolean;
 };

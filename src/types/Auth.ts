@@ -11,7 +11,12 @@ type AuthCardProps = { title: string; children: ReactNode };
 
 type AuthLinkProps = { to: string; disabled?: boolean; children: ReactNode };
 
-type GoogleButtonProps = { disabled?: boolean };
+type GoogleButtonProps = {
+  disabled?: boolean;
+  // A page to come back to after Google, instead of home.
+  next?: "settings";
+  label?: string;
+};
 
 type ServerUnavailableProps = { onRetry: () => void; isRetrying: boolean };
 

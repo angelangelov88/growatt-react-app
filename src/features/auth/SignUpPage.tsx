@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import FormAlert from "../../components/FormAlert";
 import SubmitButton from "../../components/SubmitButton";
+import PasswordField from "../../components/PasswordField";
 import TextField from "../../components/TextField";
 import { apiRequest } from "../../lib/apiClient";
 import { signupSchema } from "../../lib/authSchemas";
@@ -85,10 +86,9 @@ const SignUpPage = () => {
             disabled={signup.isPending}
             required
           />
-          <TextField
+          <PasswordField
             id="password"
             label="Password"
-            type="password"
             autoComplete="new-password"
             value={password}
             onChange={(e) => {

@@ -8,4 +8,10 @@ type MfaSetupProps = {
 
 type MfaTurnOffProps = { onDone: () => void; onCancel: () => void };
 
-export type { MfaSetupProps, MfaTurnOffProps };
+// onDone gets the message to show.
+type PasswordFormProps = {
+  onDone: (message: string) => void;
+  onCancel: () => void;
+};
+
+export type { MfaSetupProps, MfaTurnOffProps, PasswordFormProps };

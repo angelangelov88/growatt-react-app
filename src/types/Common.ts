@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode } from "react";
 
 type SpinnerProps = { className?: string };
 
@@ -17,7 +17,12 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
   label: string;
   hint?: string;
   error?: string;
+  // Shown inside the input, at its right edge (e.g. a show-password button).
+  trailing?: ReactNode;
 };
+
+// The type is chosen by the show/hide button.
+type PasswordFieldProps = Omit<TextFieldProps, "type" | "trailing">;
 
 // A 6-digit code from an authenticator app.
 type CodeFieldProps = {
@@ -41,6 +46,7 @@ export type {
   NotReadYetProps,
   FieldErrors,
   TextFieldProps,
+  PasswordFieldProps,
   CodeFieldProps,
   SubmitButtonProps,
   FormAlertProps,

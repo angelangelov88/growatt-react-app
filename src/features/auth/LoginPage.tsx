@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import FormAlert from "../../components/FormAlert";
 import SubmitButton from "../../components/SubmitButton";
+import PasswordField from "../../components/PasswordField";
 import TextField from "../../components/TextField";
 import { apiRequest } from "../../lib/apiClient";
 import { loginSchema } from "../../lib/authSchemas";
@@ -87,10 +88,9 @@ const LoginPage = () => {
             disabled={login.isPending}
             required
           />
-          <TextField
+          <PasswordField
             id="password"
             label="Password"
-            type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => {

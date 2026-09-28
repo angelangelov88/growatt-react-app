@@ -23,8 +23,24 @@ const loginSchema = z.object({ email, password: z.string().min(1).max(72) });
 // Forgot password: where to send the reset link.
 const resetRequestSchema = z.object({ email });
 
-// A new password, after the reset link or from Settings.
-const newPasswordSchema = z.object({ password: newPassword });
+const currentPassword = z
+  .string()
+  .min(1, "Enter your current password")
+  .max(72);
+
+// PUT /api/auth/password: a new password, after the reset link or from
+// Settings. currentPassword proves who it is for users without MFA, in place
+// of a recent login.
+const newPasswordSchema = z.object({
+  password: newPassword,
+  currentPassword: currentPassword.optional(),
+});
+
+// Settings' change password form, for users with a password and no MFA.
+const changePasswordSchema = z.object({
+  currentPassword,
+  password: newPassword,
+});
 
 // The 6-digit code from an authenticator app.
 const totpCode = z.string().regex(/^\d{6}$/, "Enter the 6-digit code");
@@ -39,5 +55,6 @@ export {
   loginSchema,
   resetRequestSchema,
   newPasswordSchema,
+  changePasswordSchema,
   mfaSchema,
 };

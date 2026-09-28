@@ -86,4 +86,4 @@ const requireUser = async (
   return { userId: claims.sub, claims, supabase };
 };
 
-export { createSupabase, requireUser };
+export { createSupabase, requireUser, secure };

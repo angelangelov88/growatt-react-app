@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import FormAlert from "../../components/FormAlert";
 import SubmitButton from "../../components/SubmitButton";
-import TextField from "../../components/TextField";
+import PasswordField from "../../components/PasswordField";
 import useToast from "../../contexts/useToast";
 import { ApiRequestError, apiRequest } from "../../lib/apiClient";
 import { newPasswordSchema } from "../../lib/authSchemas";
@@ -118,10 +118,9 @@ const ResetPasswordPage = () => {
           readOnly
           hidden
         />
-        <TextField
+        <PasswordField
           id="password"
           label="New password"
-          type="password"
           autoComplete="new-password"
           autoFocus
           value={password}

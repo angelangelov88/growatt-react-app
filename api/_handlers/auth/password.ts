@@ -20,7 +20,8 @@ const RATE_LIMITED = "Too many attempts, try again later";
 // PUT { password } → 204. Sets a new password and signs out the user's other
 //   sessions. Needs a recent step-up: the reset link counts as a fresh login,
 //   and users with MFA also need their app's code, so a stolen inbox alone
-//   can't take over the account.
+//   can't take over the account. From Settings, users without MFA send
+//   currentPassword instead (or, with none yet, have logged in recently).
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["POST", "PUT"]) || !checkOrigin(req, res))
     return;
@@ -61,7 +62,12 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     return;
   }
   if (!(await rateLimit(res, "passwordChange", user.userId))) return;
-  if (!(await requireStepUp(user, res))) return;
+  if (
+    !(await requireStepUp(user, res, {
+      currentPassword: body.data.currentPassword,
+    }))
+  )
+    return;
 
   const { auth } = user.supabase;
   const { error } = await auth.updateUser({ password: body.data.password });

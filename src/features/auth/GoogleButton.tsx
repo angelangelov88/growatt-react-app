@@ -2,10 +2,17 @@ import type { GoogleButtonProps } from "../../types/Auth";
 
 // A plain link, not a fetch: the server redirects the whole page to Google and
 // back to /api/auth/callback, which sets the session cookies. Disabled, it has
-// no href, so it can't be clicked or tabbed to.
-const GoogleButton = ({ disabled = false }: GoogleButtonProps) => (
+// no href, so it can't be clicked or tabbed to. next names the page to come
+// back to (the server only accepts known names).
+const GoogleButton = ({
+  disabled = false,
+  next,
+  label = "Continue with Google",
+}: GoogleButtonProps) => (
   <a
-    href={disabled ? undefined : "/api/auth/google"}
+    href={
+      disabled ? undefined : `/api/auth/google${next ? `?next=${next}` : ""}`
+    }
     aria-disabled={disabled || undefined}
     className={`w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium bg-white text-gray-900 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400 ${
       disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
@@ -29,7 +36,7 @@ const GoogleButton = ({ disabled = false }: GoogleButtonProps) => (
         d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
       />
     </svg>
-    Continue with Google
+    {label}
   </a>
 );
 
