@@ -2,6 +2,8 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 
 type SpinnerProps = { className?: string };
 
+type AppLogoProps = { className?: string };
+
 type NotReadYetProps = {
   isReading: boolean;
   loadingMessage: string;
@@ -43,6 +45,7 @@ type FormAlertProps = { message: string; tone?: "error" | "success" };
 
 export type {
   SpinnerProps,
+  AppLogoProps,
   NotReadYetProps,
   FieldErrors,
   TextFieldProps,

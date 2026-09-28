@@ -1,7 +1,9 @@
 import { Link, Outlet } from "react-router";
 import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
+import AppLogo from "./AppLogo";
 import LegalLinks from "./LegalLinks";
+import Wordmark from "./Wordmark";
 
 // The frame around every page for a logged-in user.
 const AppLayout = () => {
@@ -13,9 +15,10 @@ const AppLayout = () => {
       <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
         <Link
           to="/"
-          className="text-lg font-semibold tracking-tight text-white"
+          className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"
         >
-          ⚡ Energy Dashboard
+          <AppLogo className="size-7 shrink-0" />
+          <Wordmark />
         </Link>
         <div className="flex items-center gap-4 min-w-0">
           {me?.email && (
