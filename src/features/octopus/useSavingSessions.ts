@@ -1,14 +1,29 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { fetchToken } from "./useOctopus";
-import { fetchSavingSessions, joinSession } from "../../lib/savingSessions";
+import { apiRequest } from "../../lib/apiClient";
+import type { JoinBody, SavingSessions, SessionJson } from "../../types/Api";
+import type { PowerDownSession, SavingSessionsData } from "../../types/Octopus";
 
-const account = import.meta.env.VITE_OCTOPUS_ACCOUNT;
+// The server sends the dates as ISO strings.
+const toSession = (s: SessionJson): PowerDownSession => ({
+  ...s,
+  startAt: new Date(s.startAt),
+  endAt: new Date(s.endAt),
+});
+
+const fetchSessions = async (): Promise<SavingSessionsData> => {
+  const data = await apiRequest<SavingSessions>("octopus/sessions");
+  return {
+    region: data.region,
+    events: data.events.map(toSession),
+    joined: data.joined.map(toSession),
+  };
+};
 
 // Loaded on demand with refetch(), like the inverter cards.
 const useSavingSessions = () =>
   useQuery({
     queryKey: ["octopus", "savingSessions"],
-    queryFn: async () => fetchSavingSessions(await fetchToken(), account),
+    queryFn: fetchSessions,
     enabled: false,
     retry: false,
     staleTime: Infinity,
@@ -17,8 +32,11 @@ const useSavingSessions = () =>
 // The caller reloads the sessions on success (refetchQueries skips disabled queries).
 const useJoinSession = () =>
   useMutation({
-    mutationFn: async (eventCode: string) =>
-      joinSession(await fetchToken(), account, eventCode),
+    mutationFn: (eventCode: string) =>
+      apiRequest("octopus/join", {
+        method: "POST",
+        body: { eventCode } satisfies JoinBody,
+      }),
   });
 
 export { useJoinSession };

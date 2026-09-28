@@ -79,6 +79,8 @@ type PowerDownSessionsProps = {
   exportDisabled: boolean;
 };
 
+type OctopusProps = { canApply: boolean };
+
 type SectionHeadingProps = { children: string };
 
 export type {
@@ -95,5 +97,6 @@ export type {
   SessionStatus,
   HistoryDays,
   PowerDownSessionsProps,
+  OctopusProps,
   SectionHeadingProps,
 };

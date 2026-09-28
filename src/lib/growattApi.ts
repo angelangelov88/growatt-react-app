@@ -8,21 +8,18 @@ import type {
 } from "../types/Growatt";
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
-// Used by the server (one client per user), the Node script and, until it moves
-// to the API, the browser. Each caller passes its own credentials and URL builder.
+// Used by the server (one client per user) and the Node script. Each caller
+// passes its own credentials and URL builder.
 
 const createGrowattClient = ({
   user,
   passwordMd5,
   buildUrl,
-  cookieHeader = "Cookie",
-  storage,
   debug = false,
 }: GrowattConfig) => {
-  const STORAGE_KEY = "growatt_session";
-  // Without storage the session lives only in this client, so on the server
-  // one user's Growatt session can never be used for another.
-  let sessionCookie = storage?.getItem(STORAGE_KEY) ?? "";
+  // The session lives only in this client, so on the server one user's Growatt
+  // session can never be used for another.
+  let sessionCookie = "";
   let loginPromise: Promise<void> | null = null;
 
   const request = async (
@@ -32,7 +29,7 @@ const createGrowattClient = ({
   ): Promise<GrowattResponse> => {
     const headers: Record<string, string> = {};
     if (body) headers["Content-Type"] = "application/x-www-form-urlencoded";
-    if (sessionCookie) headers[cookieHeader] = sessionCookie;
+    if (sessionCookie) headers.Cookie = sessionCookie;
 
     const res = await fetch(buildUrl(path), {
       method: body ? "POST" : "GET",
@@ -41,14 +38,10 @@ const createGrowattClient = ({
       signal: AbortSignal.timeout(20_000),
     });
 
-    const setCookie =
-      res.headers.get("x-set-cookie") ?? res.headers.get("set-cookie");
+    const setCookie = res.headers.get("set-cookie");
     if (setCookie) {
       const match = /JSESSIONID=[^;]+/.exec(setCookie);
-      if (match) {
-        sessionCookie = match[0];
-        storage?.setItem(STORAGE_KEY, sessionCookie);
-      }
+      if (match) sessionCookie = match[0];
     }
 
     const text = await res.text();
@@ -72,7 +65,6 @@ const createGrowattClient = ({
 
     if (!isRetry && isAuthError) {
       sessionCookie = "";
-      storage?.removeItem(STORAGE_KEY);
       loginPromise = null;
       await ensureLoggedIn();
       return request(path, body, true);

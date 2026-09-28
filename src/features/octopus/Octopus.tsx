@@ -2,15 +2,17 @@ import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
 import useToast from "../../contexts/useToast";
+import type { OctopusProps } from "../../types/Octopus";
 
-const Octopus = () => {
+// canApply: false until the user has saved their Growatt login.
+const Octopus = ({ canApply }: OctopusProps) => {
   const {
     slotsLoading,
     slotsError,
     slotsErrorUpdatedAt,
     slotsData,
     formatDate,
-    handleAuthAndFetchSlots,
+    fetchSlots,
   } = useOctopus();
   const { applySlots, planSummary, extraSlotsMessage, isPending } =
     useApplySlots({ slotsData });
@@ -33,7 +35,7 @@ const Octopus = () => {
           Octopus Dispatch Slots
         </h2>
         <button
-          onClick={handleAuthAndFetchSlots}
+          onClick={fetchSlots}
           disabled={slotsLoading}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
@@ -65,7 +67,13 @@ const Octopus = () => {
         </div>
       )}
 
-      {slotsData && (
+      {slotsData && !canApply && (
+        <p className="text-xs text-gray-400">
+          Add your Growatt login in Settings to apply these to your inverter.
+        </p>
+      )}
+
+      {slotsData && canApply && (
         <>
           <p className="text-xs text-gray-400 mb-3">
             Will apply (UK time):{" "}

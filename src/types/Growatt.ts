@@ -7,6 +7,10 @@ type SlotParam = {
   endMin: string;
 } | null;
 
+// Battery First or Grid First values to write, as the forms hold them. Empty
+// slots are null.
+type PeriodsInput = { powerRate: string; stopSOC: string; slots: SlotParam[] };
+
 type ChargePeriod = { start: string; end: string; enabled: boolean };
 type ChargePeriods = {
   powerRate: number;
@@ -33,13 +37,6 @@ type GrowattConfig = {
   // MD5 of the password, which is all Growatt's login sends.
   passwordMd5: string;
   buildUrl: (path: string) => string;
-  cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
-  // Where to keep the Growatt session between page loads. Browser only.
-  storage?: {
-    getItem: (key: string) => string | null;
-    setItem: (key: string, value: string) => void;
-    removeItem: (key: string) => void;
-  };
   // Log each reply (never the login one).
   debug?: boolean;
 };
@@ -58,6 +55,7 @@ type Preset = "high" | "low";
 
 export type {
   SlotParam,
+  PeriodsInput,
   ChargePeriod,
   ChargePeriods,
   DischargePeriods,
