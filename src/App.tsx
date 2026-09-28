@@ -1,6 +1,5 @@
 import Growatt from "./features/growatt/Growatt";
 import Octopus from "./features/octopus/Octopus";
-import TriggerUpdate from "./components/TriggerUpdate";
 
 const App = () => {
   return (
@@ -11,7 +10,6 @@ const App = () => {
         </h1>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
-        <TriggerUpdate />
         <Octopus />
         <Growatt />
       </main>

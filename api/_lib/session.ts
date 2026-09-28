@@ -3,6 +3,7 @@ import {
   parseCookieHeader,
   serializeCookieHeader,
 } from "@supabase/ssr";
+import type { JwtPayload, SupabaseClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { SessionUser } from "../../src/types/Server";
 import { sendError } from "./http";
@@ -43,12 +44,25 @@ const createSupabase = (req: VercelRequest, res: VercelResponse) =>
     },
   });
 
+// Whether the user has an authenticator app set up. An aal2 token (signed)
+// proves it; otherwise ask Supabase, because the user object in the session
+// cookie is the browser's copy and could have its factors removed.
+const hasMfa = async (supabase: SupabaseClient, claims: JwtPayload) => {
+  if (claims.aal === "aal2") return true;
+  const { data, error } = await supabase.auth.mfa.listFactors();
+  if (error) return null;
+  return data.totp.length > 0;
+};
+
 // Call first in every endpoint that needs a login. Verifies the access token
 // against Supabase's public key (refreshing it from the cookie if it expired).
-// Returns the user, or null after responding 401.
+// Users with MFA must have entered their app's code in this session (aal2),
+// or they get 403 mfa_required; only the endpoints that let them enter it
+// pass allowPendingMfa. Returns the user, or null after responding.
 const requireUser = async (
   req: VercelRequest,
   res: VercelResponse,
+  { allowPendingMfa = false } = {},
 ): Promise<SessionUser | null> => {
   res.setHeader("Cache-Control", "private, no-store");
   const supabase = createSupabase(req, res);
@@ -57,7 +71,17 @@ const requireUser = async (
     sendError(res, 401, "unauthenticated", "Please log in");
     return null;
   }
-  return { userId: data.claims.sub, claims: data.claims, supabase };
+  const { claims } = data;
+  const mfaEnrolled = await hasMfa(supabase, claims);
+  if (mfaEnrolled === null) {
+    sendError(res, 401, "unauthenticated", "Please log in");
+    return null;
+  }
+  if (mfaEnrolled && claims.aal !== "aal2" && !allowPendingMfa) {
+    sendError(res, 403, "mfa_required", "Enter the code from your app");
+    return null;
+  }
+  return { userId: claims.sub, claims, mfaEnrolled, supabase };
 };
 
 export { createSupabase, requireUser };

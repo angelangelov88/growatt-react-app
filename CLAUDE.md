@@ -75,7 +75,7 @@ export default ActionButton;
 
 ## Folder Structure
 
-- `src/components/` — shared components used across features (`Spinner.tsx`, `TriggerUpdate.tsx`).
+- `src/components/` — shared components used across features (`Spinner.tsx`).
 - `src/features/<feature>/` — a feature's components and hooks (`growatt/`, `octopus/`).
   - A component starts in the feature that uses it. Move it to `src/components/` only when a second feature actually uses it, not because it might be reused. When you move it, give it a neutral props type in `src/types/Common.ts`.
   - Keep feature folders flat. Add `components/` and `hooks/` subfolders only once a feature has around 15 or more files.

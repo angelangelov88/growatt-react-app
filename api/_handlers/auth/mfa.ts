@@ -17,7 +17,9 @@ import { requireStepUp } from "../../_lib/stepUp";
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["POST", "DELETE"]) || !checkOrigin(req, res))
     return;
-  const user = await requireUser(req, res);
+  // Verify is how a user with MFA finishes logging in. Enroll then answers
+  // already_enrolled, and DELETE's step-up still asks for the code.
+  const user = await requireUser(req, res, { allowPendingMfa: true });
   if (!user) return;
   if (!(await rateLimit(res, "mfa", user.userId))) return;
   const { mfa } = user.supabase.auth;
