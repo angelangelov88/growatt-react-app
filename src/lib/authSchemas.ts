@@ -23,14 +23,15 @@ const loginSchema = z.object({ email, password: z.string().min(1).max(72) });
 // Forgot password: where to send the reset link.
 const resetRequestSchema = z.object({ email });
 
+// Proves who it is, for users with a password and no MFA, in place of a
+// recent login. Also used by PUT /api/credentials.
 const currentPassword = z
   .string()
   .min(1, "Enter your current password")
   .max(72);
 
 // PUT /api/auth/password: a new password, after the reset link or from
-// Settings. currentPassword proves who it is for users without MFA, in place
-// of a recent login.
+// Settings.
 const newPasswordSchema = z.object({
   password: newPassword,
   currentPassword: currentPassword.optional(),
@@ -57,4 +58,5 @@ export {
   newPasswordSchema,
   changePasswordSchema,
   mfaSchema,
+  currentPassword,
 };

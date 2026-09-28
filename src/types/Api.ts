@@ -6,7 +6,10 @@ import type {
   resetRequestSchema,
   signupSchema,
 } from "../lib/authSchemas";
-import type { credentialsSchema } from "../lib/credentialSchemas";
+import type {
+  credentialsSchema,
+  providerSchema,
+} from "../lib/credentialSchemas";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
 import type { settingsSchema } from "../lib/settingsSchema";
@@ -96,6 +99,8 @@ type AccountExport = {
   }[];
 };
 
+type Provider = z.infer<typeof providerSchema>;
+
 // GET /api/credentials, and the reply to PUT and DELETE. Never the secrets.
 type Credentials = {
   growatt: { serial: string; verifiedAt: string } | null;
@@ -112,6 +117,7 @@ export type {
   CredentialsBody,
   Me,
   MfaEnrollment,
+  Provider,
   Credentials,
   Settings,
   PeriodsBody,

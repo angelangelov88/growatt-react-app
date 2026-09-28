@@ -21,3 +21,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .vercel
+
+# Throwaway test scripts, run once and deleted.
+scripts/.tmp-*

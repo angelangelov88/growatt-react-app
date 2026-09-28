@@ -129,8 +129,9 @@ const save = async (tx: Tx, userId: string, body: CredentialsBody) => {
 };
 
 // GET → Credentials.
-// PUT CredentialsBody → Credentials. Needs a recent step-up; checks the
-//   credentials with Growatt or Octopus before saving them encrypted.
+// PUT CredentialsBody → Credentials. Needs a step-up (the MFA code, the
+//   current password, or a recent login); checks the credentials with Growatt
+//   or Octopus before saving them encrypted.
 // DELETE ?provider=growatt|octopus → Credentials. Also turns automation off.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (
@@ -181,7 +182,12 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     return;
   }
   if (!(await rateLimit(res, "credentials", userId))) return;
-  if (!(await requireStepUp(user, res))) return;
+  if (
+    !(await requireStepUp(user, res, {
+      currentPassword: body.data.currentPassword,
+    }))
+  )
+    return;
 
   const [{ failures }] = await withUser(
     userId,

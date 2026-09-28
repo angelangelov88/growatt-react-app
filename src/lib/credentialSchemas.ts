@@ -1,6 +1,8 @@
 import { z } from "zod";
+import { currentPassword } from "./authSchemas";
 
-// Shared by /api/credentials and the settings form.
+// Shared by /api/credentials and the settings form. currentPassword is only
+// for the step-up check, and is never saved.
 
 const providerSchema = z.enum(["growatt", "octopus"]);
 
@@ -12,6 +14,7 @@ const growattCredentialsSchema = z.object({
     .string()
     .trim()
     .regex(/^[A-Za-z0-9]{6,20}$/, "Check the inverter serial number"),
+  currentPassword: currentPassword.optional(),
 });
 
 const octopusCredentialsSchema = z.object({
@@ -28,6 +31,7 @@ const octopusCredentialsSchema = z.object({
     .trim()
     .toUpperCase()
     .regex(/^A-[0-9A-F]{8}$/, "Account numbers look like A-1234ABCD"),
+  currentPassword: currentPassword.optional(),
 });
 
 const credentialsSchema = z.discriminatedUnion("provider", [
