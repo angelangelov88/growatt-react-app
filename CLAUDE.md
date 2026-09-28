@@ -126,7 +126,10 @@ The app is public and changes real inverters, so these rules always apply:
   `npx prettier --write <files> && npx eslint <files>`
 - Before finishing, type-check: `npx tsc --noEmit -p . && npx tsc --noEmit -p scripts && npx tsc --noEmit -p api`.
 - Scripts: `pnpm lint`, `pnpm lint:fix`, `pnpm format`, `pnpm format:check`, `pnpm check:bundle` (after `pnpm build`), `pnpm check:database`.
-- CI (`.github/workflows/ci.yml`) runs the type check, lint, formatting, build, both checks and `pnpm audit --prod` on every push.
+- CI (`.github/workflows/ci.yml`) runs the type check, lint, formatting, build and both checks on every PR into `main`, weekly, and on demand (Actions → CI → Run workflow).
+- Dependencies are updated by hand, now and then, not by bots or CI:
+  - `pnpm audit --prod` lists known security issues in what the app ships; `pnpm audit` includes dev tools.
+  - `pnpm outdated` lists newer versions. Update on a branch: minor and patch versions together, each major version on its own (read its changelog). Run everything CI runs before merging, since `main` deploys to production.
 - Use pnpm, not npm. Don't commit build output (`dist/`).
 
 ## Working with Claude Code
