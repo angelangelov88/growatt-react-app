@@ -5,6 +5,7 @@ import LoginPage from "./features/auth/LoginPage";
 import MfaPage from "./features/auth/MfaPage";
 import SignUpPage from "./features/auth/SignUpPage";
 import DashboardPage from "./features/dashboard/DashboardPage";
+import SettingsPage from "./features/settings/SettingsPage";
 
 const router = createBrowserRouter([
   {
@@ -23,7 +24,10 @@ const router = createBrowserRouter([
     children: [
       {
         element: <AppLayout />,
-        children: [{ path: "/", element: <DashboardPage /> }],
+        children: [
+          { path: "/", element: <DashboardPage /> },
+          { path: "/settings", element: <SettingsPage /> },
+        ],
       },
     ],
   },

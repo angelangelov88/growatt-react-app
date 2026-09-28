@@ -1,9 +1,15 @@
+import type { GoogleButtonProps } from "../../types/Auth";
+
 // A plain link, not a fetch: the server redirects the whole page to Google and
-// back to /api/auth/callback, which sets the session cookies.
-const GoogleButton = () => (
+// back to /api/auth/callback, which sets the session cookies. Disabled, it has
+// no href, so it can't be clicked or tabbed to.
+const GoogleButton = ({ disabled = false }: GoogleButtonProps) => (
   <a
-    href="/api/auth/google"
-    className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium bg-white text-gray-900 hover:bg-gray-100 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+    href={disabled ? undefined : "/api/auth/google"}
+    aria-disabled={disabled || undefined}
+    className={`w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium bg-white text-gray-900 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400 ${
+      disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
+    }`}
   >
     <svg aria-hidden="true" viewBox="0 0 48 48" className="h-4 w-4">
       <path

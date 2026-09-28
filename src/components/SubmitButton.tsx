@@ -1,5 +1,5 @@
-import Spinner from "../../components/Spinner";
-import type { SubmitButtonProps } from "../../types/Auth";
+import Spinner from "./Spinner";
+import type { SubmitButtonProps } from "../types/Common";
 
 const SubmitButton = ({
   label,

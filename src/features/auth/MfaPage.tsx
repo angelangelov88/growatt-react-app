@@ -1,15 +1,15 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import CodeField from "../../components/CodeField";
+import FormAlert from "../../components/FormAlert";
+import SubmitButton from "../../components/SubmitButton";
 import { apiRequest } from "../../lib/apiClient";
 import { mfaSchema } from "../../lib/authSchemas";
 import { fieldErrors } from "../../lib/fieldErrors";
 import type { MfaBody } from "../../types/Api";
 import type { FieldErrors } from "../../types/Common";
 import AuthCard from "./AuthCard";
-import FormAlert from "./FormAlert";
-import SubmitButton from "./SubmitButton";
-import TextField from "./TextField";
 import useAuth, { resetSession } from "./useAuth";
 import useLogout from "./useLogout";
 
@@ -47,19 +47,12 @@ const MfaPage = () => {
           Open your authenticator app and enter the 6-digit code for Growatt App
           {me?.email ? ` (${me.email})` : ""}.
         </p>
-        <TextField
-          id="code"
-          label="Code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          maxLength={6}
-          autoFocus
+        <CodeField
           value={code}
-          onChange={(e) => {
-            setCode(e.target.value);
-          }}
+          onChange={setCode}
           error={errors.code}
-          required
+          autoFocus
+          disabled={verify.isPending || logout.isPending}
         />
         <SubmitButton
           label="Continue"
@@ -71,7 +64,7 @@ const MfaPage = () => {
           onClick={() => {
             logout.mutate();
           }}
-          disabled={logout.isPending}
+          disabled={logout.isPending || verify.isPending}
           className="text-sm text-gray-400 hover:text-gray-200 disabled:opacity-40"
         >
           Use a different account

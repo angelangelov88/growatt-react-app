@@ -1,3 +1,5 @@
+import type { InputHTMLAttributes } from "react";
+
 type SpinnerProps = { className?: string };
 
 type NotReadYetProps = {
@@ -10,4 +12,36 @@ type NotReadYetProps = {
 // A form's problems: one message per field, by field name.
 type FieldErrors = Partial<Record<string, string>>;
 
-export type { SpinnerProps, NotReadYetProps, FieldErrors };
+type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
+  id: string;
+  label: string;
+  hint?: string;
+  error?: string;
+};
+
+// A 6-digit code from an authenticator app.
+type CodeFieldProps = {
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  autoFocus?: boolean;
+  disabled?: boolean;
+};
+
+type SubmitButtonProps = {
+  label: string;
+  pendingLabel: string;
+  isPending: boolean;
+};
+
+type FormAlertProps = { message: string; tone?: "error" | "success" };
+
+export type {
+  SpinnerProps,
+  NotReadYetProps,
+  FieldErrors,
+  TextFieldProps,
+  CodeFieldProps,
+  SubmitButtonProps,
+  FormAlertProps,
+};

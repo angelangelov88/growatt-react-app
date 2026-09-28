@@ -1,17 +1,18 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import FormAlert from "../../components/FormAlert";
+import SubmitButton from "../../components/SubmitButton";
+import TextField from "../../components/TextField";
 import { apiRequest } from "../../lib/apiClient";
 import { loginSchema } from "../../lib/authSchemas";
 import { fieldErrors } from "../../lib/fieldErrors";
 import type { LoginBody } from "../../types/Api";
 import type { FieldErrors } from "../../types/Common";
 import AuthCard from "./AuthCard";
-import FormAlert from "./FormAlert";
+import AuthLink from "./AuthLink";
 import GoogleButton from "./GoogleButton";
-import SubmitButton from "./SubmitButton";
-import TextField from "./TextField";
 import { resetSession } from "./useAuth";
 
 // The ?error= codes the server's redirects use (Google sign-in and email
@@ -62,7 +63,7 @@ const LoginPage = () => {
     <AuthCard title="Log in">
       <div className="flex flex-col gap-5">
         {alert && <FormAlert message={alert} />}
-        <GoogleButton />
+        <GoogleButton disabled={login.isPending} />
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <span className="h-px flex-1 bg-gray-800" />
           or with email
@@ -83,6 +84,7 @@ const LoginPage = () => {
               setEmail(e.target.value);
             }}
             error={errors.email}
+            disabled={login.isPending}
             required
           />
           <TextField
@@ -95,6 +97,7 @@ const LoginPage = () => {
               setPassword(e.target.value);
             }}
             error={errors.password && "Enter your password"}
+            disabled={login.isPending}
             required
           />
           <SubmitButton
@@ -105,9 +108,9 @@ const LoginPage = () => {
         </form>
         <p className="text-sm text-gray-400 text-center">
           New here?{" "}
-          <Link to="/signup" className="text-violet-400 hover:underline">
+          <AuthLink to="/signup" disabled={login.isPending}>
             Create an account
-          </Link>
+          </AuthLink>
         </p>
       </div>
     </AuthCard>

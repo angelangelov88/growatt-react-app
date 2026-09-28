@@ -1,4 +1,4 @@
-import type { FormAlertProps } from "../../types/Auth";
+import type { FormAlertProps } from "../types/Common";
 
 // A message about the whole form, read out by screen readers when it appears.
 const FormAlert = ({ message, tone = "error" }: FormAlertProps) => (

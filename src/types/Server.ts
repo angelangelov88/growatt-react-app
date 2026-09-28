@@ -19,8 +19,6 @@ type EncryptedSecret = {
 type SessionUser = {
   userId: string;
   claims: JwtPayload;
-  // Has an authenticator app, checked with Supabase (never the cookie's copy).
-  mfaEnrolled: boolean;
   supabase: SupabaseClient;
 };
 

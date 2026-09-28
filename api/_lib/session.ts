@@ -44,11 +44,13 @@ const createSupabase = (req: VercelRequest, res: VercelResponse) =>
     },
   });
 
-// Whether the user has an authenticator app set up. An aal2 token (signed)
-// proves it; otherwise ask Supabase, because the user object in the session
-// cookie is the browser's copy and could have its factors removed.
-const hasMfa = async (supabase: SupabaseClient, claims: JwtPayload) => {
-  if (claims.aal === "aal2") return true;
+// Whether the user still has to enter their authenticator app's code: they
+// have an app, and this session hasn't passed it yet. An aal2 token (signed)
+// proves the code was entered. Otherwise ask Supabase, because the user object
+// in the session cookie is the browser's copy and could have its factors
+// removed. null if Supabase couldn't answer.
+const mfaPending = async (supabase: SupabaseClient, claims: JwtPayload) => {
+  if (claims.aal === "aal2") return false;
   const { data, error } = await supabase.auth.mfa.listFactors();
   if (error) return null;
   return data.totp.length > 0;
@@ -72,16 +74,16 @@ const requireUser = async (
     return null;
   }
   const { claims } = data;
-  const mfaEnrolled = await hasMfa(supabase, claims);
-  if (mfaEnrolled === null) {
+  const pending = await mfaPending(supabase, claims);
+  if (pending === null) {
     sendError(res, 401, "unauthenticated", "Please log in");
     return null;
   }
-  if (mfaEnrolled && claims.aal !== "aal2" && !allowPendingMfa) {
+  if (pending && !allowPendingMfa) {
     sendError(res, 403, "mfa_required", "Enter the code from your app");
     return null;
   }
-  return { userId: claims.sub, claims, mfaEnrolled, supabase };
+  return { userId: claims.sub, claims, supabase };
 };
 
 export { createSupabase, requireUser };

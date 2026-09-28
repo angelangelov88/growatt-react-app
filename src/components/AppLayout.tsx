@@ -19,6 +19,12 @@ const AppLayout = () => {
           {me?.email && (
             <span className="text-sm text-gray-400 truncate">{me.email}</span>
           )}
+          <Link
+            to="/settings"
+            className="text-sm text-gray-300 hover:text-white shrink-0"
+          >
+            Settings
+          </Link>
           <button
             onClick={() => {
               logout.mutate();

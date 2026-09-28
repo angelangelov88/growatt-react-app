@@ -2,16 +2,17 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router";
 import { useMutation } from "@tanstack/react-query";
+import FormAlert from "../../components/FormAlert";
+import SubmitButton from "../../components/SubmitButton";
+import TextField from "../../components/TextField";
 import { apiRequest } from "../../lib/apiClient";
 import { signupSchema } from "../../lib/authSchemas";
 import { fieldErrors } from "../../lib/fieldErrors";
 import type { SignupBody } from "../../types/Api";
 import type { FieldErrors } from "../../types/Common";
 import AuthCard from "./AuthCard";
-import FormAlert from "./FormAlert";
+import AuthLink from "./AuthLink";
 import GoogleButton from "./GoogleButton";
-import SubmitButton from "./SubmitButton";
-import TextField from "./TextField";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -60,7 +61,7 @@ const SignUpPage = () => {
     <AuthCard title="Create an account">
       <div className="flex flex-col gap-5">
         {signup.error && <FormAlert message={signup.error.message} />}
-        <GoogleButton />
+        <GoogleButton disabled={signup.isPending} />
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <span className="h-px flex-1 bg-gray-800" />
           or with email
@@ -81,6 +82,7 @@ const SignUpPage = () => {
               setEmail(e.target.value);
             }}
             error={errors.email}
+            disabled={signup.isPending}
             required
           />
           <TextField
@@ -94,6 +96,7 @@ const SignUpPage = () => {
             }}
             hint="At least 10 characters, with upper and lowercase letters, a number and a symbol"
             error={errors.password}
+            disabled={signup.isPending}
             required
           />
           <SubmitButton
@@ -104,9 +107,9 @@ const SignUpPage = () => {
         </form>
         <p className="text-sm text-gray-400 text-center">
           Already have an account?{" "}
-          <Link to="/login" className="text-violet-400 hover:underline">
+          <AuthLink to="/login" disabled={signup.isPending}>
             Log in
-          </Link>
+          </AuthLink>
         </p>
       </div>
     </AuthCard>
