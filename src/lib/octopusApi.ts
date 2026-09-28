@@ -1,17 +1,25 @@
 import type { GraphQLResponse } from "../types/GraphQL";
+import type { Dispatch } from "../types/Octopus";
 
-// Octopus's public GraphQL API (Kraken). Kept free of React: the server uses it.
+// Octopus's GraphQL APIs (Kraken). Kept free of React: the server uses it.
 // Inputs always go in variables, never into the query text, so a crafted value
 // can't change the query.
 
 const OCTOPUS_ENDPOINT = "https://api.octopus.energy/v1/graphql/";
 
+// An error Octopus itself returned, so its message is safe to show. Anything
+// else (a timeout, a network error, an HTML error page) is a plain Error.
+class OctopusError extends Error {}
+
 const octopusRequest = async <T>(
   query: string,
-  variables: Record<string, string>,
-  token?: string,
+  variables: Record<string, unknown>,
+  {
+    token,
+    endpoint = OCTOPUS_ENDPOINT,
+  }: { token?: string; endpoint?: string } = {},
 ): Promise<T> => {
-  const res = await fetch(OCTOPUS_ENDPOINT, {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -21,8 +29,8 @@ const octopusRequest = async <T>(
     signal: AbortSignal.timeout(15_000),
   });
   const json = (await res.json()) as GraphQLResponse<T>;
-  if (json.errors?.length) throw new Error(json.errors[0].message);
-  if (!json.data) throw new Error("No data returned from Octopus");
+  if (json.errors?.length) throw new OctopusError(json.errors[0].message);
+  if (!json.data) throw new OctopusError("No data returned from Octopus");
   return json.data;
 };
 
@@ -37,7 +45,7 @@ const obtainToken = async (apiKey: string) => {
     { apiKey },
   );
   const token = data.obtainKrakenToken?.token;
-  if (!token) throw new Error("No token returned from Octopus");
+  if (!token) throw new OctopusError("No token returned from Octopus");
   return token;
 };
 
@@ -48,9 +56,28 @@ const checkAccount = async (token: string, account: string) => {
       account(accountNumber: $account) { number }
     }`,
     { account },
-    token,
+    { token },
   );
-  if (data.account?.number !== account) throw new Error("Account not found");
+  if (data.account?.number !== account)
+    throw new OctopusError("Account not found");
 };
 
-export { octopusRequest, obtainToken, checkAccount };
+// Intelligent Octopus's planned charging slots for the account.
+const fetchPlannedDispatches = async (token: string, account: string) => {
+  const data = await octopusRequest<{ plannedDispatches: Dispatch[] | null }>(
+    `query PlannedDispatches($account: String!) {
+      plannedDispatches(accountNumber: $account) { startDt endDt }
+    }`,
+    { account },
+    { token },
+  );
+  return data.plannedDispatches ?? [];
+};
+
+export {
+  OctopusError,
+  octopusRequest,
+  obtainToken,
+  checkAccount,
+  fetchPlannedDispatches,
+};

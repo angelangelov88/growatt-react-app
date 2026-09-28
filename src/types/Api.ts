@@ -2,7 +2,9 @@ import type { z } from "zod";
 import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
 import type { credentialsSchema } from "../lib/credentialSchemas";
 import type { periodsSchema } from "../lib/growattSchemas";
+import type { joinSchema } from "../lib/octopusSchemas";
 import type { settingsSchema } from "../lib/settingsSchema";
+import type { Dispatch, PowerDownSession } from "./Octopus";
 
 // Shared by the api/ functions and the app.
 
@@ -40,6 +42,23 @@ type MfaEnrollment = {
 // ChargePeriods type from Growatt.ts.
 type PeriodsBody = z.infer<typeof periodsSchema>;
 
+// GET /api/octopus/slots
+type OctopusSlots = { plannedDispatches: Dispatch[] };
+
+// GET /api/octopus/sessions. SavingSessionsData, with the dates as ISO strings.
+type SessionJson = Omit<PowerDownSession, "startAt" | "endAt"> & {
+  startAt: string;
+  endAt: string;
+};
+type SavingSessions = {
+  region: number | null;
+  events: SessionJson[];
+  joined: SessionJson[];
+};
+
+// POST /api/octopus/join
+type JoinBody = z.infer<typeof joinSchema>;
+
 // GET and PUT /api/settings.
 type Settings = z.infer<typeof settingsSchema>;
 
@@ -60,4 +79,8 @@ export type {
   Credentials,
   Settings,
   PeriodsBody,
+  OctopusSlots,
+  SessionJson,
+  SavingSessions,
+  JoinBody,
 };

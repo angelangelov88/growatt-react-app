@@ -37,7 +37,8 @@ type AuditAction =
   | "credentials_deleted"
   | "credentials_check_failed"
   | "settings_saved"
-  | "growatt_write";
+  | "growatt_write"
+  | "octopus_join";
 
 export type {
   Tx,
