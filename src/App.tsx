@@ -7,6 +7,8 @@ import MfaPage from "./features/auth/MfaPage";
 import ResetPasswordPage from "./features/auth/ResetPasswordPage";
 import SignUpPage from "./features/auth/SignUpPage";
 import DashboardPage from "./features/dashboard/DashboardPage";
+import PrivacyPage from "./features/legal/PrivacyPage";
+import TermsPage from "./features/legal/TermsPage";
 import SettingsPage from "./features/settings/SettingsPage";
 
 const router = createBrowserRouter([
@@ -35,6 +37,9 @@ const router = createBrowserRouter([
       },
     ],
   },
+  // Open to everyone, signed in or not.
+  { path: "/privacy", element: <PrivacyPage /> },
+  { path: "/terms", element: <TermsPage /> },
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
 

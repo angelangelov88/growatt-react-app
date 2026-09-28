@@ -94,6 +94,7 @@ The app is public and changes real inverters, so these rules always apply:
 - **Never log request bodies, headers, cookies or credentials.** Log error codes and at most the first 8 characters of a user id. Audit rows (`audit`) never hold a secret.
 - Error replies use `sendError` with safe messages: never pass on another service's raw reply.
 - This repo and its Actions logs are public: scripts and workflows print names and counts, never values.
+- **Keep the privacy notice true.** If a change collects new personal data, keeps it longer or sends it to a new service, update `src/features/legal/PrivacyPage.tsx` and `LAST_UPDATED` in `legalInfo.ts` in the same PR.
 
 ## Styling
 

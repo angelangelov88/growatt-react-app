@@ -32,4 +32,13 @@ const automationUserIds = async () =>
     >`select id from private.automation_user_ids() as id`
   ).map((r) => r.id);
 
-export { sql, withUser, automationUserIds };
+// Only for the cron job: deletes audit rows older than 12 months (the privacy
+// notice promises this). Returns how many went.
+const pruneAuditLog = async () => {
+  const [row] = await sql<
+    { count: string }[]
+  >`select private.prune_audit_log() as count`;
+  return Number(row.count);
+};
+
+export { sql, withUser, automationUserIds, pruneAuditLog };

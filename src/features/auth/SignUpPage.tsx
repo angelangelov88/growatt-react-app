@@ -105,6 +105,26 @@ const SignUpPage = () => {
             isPending={signup.isPending}
           />
         </form>
+        {/* A new tab, so the form keeps what's been typed. Covers Google too. */}
+        <p className="text-xs text-gray-500 text-center">
+          By creating an account, you agree to the{" "}
+          <Link
+            to="/terms"
+            target="_blank"
+            className="text-violet-400 hover:underline"
+          >
+            terms of use
+          </Link>{" "}
+          and confirm you&apos;ve read the{" "}
+          <Link
+            to="/privacy"
+            target="_blank"
+            className="text-violet-400 hover:underline"
+          >
+            privacy notice
+          </Link>
+          .
+        </p>
         <p className="text-sm text-gray-400 text-center">
           Already have an account?{" "}
           <AuthLink to="/login" disabled={signup.isPending}>

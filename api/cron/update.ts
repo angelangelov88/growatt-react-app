@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { CronSummary } from "../../src/types/Server";
 import { runAutomation } from "../_lib/automation";
-import { automationUserIds } from "../_lib/db";
+import { automationUserIds, pruneAuditLog } from "../_lib/db";
 import { allowMethods, sendError } from "../_lib/http";
 
 // Each user takes 25–35s, mostly the inverter's gaps between commands.
@@ -30,6 +30,13 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   if (!isAuthorized(req)) {
     sendError(res, 401, "unauthorized", "Unauthorized");
     return;
+  }
+
+  // Housekeeping first. A failure here mustn't stop anyone's charging.
+  try {
+    await pruneAuditLog();
+  } catch {
+    console.error("cron: audit log prune failed");
   }
 
   const userIds = await automationUserIds();
