@@ -5,6 +5,7 @@ import {
   AFTER_GOOGLE_PAGES,
 } from "../../_lib/afterGoogle";
 import { allowMethods, clientIp } from "../../_lib/http";
+import { requestOrigin } from "../../_lib/origin";
 import { countHit } from "../../_lib/rateLimit";
 import { createSupabase, secure } from "../../_lib/session";
 
@@ -23,7 +24,8 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   const { data, error } = await createSupabase(req, res).auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.APP_ORIGIN ?? ""}/api/auth/callback`,
+      // Back to the host this browser is on, where the PKCE cookie is.
+      redirectTo: `${requestOrigin(req)}/api/auth/callback`,
       skipBrowserRedirect: true,
     },
   });

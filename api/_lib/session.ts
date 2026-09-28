@@ -7,15 +7,14 @@ import type { JwtPayload, SupabaseClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { SessionUser } from "../../src/types/Server";
 import { sendError } from "./http";
+import { appOrigin } from "./origin";
 
-const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, APP_ORIGIN } = process.env;
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY || !APP_ORIGIN)
-  throw new Error(
-    "SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and APP_ORIGIN must be set",
-  );
+const { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } = process.env;
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)
+  throw new Error("SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be set");
 
 // Secure cookies need HTTPS, which localhost doesn't have.
-const secure = !APP_ORIGIN.startsWith("http://localhost");
+const secure = !appOrigin.startsWith("http://localhost");
 
 // A Supabase client whose session lives in cookies on this request/response.
 // Whatever Supabase asks for, the cookies are always httpOnly (scripts in the
