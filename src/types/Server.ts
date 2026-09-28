@@ -30,7 +30,12 @@ type Handler = (
 ) => Promise<void> | void;
 
 // What private.audit_log records.
-type AuditAction = "mfa_enrolled" | "mfa_removed";
+type AuditAction =
+  | "mfa_enrolled"
+  | "mfa_removed"
+  | "credentials_saved"
+  | "credentials_deleted"
+  | "credentials_check_failed";
 
 export type {
   Tx,

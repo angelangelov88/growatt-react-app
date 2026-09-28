@@ -1,3 +1,4 @@
+import SparkMD5 from "spark-md5";
 import { createGrowattClient } from "../src/lib/growattApi";
 import {
   buildChargePlan,
@@ -20,8 +21,9 @@ const {
 
 const growatt = createGrowattClient({
   user: GROWATT_USER,
-  password: GROWATT_PASSWORD,
+  passwordMd5: SparkMD5.hash(GROWATT_PASSWORD),
   buildUrl: (path) => `${GROWATT_BASE}${path}`,
+  debug: true,
 });
 
 // ─── Octopus ──────────────────────────────────────────────────────────────────

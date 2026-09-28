@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { loginSchema, mfaSchema, signupSchema } from "../lib/authSchemas";
+import type { credentialsSchema } from "../lib/credentialSchemas";
 
 // Shared by the api/ functions and the app.
 
@@ -12,6 +13,8 @@ type ApiError = {
 type LoginBody = z.infer<typeof loginSchema>;
 type SignupBody = z.infer<typeof signupSchema>;
 type MfaBody = z.infer<typeof mfaSchema>;
+// PUT /api/credentials. Sent once to be checked and saved; never sent back.
+type CredentialsBody = z.infer<typeof credentialsSchema>;
 
 // GET /api/auth/me
 type Me = {
@@ -31,4 +34,19 @@ type MfaEnrollment = {
   secret: string;
 };
 
-export type { ApiError, LoginBody, SignupBody, MfaBody, Me, MfaEnrollment };
+// GET /api/credentials, and the reply to PUT and DELETE. Never the secrets.
+type Credentials = {
+  growatt: { serial: string; verifiedAt: string } | null;
+  octopus: { account: string; verifiedAt: string } | null;
+};
+
+export type {
+  ApiError,
+  LoginBody,
+  SignupBody,
+  MfaBody,
+  CredentialsBody,
+  Me,
+  MfaEnrollment,
+  Credentials,
+};

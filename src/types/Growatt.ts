@@ -30,9 +30,18 @@ type GrowattResponse = {
 
 type GrowattConfig = {
   user: string;
-  password: string;
+  // MD5 of the password, which is all Growatt's login sends.
+  passwordMd5: string;
   buildUrl: (path: string) => string;
   cookieHeader?: string; // defaults to "Cookie"; use "X-Session-Cookie" for browser proxy
+  // Where to keep the Growatt session between page loads. Browser only.
+  storage?: {
+    getItem: (key: string) => string | null;
+    setItem: (key: string, value: string) => void;
+    removeItem: (key: string) => void;
+  };
+  // Log each reply (never the login one).
+  debug?: boolean;
 };
 
 // A slot as edited in the form.

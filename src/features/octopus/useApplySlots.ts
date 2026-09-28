@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { setChargePeriods } from "../../lib/growattApi";
+import { setChargePeriods } from "../growatt/growattBrowser";
 import useToast from "../../contexts/useToast";
 import {
   CHARGE_KEY,
