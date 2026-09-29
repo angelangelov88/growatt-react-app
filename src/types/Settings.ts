@@ -62,6 +62,9 @@ type ExportPresetFieldsProps = {
   errors: FieldErrors;
   disabled: boolean;
   onChange: (field: keyof ExportPresetDraft, value: string) => void;
+  // Puts this preset back to its default values; greyed out when it already is.
+  onReset: () => void;
+  isDefault: boolean;
 };
 
 export type {

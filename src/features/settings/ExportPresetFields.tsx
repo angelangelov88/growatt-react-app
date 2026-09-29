@@ -18,6 +18,8 @@ const ExportPresetFields = ({
   errors,
   disabled,
   onChange,
+  onReset,
+  isDefault,
 }: ExportPresetFieldsProps) => {
   const id = (field: string) => `${preset}-export-${field}`;
   const timesError = errors.start ?? errors.end;
@@ -107,6 +109,14 @@ const ExportPresetFields = ({
         {renderSelect("powerRate", "Discharge power", RATE_OPTIONS)}
         {renderSelect("stopSOC", "Stop at battery", SOC_OPTIONS)}
       </div>
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={disabled || isDefault}
+        className="self-start text-sm text-violet-400 hover:underline disabled:text-gray-500 disabled:no-underline disabled:cursor-not-allowed"
+      >
+        Reset to default
+      </button>
     </fieldset>
   );
 };

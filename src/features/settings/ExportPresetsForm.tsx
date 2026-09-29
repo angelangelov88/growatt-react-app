@@ -64,7 +64,7 @@ const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
   });
 
   const isChanged = !sameDrafts(drafts, savedDrafts);
-  const isDefault = sameDrafts(drafts, toDrafts(defaultExportPresets));
+  const defaults = toDrafts(defaultExportPresets);
 
   const handleChange =
     (preset: Preset) => (field: keyof ExportPresetDraft, value: string) => {
@@ -73,6 +73,11 @@ const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
         [preset]: { ...prev[preset], [field]: value },
       }));
     };
+
+  const handleReset = (preset: Preset) => () => {
+    setDrafts((prev) => ({ ...prev, [preset]: defaults[preset] }));
+    setErrors((prev) => ({ ...prev, [preset]: {} }));
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -112,6 +117,11 @@ const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
             errors={errors[preset] ?? {}}
             disabled={save.isPending}
             onChange={handleChange(preset)}
+            onReset={handleReset(preset)}
+            isDefault={
+              JSON.stringify(drafts[preset]) ===
+              JSON.stringify(defaults[preset])
+            }
           />
         ))}
       </div>
@@ -125,19 +135,6 @@ const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
             pendingLabel="Saving…"
             isPending={save.isPending}
           />
-        )}
-        {!isDefault && (
-          <button
-            type="button"
-            onClick={() => {
-              setDrafts(toDrafts(defaultExportPresets));
-              setErrors({});
-            }}
-            disabled={save.isPending}
-            className="text-sm text-violet-400 hover:underline disabled:opacity-50"
-          >
-            Reset to defaults
-          </button>
         )}
       </div>
     </form>
