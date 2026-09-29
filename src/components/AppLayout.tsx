@@ -1,54 +1,36 @@
-import { Link, Outlet } from "react-router";
-import useAuth from "../features/auth/useAuth";
-import useLogout from "../features/auth/useLogout";
+import { Link, Outlet, ScrollRestoration } from "react-router";
 import AppLogo from "./AppLogo";
 import BetaBadge from "./BetaBadge";
+import HeaderNav from "./HeaderNav";
 import LegalLinks from "./LegalLinks";
 import Wordmark from "./Wordmark";
 
-// The frame around every page for a logged-in user.
-const AppLayout = () => {
-  const { me } = useAuth();
-  const logout = useLogout();
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
-      {/* Stays at the top while the page scrolls; toasts (z-50) stay above. */}
-      <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
-        <Link
-          to="/"
-          className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"
-        >
-          <AppLogo className="size-7 shrink-0" />
-          <Wordmark />
-          <BetaBadge />
-        </Link>
-        <div className="flex items-center gap-4 min-w-0">
-          {me?.email && (
-            <span className="text-sm text-gray-400 truncate">{me.email}</span>
-          )}
-          <Link
-            to="/settings"
-            className="text-sm text-gray-300 hover:text-white shrink-0"
-          >
-            Settings
-          </Link>
-          <button
-            onClick={() => {
-              logout.mutate();
-            }}
-            disabled={logout.isPending}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-          >
-            {logout.isPending ? "Logging out…" : "Log out"}
-          </button>
-        </div>
-      </header>
+// The frame around every page, signed in or not. The header stays at the top
+// while the page scrolls; toasts (z-50) stay above it. The footer sits at the
+// end of the page, or at the bottom of the screen on short pages. Pages that
+// fill the width need w-full, as this is a flex column.
+const AppLayout = () => (
+  <div className="min-h-dvh flex flex-col bg-gray-950 text-gray-100">
+    {/* Opens each new page at the top, and restores the position on Back. */}
+    <ScrollRestoration />
+    <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
+      <Link
+        to="/"
+        className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"
+      >
+        <AppLogo className="size-7 shrink-0" />
+        <Wordmark />
+        <BetaBadge />
+      </Link>
+      <HeaderNav />
+    </header>
+    <div className="flex-1 flex flex-col">
       <Outlet />
-      <footer className="pb-8">
-        <LegalLinks />
-      </footer>
     </div>
-  );
-};
+    <footer className="pb-8">
+      <LegalLinks />
+    </footer>
+  </div>
+);
 
 export default AppLayout;

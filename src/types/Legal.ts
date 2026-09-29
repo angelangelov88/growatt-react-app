@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
 
-type LegalPageProps = { title: string; children: ReactNode };
+// showUpdated: the "Last updated" date, for the privacy and terms pages.
+type LegalPageProps = {
+  title: string;
+  children: ReactNode;
+  showUpdated?: boolean;
+};
 
 type LegalSectionProps = { title: string; children: ReactNode };
 
-export type { LegalPageProps, LegalSectionProps };
+type ContactLinkProps = { email?: string };
+
+export type { LegalPageProps, LegalSectionProps, ContactLinkProps };

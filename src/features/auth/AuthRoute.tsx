@@ -32,7 +32,7 @@ const AuthRoute = ({ allow }: AuthRouteProps) => {
     return (
       <div
         role="status"
-        className="min-h-screen bg-gray-950 flex items-center justify-center gap-2 text-sm text-gray-400"
+        className="flex-1 flex items-center justify-center gap-2 text-sm text-gray-400"
       >
         <Spinner />
         Loading…

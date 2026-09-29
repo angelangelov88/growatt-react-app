@@ -1,9 +1,10 @@
 import { Link } from "react-router";
 import type { SetupNoticeProps } from "../../types/Dashboard";
-import { PROVIDERS } from "../settings/providers";
+import { OCTOPUS_BENEFITS, PROVIDERS } from "../settings/providers";
 
-// Shown until the user has saved both logins, in place of the cards that need them.
-const SetupNotice = ({ missing }: SetupNoticeProps) => (
+// Shown until the user has saved their Growatt login, which the app needs.
+// Octopus is optional, so it's only suggested.
+const SetupNotice = ({ hasOctopus }: SetupNoticeProps) => (
   <section
     aria-labelledby="setup-heading"
     className="rounded-2xl bg-gray-900 border border-violet-800/60 p-6 flex flex-col gap-4"
@@ -12,14 +13,18 @@ const SetupNotice = ({ missing }: SetupNoticeProps) => (
       Finish setting up
     </h2>
     <ul className="flex flex-col gap-2 text-sm text-gray-400">
-      {missing.map((provider) => (
-        <li key={provider}>
-          <span className="font-medium text-gray-200">
-            Add your {PROVIDERS[provider].secret}.
-          </span>{" "}
-          {PROVIDERS[provider].neededFor}.
+      <li>
+        <span className="font-medium text-gray-200">
+          Add your {PROVIDERS.growatt.secret}.
+        </span>{" "}
+        {PROVIDERS.growatt.neededFor}.
+      </li>
+      {!hasOctopus && (
+        <li>
+          <span className="font-medium text-gray-200">Optional:</span> add your{" "}
+          {PROVIDERS.octopus.secret} {OCTOPUS_BENEFITS}.
         </li>
-      ))}
+      )}
     </ul>
     <Link
       to="/settings"

@@ -25,7 +25,7 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
   - password and MFA
   - data export and account deletion
 - **Automatic charging:** every 5 minutes, each opted-in user's planned dispatches are checked and applied to their inverter when they change.
-- **Privacy notice and terms** at `/privacy` and `/terms`.
+- **About, contact, privacy notice and terms** at `/about`, `/contact`, `/privacy` and `/terms`, open to everyone.
 
 ## How it works
 
@@ -59,7 +59,7 @@ Supabase pg_cron (every 5 min) ──Bearer CRON_SECRET──▶ /api/cron/user,
 ## Project structure
 
 ```
-api/                    Vercel functions (8 of the Hobby plan's 12)
+api/                    Vercel functions (9 of the Hobby plan's 12)
   auth/[action].ts      login, signup, google, callback, confirm, logout, me, mfa, password
   growatt/[action].ts   charge / discharge (read and write the inverter)
   octopus/[action].ts   slots, sessions, join
@@ -68,6 +68,7 @@ api/                    Vercel functions (8 of the Hobby plan's 12)
   automation.ts         automatic charging status, Check now
   account.ts            data export, account deletion
   cron/[action].ts      user (one user's scheduled check), update (everyone, by hand)
+  contact.ts            the contact form (emails hello@angelov.uk through Resend)
   _handlers/            the handlers behind the [action] routes (not routed)
   _lib/                 session, CSRF, rate limits, crypto, database, audit log…
 src/
@@ -115,6 +116,8 @@ All of them are **server-only**: they're read in `api/` and never reach the brow
 | `GOOGLE_CLIENT_ID`         | The Google OAuth client's ID (step 2 below)                                                                                   | `.env`, Vercel                                                                                                    |
 | `GOOGLE_CLIENT_SECRET`     | The Google OAuth client's secret                                                                                              | `.env`, Vercel                                                                                                    |
 | `CRON_SECRET`              | Lets the schedule call `/api/cron/*`: `openssl rand -hex 32`                                                                  | `.env`, Vercel Production, Supabase Vault (`cron_secret`), GitHub                                                 |
+| `RESEND_API_KEY`           | A Resend API key with sending access only, for the contact form                                                               | `.env`, Vercel                                                                                                    |
+| `CONTACT_FROM`             | The contact form's sender, on the Resend domain, e.g. `Kelpwatt <no-reply@mail.angelov.uk>`                                   | `.env`, Vercel                                                                                                    |
 | `CI_DATABASE_URL`          | Postgres as `ci_check`, only for `pnpm check:database`                                                                        | `.env`, GitHub                                                                                                    |
 
 The local `.env` points at the **same Supabase project as production**. Test with throwaway accounts, and don't turn on automatic charging for a real inverter from a local run.
@@ -188,6 +191,7 @@ Supabase's built-in email sender only allows a few emails an hour, so the app se
 
 1. In Resend, verify a sending domain, e.g. `mail.angelov.uk`, by adding its DNS records (MX/SPF and DKIM).
 2. In Supabase, go to Authentication → Emails → SMTP Settings and enter Resend's SMTP details. The sender is `no-reply@<your domain>`.
+   - **Contact form:** in Resend, create an API key with **Sending access** for that domain only. Put it in `RESEND_API_KEY` and the sender in `CONTACT_FROM` (`.env` and Vercel). Messages go to `hello@angelov.uk` with Reply-To set to the sender, and aren't stored.
 3. **Email templates:** each link must go to our API, not Supabase's default page, so it works on any device:
 
    | Template             | Link                                                                            |
@@ -319,12 +323,13 @@ If a secret leaks:
 | `DATABASE_URL` or `CI_DATABASE_URL`                 | Set a new password for the role (step 1.7 above) and update the connection strings.                                                              |
 | `CRON_SECRET`                                       | Generate a new one and update Vercel, Supabase Vault (`cron_secret`) and GitHub together.                                                        |
 | `GOOGLE_CLIENT_SECRET`                              | Add a new secret to the OAuth client in Google Cloud, update Supabase's Google provider and Vercel, then disable and delete the old one.         |
+| `RESEND_API_KEY`                                    | Create a new key in Resend (API Keys), update Vercel, then delete the old one.                                                                   |
 | `CREDENTIALS_ENC_KEY_V1`                            | Add a `…_V2` key and re-encrypt the saved details with it (the stored rows record their key version), or ask users to enter their details again. |
 | Everyone needs signing out                          | Revoke all sessions in Supabase.                                                                                                                 |
 
 ## Legal
 
-The **privacy notice** (`/privacy`) and **terms** (`/terms`) live in `src/features/legal/`. The operator's name, contact address and "last updated" date are in `legalInfo.ts`.
+The **privacy notice** (`/privacy`) and **terms** (`/terms`) live in `src/features/legal/`. The operator's name, contact address and "last updated" date are in `legalInfo.ts`. The **about** (`/about`) and **contact** (`/contact`) pages are in `src/features/about/`, with `hello@angelov.uk` and the GitHub links in `src/lib/contactInfo.ts`.
 
 If the app starts collecting new data, keeping it longer, or sending it to a new service, update the privacy notice in the same PR.
 
@@ -336,6 +341,6 @@ If the app starts collecting new data, keeping it longer, or sending it to a new
 - [ ] Email the user when their automatic charging pauses after a refused Growatt or Octopus login.
 - [ ] Supabase Pro, for backups and no pausing, once there are real users.
 - [ ] Check the ICO's data protection fee self-assessment.
-- [ ] Set up `privacy@angelov.uk` so it reaches a real inbox.
+- [ ] Set up `privacy@angelov.uk` and `hello@angelov.uk` so they reach a real inbox.
 
 Growatt's API isn't official, and every user's traffic comes from Vercel's addresses. Growatt could rate-limit or block it.

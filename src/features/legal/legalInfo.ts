@@ -1,5 +1,6 @@
-// Who runs the app and how to reach them, shown on the privacy and terms pages.
-// Change LAST_UPDATED whenever either page's wording changes.
+// Who runs the app and how to reach them about data, shown on the privacy and
+// terms pages. Change LAST_UPDATED whenever either page's wording changes.
+// Everyday contact details are in src/lib/contactInfo.ts.
 const OPERATOR = "Angel Angelov";
 const CONTACT_EMAIL = "privacy@angelov.uk";
 const SITE = "kelpwatt.angelov.uk";

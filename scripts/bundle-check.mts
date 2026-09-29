@@ -17,8 +17,9 @@ const PATTERNS: [RegExp, string][] = [
   [/postgres(?:ql)?:\/\//, "a database address"],
   [/GOCSPX-/, "a Google client secret"],
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, "a private key"],
+  [/\bre_[A-Za-z0-9]{8}_[A-Za-z0-9]{8,}/, "a Resend API key"],
   [
-    /\b(?:SUPABASE|DATABASE|CREDENTIALS|CRON|GOOGLE|GROWATT|OCTOPUS|GITHUB)_[A-Z0-9_]+/,
+    /\b(?:SUPABASE|DATABASE|CREDENTIALS|CRON|GOOGLE|GROWATT|OCTOPUS|GITHUB|RESEND)_[A-Z0-9_]+/,
     "a server setting's name",
   ],
   [/\bVITE_\w+/, "a VITE_ setting (built into the bundle)"],
@@ -36,6 +37,7 @@ const SECRET_NAMES = [
   "CREDENTIALS_ENC_KEY_V1",
   "CRON_SECRET",
   "GOOGLE_CLIENT_SECRET",
+  "RESEND_API_KEY",
 ];
 const envValues = new Map<string, string>();
 const remember = (name: string, value: string | undefined) => {
