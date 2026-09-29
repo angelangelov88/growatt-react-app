@@ -23,7 +23,8 @@ type GridFirstProps = {
 
 type GrowattProps = { showSessions: boolean };
 
-type SlotListProps = { form: SlotForm };
+// readOnly: shows the slots without letting them change.
+type SlotListProps = { form: SlotForm; readOnly?: boolean };
 
 // label names the dropdowns for screen readers, e.g. "Peak" → "Peak start
 // hour". invalid marks it as having an error; describedBy points at the

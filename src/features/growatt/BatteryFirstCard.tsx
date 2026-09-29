@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../../components/Spinner";
@@ -16,6 +17,9 @@ const BatteryFirstCard = ({
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
+  // Automatic charging sets Battery First itself, so it can only be viewed.
+  const isAutomatic = settings?.automationEnabled ?? false;
+  const selectDisabledClass = `${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`;
 
   const handleApply = () => {
     setChargePeriodsMutation.mutate(
@@ -81,7 +85,7 @@ const BatteryFirstCard = ({
                 endMin: "00",
               });
             }}
-            disabled={isDisabled || !form.isLoaded}
+            disabled={isDisabled || !form.isLoaded || isAutomatic}
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Defaults
@@ -89,10 +93,14 @@ const BatteryFirstCard = ({
         </div>
       </div>
 
-      {settings?.automationEnabled && (
+      {isAutomatic && (
         <p className="-mt-2 mb-4 text-xs text-amber-400">
-          Automatic charging is on, so changes here are replaced at the next
-          check (every 5 minutes) if they differ from your Octopus plan.
+          Automatic charging sets these for you, so you can only view them here.
+          To change them yourself,{" "}
+          <Link to="/settings" className="text-violet-400 hover:underline">
+            turn automatic charging off
+          </Link>
+          .
         </p>
       )}
 
@@ -101,7 +109,11 @@ const BatteryFirstCard = ({
           isReading={isLoading}
           loadingMessage="Loading settings from your inverter…"
           emptyMessage="Settings not loaded yet"
-          hint="Press Load to get the current settings from your inverter."
+          hint={
+            isAutomatic
+              ? "Press Load to see what automatic charging has set on your inverter."
+              : "Press Load to get the current settings from your inverter."
+          }
         />
       ) : (
         <>
@@ -115,7 +127,8 @@ const BatteryFirstCard = ({
                 onChange={(e) => {
                   form.setPowerRate(e.target.value);
                 }}
-                className={selectClass}
+                disabled={isAutomatic}
+                className={selectDisabledClass}
               >
                 {RATE_OPTIONS.map((v) => (
                   <option key={v} value={v}>
@@ -133,7 +146,8 @@ const BatteryFirstCard = ({
                 onChange={(e) => {
                   form.setStopSOC(e.target.value);
                 }}
-                className={selectClass}
+                disabled={isAutomatic}
+                className={selectDisabledClass}
               >
                 {SOC_OPTIONS.map((v) => (
                   <option key={v} value={v}>
@@ -144,15 +158,17 @@ const BatteryFirstCard = ({
             </div>
           </div>
 
-          <SlotList form={form} />
+          <SlotList form={form} readOnly={isAutomatic} />
 
-          <button
-            onClick={handleApply}
-            disabled={isDisabled || !form.isDirty}
-            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {isApplying ? "Applying…" : "Apply Battery First"}
-          </button>
+          {!isAutomatic && (
+            <button
+              onClick={handleApply}
+              disabled={isDisabled || !form.isDirty}
+              className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              {isApplying ? "Applying…" : "Apply Battery First"}
+            </button>
+          )}
         </>
       )}
     </div>
