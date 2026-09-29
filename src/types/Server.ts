@@ -22,6 +22,16 @@ type SessionUser = {
   supabase: SupabaseClient;
 };
 
+// A Google login in progress, kept in an httpOnly cookie between
+// /api/auth/google and /api/auth/callback. next: a name from
+// AFTER_GOOGLE_PAGES, or "" for home.
+type GoogleLogin = {
+  state: string;
+  verifier: string;
+  nonce: string;
+  next: string;
+};
+
 // One endpoint. Several share a Vercel function through a router, because the
 // Hobby plan allows at most 12 functions per deployment.
 type Handler = (
@@ -55,6 +65,7 @@ export type {
   Provider,
   EncryptedSecret,
   SessionUser,
+  GoogleLogin,
   Handler,
   AuditAction,
   AutomationResult,

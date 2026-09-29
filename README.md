@@ -4,7 +4,7 @@
 
 A web app that connects a **Growatt** solar/battery inverter to an **Octopus Energy** account. It shows the inverter's charge settings next to Octopus's planned charging times (Intelligent Octopus dispatches) and can apply those times to the inverter, by hand or automatically through the night. It also lists Octopus saving sessions ("Power Down") and lets you join them.
 
-Live at **https://growatt.angelov.uk**. Anyone can sign up; each user connects their own Growatt and Octopus accounts.
+Live at **https://kelpwatt.angelov.uk**. Anyone can sign up; each user connects their own Growatt and Octopus accounts.
 
 ## About the name
 
@@ -103,16 +103,18 @@ pnpm dev:api             # app and API on http://localhost:3000
 
 All of them are **server-only**: they're read in `api/` and never reach the browser. Never add a `VITE_*` variable that holds a secret, because Vite builds those into the public JavaScript.
 
-| Name                       | What it is                                                                                                                    | Where it's set                                                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `APP_ORIGIN`               | The app's address. Requests that change data must come from it.                                                               | `.env` (`http://localhost:3000`) and Vercel Production (`https://growatt.angelov.uk`). Leave unset for previews. |
-| `SUPABASE_URL`             | The Supabase project URL                                                                                                      | `.env`, Vercel, GitHub                                                                                           |
-| `SUPABASE_PUBLISHABLE_KEY` | Supabase's public key, used by the server for sign-in                                                                         | `.env`, Vercel, GitHub                                                                                           |
-| `SUPABASE_SECRET_KEY`      | Supabase's admin key, only used to delete accounts (and in local test scripts)                                                | `.env`, Vercel                                                                                                   |
-| `DATABASE_URL`             | Postgres as `app_server`, through the transaction pooler (port 6543)                                                          | `.env`, Vercel                                                                                                   |
-| `CREDENTIALS_ENC_KEY_V1`   | Encrypts saved Growatt and Octopus details: `openssl rand -base64 32`. **Losing it means users must re-enter their details.** | `.env`, Vercel                                                                                                   |
-| `CRON_SECRET`              | Lets the GitHub schedule call `/api/cron/update`: `openssl rand -base64 32`                                                   | `.env`, Vercel Production, GitHub                                                                                |
-| `CI_DATABASE_URL`          | Postgres as `ci_check`, only for `pnpm check:database`                                                                        | `.env`, GitHub                                                                                                   |
+| Name                       | What it is                                                                                                                    | Where it's set                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `APP_ORIGIN`               | The app's address. Requests that change data must come from it.                                                               | `.env` (`http://localhost:3000`) and Vercel Production (`https://kelpwatt.angelov.uk`). Leave unset for previews. |
+| `SUPABASE_URL`             | The Supabase project URL                                                                                                      | `.env`, Vercel, GitHub                                                                                            |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase's public key, used by the server for sign-in                                                                         | `.env`, Vercel, GitHub                                                                                            |
+| `SUPABASE_SECRET_KEY`      | Supabase's admin key, only used to delete accounts (and in local test scripts)                                                | `.env`, Vercel                                                                                                    |
+| `DATABASE_URL`             | Postgres as `app_server`, through the transaction pooler (port 6543)                                                          | `.env`, Vercel                                                                                                    |
+| `CREDENTIALS_ENC_KEY_V1`   | Encrypts saved Growatt and Octopus details: `openssl rand -base64 32`. **Losing it means users must re-enter their details.** | `.env`, Vercel                                                                                                    |
+| `GOOGLE_CLIENT_ID`         | The Google OAuth client's ID (step 2 below)                                                                                   | `.env`, Vercel                                                                                                    |
+| `GOOGLE_CLIENT_SECRET`     | The Google OAuth client's secret                                                                                              | `.env`, Vercel                                                                                                    |
+| `CRON_SECRET`              | Lets the GitHub schedule call `/api/cron/update`: `openssl rand -base64 32`                                                   | `.env`, Vercel Production, GitHub                                                                                 |
+| `CI_DATABASE_URL`          | Postgres as `ci_check`, only for `pnpm check:database`                                                                        | `.env`, GitHub                                                                                                    |
 
 The local `.env` points at the **same Supabase project as production**. Test with throwaway accounts, and don't turn on automatic charging for a real inverter from a local run.
 
@@ -126,7 +128,7 @@ This is how production is set up, and what you'd repeat for a fresh copy.
 2. **Turn off the Data API:** Project Settings → Data API. The app never uses it.
 3. **Authentication → Sign In / Providers:**
    - **Email:** on, with "Confirm email" on.
-   - **Google:** on, with the client ID and secret from step 2 below.
+   - **Google:** on, with the client ID and secret from step 2 below. Supabase checks that the ID tokens the app hands it were issued to this client.
    - **Allow new users to sign up:** turn it off to make the app invite-only for now.
 4. **Authentication settings:**
    - Access token (JWT) expiry: **900 seconds**.
@@ -134,8 +136,8 @@ This is how production is set up, and what you'd repeat for a fresh copy.
    - Minimum password length: **10**, requiring lowercase, uppercase, digits and symbols. This matches the sign-up form.
    - MFA: **TOTP (authenticator app) on**.
 5. **Authentication → URL Configuration:**
-   - **Site URL:** `https://growatt.angelov.uk`. Every email link starts with it.
-   - **Redirect URLs:** `https://growatt.angelov.uk/api/auth/callback` and `http://localhost:3000/api/auth/callback`.
+   - **Site URL:** `https://kelpwatt.angelov.uk`. Every email link starts with it.
+   - **Redirect URLs:** none needed. Google comes back to our own API, not to Supabase.
 6. **Run the migrations:** open the SQL Editor and run each file in `supabase/migrations/` **in order**:
 
    | Migration              | What it does                                            |
@@ -167,10 +169,13 @@ This is how production is set up, and what you'd repeat for a fresh copy.
 
 ### 2. Google sign-in
 
+The app talks to Google itself (`/api/auth/google` and `/api/auth/callback`, in `api/_lib/googleOAuth.ts`) and hands Google's ID token to Supabase, which checks it and starts the session. That way Google's account chooser says "continue to kelpwatt.angelov.uk", not Supabase's address.
+
 1. In Google Cloud, go to APIs & Services → Credentials and create an **OAuth client ID** of type **Web application**.
-2. **Authorised redirect URI:** Supabase's callback, `https://<project-ref>.supabase.co/auth/v1/callback`. Supabase shows it on the Google provider page.
-3. Copy the client ID and secret into Supabase's Google provider.
-4. **Google Auth Platform → Audience:** while the app is in **Testing**, only the test users listed there can sign in. **Publish** the app to let anyone with a Google account sign in. The app only asks for the email address and basic profile, so Google doesn't need to review it.
+2. **Authorised redirect URIs:** `https://kelpwatt.angelov.uk/api/auth/callback` and `http://localhost:3000/api/auth/callback`. They must match exactly, so Google sign-in doesn't work on preview deployments; use email login there.
+3. Copy the client ID and secret into Supabase's Google provider, and into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` (`.env` and Vercel).
+4. **Google Auth Platform → Branding:** app name **Kelpwatt**, the logo (`public/icon-512.png`, resized to 120×120), home page `https://kelpwatt.angelov.uk`, privacy policy `https://kelpwatt.angelov.uk/privacy`, terms `https://kelpwatt.angelov.uk/terms`, and `angelov.uk` under **Authorised domains**. The domain must be verified in [Google Search Console](https://search.google.com/search-console) (a DNS TXT record). Then submit the branding for verification; until it's approved, Google may show the domain instead of the name and logo.
+5. **Google Auth Platform → Audience:** while the app is in **Testing**, only the test users listed there can sign in. **Publish** the app to let anyone with a Google account sign in. The app only asks for the email address and basic profile, so Google doesn't need to review it.
 
 ### 3. Email (Resend)
 
@@ -301,6 +306,7 @@ If a secret leaks:
 | `SUPABASE_SECRET_KEY` or `SUPABASE_PUBLISHABLE_KEY` | Create a new key in Supabase (Project Settings → API Keys), update Vercel and GitHub, then delete the old key.                                   |
 | `DATABASE_URL` or `CI_DATABASE_URL`                 | Set a new password for the role (step 1.7 above) and update the connection strings.                                                              |
 | `CRON_SECRET`                                       | Generate a new one and update Vercel and GitHub together.                                                                                        |
+| `GOOGLE_CLIENT_SECRET`                              | Add a new secret to the OAuth client in Google Cloud, update Supabase's Google provider and Vercel, then disable and delete the old one.         |
 | `CREDENTIALS_ENC_KEY_V1`                            | Add a `…_V2` key and re-encrypt the saved details with it (the stored rows record their key version), or ask users to enter their details again. |
 | Everyone needs signing out                          | Revoke all sessions in Supabase.                                                                                                                 |
 

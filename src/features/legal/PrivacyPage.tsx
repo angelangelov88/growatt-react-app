@@ -100,7 +100,7 @@ const PrivacyPage = () => (
     <LegalSection title="Cookies">
       <p>
         We use only cookies that are strictly necessary for signing in: the
-        cookies that keep you signed in, and two short-lived ones (at most 10
+        cookies that keep you signed in, and a short-lived one (at most 10
         minutes) used during Google sign-in. Scripts on the page can&apos;t read
         them. There are no analytics or advertising cookies, so there&apos;s
         nothing to accept or decline.
