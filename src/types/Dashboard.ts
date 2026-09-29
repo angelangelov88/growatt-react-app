@@ -1,5 +1,3 @@
-import type { Provider } from "./Api";
-
-type SetupNoticeProps = { missing: Provider[] };
+type SetupNoticeProps = { hasOctopus: boolean };
 
 export type { SetupNoticeProps };

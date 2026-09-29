@@ -20,4 +20,8 @@ const PROVIDERS: Record<
   },
 };
 
-export { PROVIDERS };
+// Octopus is optional: the app works with Growatt alone. What adding it gives.
+const OCTOPUS_BENEFITS =
+  "to see your car's charging slots, charge your battery in them automatically and join saving sessions";
+
+export { PROVIDERS, OCTOPUS_BENEFITS };

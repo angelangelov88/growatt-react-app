@@ -1,11 +1,10 @@
+import type { ContactLinkProps } from "../../types/Legal";
 import { CONTACT_EMAIL } from "./legalInfo";
 
-const ContactLink = () => (
-  <a
-    href={`mailto:${CONTACT_EMAIL}`}
-    className="text-violet-400 hover:underline"
-  >
-    {CONTACT_EMAIL}
+// A mailto link. The privacy address unless another is given.
+const ContactLink = ({ email = CONTACT_EMAIL }: ContactLinkProps) => (
+  <a href={`mailto:${email}`} className="text-violet-400 hover:underline">
+    {email}
   </a>
 );
 

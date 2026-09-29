@@ -1,5 +1,7 @@
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router";
 import AppLayout from "./components/AppLayout";
+import AboutPage from "./features/about/AboutPage";
+import ContactPage from "./features/about/ContactPage";
 import AuthRoute from "./features/auth/AuthRoute";
 import ForgotPasswordPage from "./features/auth/ForgotPasswordPage";
 import LoginPage from "./features/auth/LoginPage";
@@ -38,6 +40,8 @@ const router = createBrowserRouter([
     ],
   },
   // Open to everyone, signed in or not.
+  { path: "/about", element: <AboutPage /> },
+  { path: "/contact", element: <ContactPage /> },
   { path: "/privacy", element: <PrivacyPage /> },
   { path: "/terms", element: <TermsPage /> },
   { path: "*", element: <Navigate to="/" replace /> },

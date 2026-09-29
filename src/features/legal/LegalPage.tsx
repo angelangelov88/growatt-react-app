@@ -6,9 +6,9 @@ import Wordmark from "../../components/Wordmark";
 import type { LegalPageProps } from "../../types/Legal";
 import { LAST_UPDATED } from "./legalInfo";
 
-// The frame around the privacy and terms pages. Open to everyone, signed in or
-// not, so it doesn't use AppLayout.
-const LegalPage = ({ title, children }: LegalPageProps) => (
+// The frame around the privacy, terms, about and contact pages. Open to
+// everyone, signed in or not, so it doesn't use AppLayout.
+const LegalPage = ({ title, children, showUpdated = true }: LegalPageProps) => (
   <div className="min-h-screen bg-gray-950 text-gray-100">
     <header className="border-b border-gray-800 px-6 py-4">
       <Link
@@ -23,7 +23,9 @@ const LegalPage = ({ title, children }: LegalPageProps) => (
     <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-8 text-sm text-gray-300 leading-relaxed">
       <div>
         <h1 className="text-xl font-semibold text-white">{title}</h1>
-        <p className="mt-1 text-gray-500">Last updated {LAST_UPDATED}</p>
+        {showUpdated && (
+          <p className="mt-1 text-gray-500">Last updated {LAST_UPDATED}</p>
+        )}
       </div>
       {children}
     </main>

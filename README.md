@@ -25,7 +25,7 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
   - password and MFA
   - data export and account deletion
 - **Automatic charging:** every 5 minutes, each opted-in user's planned dispatches are checked and applied to their inverter when they change.
-- **Privacy notice and terms** at `/privacy` and `/terms`.
+- **About, contact, privacy notice and terms** at `/about`, `/contact`, `/privacy` and `/terms`, open to everyone.
 
 ## How it works
 
@@ -336,6 +336,6 @@ If the app starts collecting new data, keeping it longer, or sending it to a new
 - [ ] Email the user when their automatic charging pauses after a refused Growatt or Octopus login.
 - [ ] Supabase Pro, for backups and no pausing, once there are real users.
 - [ ] Check the ICO's data protection fee self-assessment.
-- [ ] Set up `privacy@angelov.uk` so it reaches a real inbox.
+- [ ] Set up `privacy@angelov.uk` and `hello@angelov.uk` so they reach a real inbox.
 
 Growatt's API isn't official, and every user's traffic comes from Vercel's addresses. Growatt could rate-limit or block it.
