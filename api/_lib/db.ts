@@ -33,4 +33,13 @@ const automationUserIds = async () =>
     >`select id from private.automation_user_ids() as id`
   ).map((r) => r.id);
 
-export { sql, withUser, automationUserIds };
+// False once the beta is full (0008_user_limit.sql). The database enforces it
+// too; this is for a friendly message before trying.
+const signupsOpen = async () => {
+  const [row] = await sql<
+    { open: boolean }[]
+  >`select private.signups_open() as open`;
+  return row.open;
+};
+
+export { sql, withUser, automationUserIds, signupsOpen };

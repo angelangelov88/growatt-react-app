@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { signupsOpen } from "../../_lib/db";
 import {
   AFTER_GOOGLE_PAGES,
   exchangeGoogleCode,
@@ -42,6 +43,11 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     nonce: login.nonce,
   });
   if (error) {
+    // A new Google account is refused by the database once the beta is full.
+    if (!(await signupsOpen())) {
+      res.redirect(302, "/login?error=signups_closed");
+      return;
+    }
     console.error("google sign-in failed:", error.code ?? error.name);
     res.redirect(302, "/login?error=sign_in_failed");
     return;
