@@ -15,9 +15,10 @@ const PATTERNS: [RegExp, string][] = [
   [/eyJ[\w-]{10,}\.eyJ[\w-]{10,}/, "a JWT"],
   [/\b(?:sk|rk)_(?:live|test)_\w{8,}/, "an API secret key"],
   [/postgres(?:ql)?:\/\//, "a database address"],
+  [/GOCSPX-/, "a Google client secret"],
   [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, "a private key"],
   [
-    /\b(?:SUPABASE|DATABASE|CREDENTIALS|CRON|GROWATT|OCTOPUS|GITHUB)_[A-Z0-9_]+/,
+    /\b(?:SUPABASE|DATABASE|CREDENTIALS|CRON|GOOGLE|GROWATT|OCTOPUS|GITHUB)_[A-Z0-9_]+/,
     "a server setting's name",
   ],
   [/\bVITE_\w+/, "a VITE_ setting (built into the bundle)"],
@@ -34,6 +35,7 @@ const SECRET_NAMES = [
   "DATABASE_URL",
   "CREDENTIALS_ENC_KEY_V1",
   "CRON_SECRET",
+  "GOOGLE_CLIENT_SECRET",
 ];
 const envValues = new Map<string, string>();
 const remember = (name: string, value: string | undefined) => {

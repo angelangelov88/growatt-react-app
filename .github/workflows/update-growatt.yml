@@ -26,4 +26,4 @@ jobs:
         run: |
           printf 'Authorization: Bearer %s' "$CRON_SECRET" |
             curl --fail-with-body --silent --show-error --max-time 90 \
-              --header @- https://growatt.angelov.uk/api/cron/update
+              --header @- https://kelpwatt.angelov.uk/api/cron/update

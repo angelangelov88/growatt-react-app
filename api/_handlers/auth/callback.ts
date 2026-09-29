@@ -1,45 +1,52 @@
-import { parseCookieHeader, serializeCookieHeader } from "@supabase/ssr";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
-  AFTER_GOOGLE_COOKIE,
   AFTER_GOOGLE_PAGES,
-} from "../../_lib/afterGoogle";
+  exchangeGoogleCode,
+  googleClient,
+  takeGoogleLogin,
+} from "../../_lib/googleOAuth";
 import { allowMethods } from "../../_lib/http";
-import { createSupabase, secure } from "../../_lib/session";
+import { createSupabase } from "../../_lib/session";
 
-// GET ?code=... after Google. Swaps the code (plus the PKCE verifier cookie)
-// for a session. Lands on "/", or on the page /api/auth/google was asked to
-// come back to (from an allow-list, never a URL from the query).
+// GET ?code=...&state=... after Google. Checks the state against the cookie
+// /api/auth/google set, swaps the code (with the PKCE verifier) for Google's ID
+// token, and gives that to Supabase, which verifies it and sets the session
+// cookies. Lands on "/", or on the page /api/auth/google was asked to come back
+// to (from an allow-list, never a URL from the query).
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET"])) return;
   res.setHeader("Cache-Control", "private, no-store");
-  // Read once, then cleared whatever happens.
-  const next = parseCookieHeader(req.headers.cookie ?? "").find(
-    (c) => c.name === AFTER_GOOGLE_COOKIE,
-  )?.value;
-  res.appendHeader(
-    "Set-Cookie",
-    serializeCookieHeader(AFTER_GOOGLE_COOKIE, "", {
-      httpOnly: true,
-      secure,
-      sameSite: "lax",
-      path: "/api/auth",
-      maxAge: 0,
-    }),
-  );
+  const login = takeGoogleLogin(req, res);
   const { code } = req.query;
   if (typeof code !== "string") {
     res.redirect(302, "/login?error=sign_in_cancelled");
     return;
   }
-  const { error } = await createSupabase(req, res).auth.exchangeCodeForSession(
-    code,
-  );
-  if (error) {
+  const client = googleClient();
+  if (!client) {
+    res.redirect(302, "/login?error=google_unavailable");
+    return;
+  }
+  if (!login) {
     res.redirect(302, "/login?error=sign_in_failed");
     return;
   }
-  res.redirect(302, (next && AFTER_GOOGLE_PAGES.get(next)) ?? "/");
+  const token = await exchangeGoogleCode(req, client, code, login.verifier);
+  if (!token) {
+    res.redirect(302, "/login?error=sign_in_failed");
+    return;
+  }
+  const { error } = await createSupabase(req, res).auth.signInWithIdToken({
+    provider: "google",
+    token,
+    nonce: login.nonce,
+  });
+  if (error) {
+    console.error("google sign-in failed:", error.code ?? error.name);
+    res.redirect(302, "/login?error=sign_in_failed");
+    return;
+  }
+  res.redirect(302, AFTER_GOOGLE_PAGES.get(login.next) ?? "/");
 };
 
 export default handler;
