@@ -14,37 +14,38 @@ import TermsPage from "./features/legal/TermsPage";
 import SettingsPage from "./features/settings/SettingsPage";
 
 const router = createBrowserRouter([
+  // Every page shares the header and footer.
   {
-    element: <AuthRoute allow={["signedOut"]} />,
+    element: <AppLayout />,
     children: [
-      { path: "/login", element: <LoginPage /> },
-      { path: "/signup", element: <SignUpPage /> },
-      { path: "/forgot-password", element: <ForgotPasswordPage /> },
-    ],
-  },
-  {
-    element: <AuthRoute allow={["needsMfa"]} />,
-    children: [{ path: "/mfa", element: <MfaPage /> }],
-  },
-  {
-    element: <AuthRoute allow={["signedIn"]} />,
-    children: [
-      { path: "/reset-password", element: <ResetPasswordPage /> },
       {
-        element: <AppLayout />,
+        element: <AuthRoute allow={["signedOut"]} />,
         children: [
+          { path: "/login", element: <LoginPage /> },
+          { path: "/signup", element: <SignUpPage /> },
+          { path: "/forgot-password", element: <ForgotPasswordPage /> },
+        ],
+      },
+      {
+        element: <AuthRoute allow={["needsMfa"]} />,
+        children: [{ path: "/mfa", element: <MfaPage /> }],
+      },
+      {
+        element: <AuthRoute allow={["signedIn"]} />,
+        children: [
+          { path: "/reset-password", element: <ResetPasswordPage /> },
           { path: "/", element: <DashboardPage /> },
           { path: "/settings", element: <SettingsPage /> },
         ],
       },
+      // Open to everyone, signed in or not.
+      { path: "/about", element: <AboutPage /> },
+      { path: "/contact", element: <ContactPage /> },
+      { path: "/privacy", element: <PrivacyPage /> },
+      { path: "/terms", element: <TermsPage /> },
+      { path: "*", element: <Navigate to="/" replace /> },
     ],
   },
-  // Open to everyone, signed in or not.
-  { path: "/about", element: <AboutPage /> },
-  { path: "/contact", element: <ContactPage /> },
-  { path: "/privacy", element: <PrivacyPage /> },
-  { path: "/terms", element: <TermsPage /> },
-  { path: "*", element: <Navigate to="/" replace /> },
 ]);
 
 const App = () => <RouterProvider router={router} />;

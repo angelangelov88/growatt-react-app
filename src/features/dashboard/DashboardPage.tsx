@@ -12,7 +12,7 @@ const DashboardPage = () => {
   const hasOctopus = me?.hasOctopus ?? false;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <main className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
       <h1 className="sr-only">Dashboard</h1>
       {!hasGrowatt && <SetupNotice hasOctopus={hasOctopus} />}
       {hasOctopus && <Octopus canApply={hasGrowatt} />}
