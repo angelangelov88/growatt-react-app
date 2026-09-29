@@ -1,4 +1,8 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  TextareaHTMLAttributes,
+} from "react";
 
 type SpinnerProps = { className?: string };
 
@@ -21,6 +25,17 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
   error?: string;
   // Shown inside the input, at its right edge (e.g. a show-password button).
   trailing?: ReactNode;
+};
+
+// A multi-line TextField, e.g. the contact form's message.
+type TextAreaFieldProps = Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "id"
+> & {
+  id: string;
+  label: string;
+  hint?: string;
+  error?: string;
 };
 
 // The type is chosen by the show/hide button.
@@ -49,6 +64,7 @@ export type {
   NotReadYetProps,
   FieldErrors,
   TextFieldProps,
+  TextAreaFieldProps,
   PasswordFieldProps,
   CodeFieldProps,
   SubmitButtonProps,

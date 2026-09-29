@@ -13,6 +13,10 @@ const LIMITS = {
   signup: { max: 5, windowSeconds: 60 * 60 },
   resetEmail: { max: 5, windowSeconds: 60 * 60 },
   google: { max: 20, windowSeconds: 5 * 60 },
+  // The contact form: per IP, and for everyone together, so a flood can't
+  // fill the inbox or use up Resend's daily allowance.
+  contact: { max: 5, windowSeconds: 60 * 60 },
+  contactAll: { max: 50, windowSeconds: 24 * 60 * 60 },
   // By user. MFA codes are only 6 digits, so guesses must stay few.
   mfa: { max: 10, windowSeconds: 5 * 60 },
   passwordChange: { max: 5, windowSeconds: 60 * 60 },

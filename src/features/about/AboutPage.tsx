@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import LegalPage from "../legal/LegalPage";
 import LegalSection from "../legal/LegalSection";
-import { REPO_URL } from "../legal/legalInfo";
+import { REPO_URL } from "../../lib/contactInfo";
 
 // Why the app exists and what it does, in the operator's own words.
 const AboutPage = () => (

@@ -66,6 +66,11 @@ const PrivacyPage = () => (
           your data. It never contains passwords or keys.
         </li>
         <li>
+          <strong className="text-gray-100">Messages you send us:</strong> if
+          you use the contact form, your name, email address and message. They
+          go straight to our inbox and aren&apos;t stored by the app.
+        </li>
+        <li>
           <strong className="text-gray-100">Technical data:</strong> to stop
           abuse, we count requests per IP address and per account. The counters
           hold a one-way hash, not the address itself, and are deleted within a
@@ -92,6 +97,11 @@ const PrivacyPage = () => (
           settings, running automatic charging if you turn it on, and sending
           emails about your account (confirming your address, resetting your
           password).
+        </li>
+        <li>
+          <strong className="text-gray-100">To answer your messages</strong>{" "}
+          (legitimate interests): replying to what you send through the contact
+          form.
         </li>
         <li>
           <strong className="text-gray-100">To keep the app secure</strong>{" "}
@@ -133,7 +143,7 @@ const PrivacyPage = () => (
         </li>
         <li>
           <strong className="text-gray-100">Resend</strong>: delivers our
-          account emails.
+          account emails and contact form messages.
         </li>
         <li>
           <strong className="text-gray-100">Google</strong>: only if you choose
@@ -170,6 +180,10 @@ const PrivacyPage = () => (
           The activity log: 12 months, then entries are deleted automatically.
         </li>
         <li>Rate-limit counters: one day.</li>
+        <li>
+          Contact form messages: in our inbox for as long as we need them to
+          help you, and no longer than 12 months.
+        </li>
       </ul>
       <p>
         Deleting your account removes all of it from our database straight away.

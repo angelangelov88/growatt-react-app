@@ -11,6 +11,7 @@ import type {
   credentialsSchema,
   providerSchema,
 } from "../lib/credentialSchemas";
+import type { contactSchema } from "../lib/contactSchema";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
 import type { settingsSchema } from "../lib/settingsSchema";
@@ -26,6 +27,7 @@ type ApiError = {
 
 type LoginBody = z.infer<typeof loginSchema>;
 type SignupBody = z.infer<typeof signupSchema>;
+type ContactBody = z.infer<typeof contactSchema>;
 type MfaBody = z.infer<typeof mfaSchema>;
 // POST and PUT /api/auth/password.
 type ResetRequestBody = z.infer<typeof resetRequestSchema>;
@@ -141,6 +143,7 @@ export type {
   ApiError,
   LoginBody,
   SignupBody,
+  ContactBody,
   MfaBody,
   ResetRequestBody,
   NewPasswordBody,
