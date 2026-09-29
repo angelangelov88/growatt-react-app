@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { auditSignIn } from "../../_lib/audit";
 import { signupsOpen } from "../../_lib/db";
 import {
   AFTER_GOOGLE_PAGES,
@@ -37,11 +38,13 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     res.redirect(302, "/login?error=sign_in_failed");
     return;
   }
-  const { error } = await createSupabase(req, res).auth.signInWithIdToken({
-    provider: "google",
-    token,
-    nonce: login.nonce,
-  });
+  const { data, error } = await createSupabase(req, res).auth.signInWithIdToken(
+    {
+      provider: "google",
+      token,
+      nonce: login.nonce,
+    },
+  );
   if (error) {
     // A new Google account is refused by the database once the beta is full.
     if (!(await signupsOpen())) {
@@ -52,6 +55,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     res.redirect(302, "/login?error=sign_in_failed");
     return;
   }
+  await auditSignIn(req, data.user.id, "google");
   res.redirect(302, AFTER_GOOGLE_PAGES.get(login.next) ?? "/");
 };
 

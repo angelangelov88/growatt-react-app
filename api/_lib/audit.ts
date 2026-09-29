@@ -1,5 +1,7 @@
 import type { VercelRequest } from "@vercel/node";
+import type { SignInMethod } from "../../src/types/Api";
 import type { AuditAction, Tx } from "../../src/types/Server";
+import { withUser } from "./db";
 import { clientIp } from "./http";
 
 // Records a security-relevant action in private.audit_log. Run it inside
@@ -15,4 +17,19 @@ const audit = (
   tx`insert into private.audit_log (user_id, action, details, ip)
     values (${userId}, ${action}, ${tx.json(details)}, ${req && clientIp(req)})`;
 
-export { audit };
+// Records a login. A failure here never stops the login itself.
+const auditSignIn = async (
+  req: VercelRequest,
+  userId: string,
+  method: SignInMethod,
+) => {
+  try {
+    await withUser(userId, (tx) =>
+      audit(tx, req, userId, "signed_in", { method }),
+    );
+  } catch {
+    console.error("sign-in audit failed");
+  }
+};
+
+export { audit, auditSignIn };

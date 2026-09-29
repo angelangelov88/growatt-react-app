@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { z } from "zod";
 import { deleteAccountSchema } from "../src/lib/authSchemas";
-import type { AccountExport } from "../src/types/Api";
+import type { AccountExport, ActivityPage } from "../src/types/Api";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
@@ -22,6 +23,17 @@ type AuditRow = {
   ip: string | null;
 };
 
+// Activity entries per page.
+const PAGE_SIZE = 50;
+
+// An audit_log id to continue from: a bigint, sent as text.
+const beforeSchema = z
+  .string()
+  .regex(/^\d{1,18}$/, "Invalid page")
+  .optional();
+
+// GET ?view=activity&before=<id> → ActivityPage: the activity log only, newest
+//   first. Not recorded as a download.
 // GET → AccountExport, as a download.
 // DELETE DeleteAccountBody (optional) → 204. Deletes the user; their
 //   credentials, settings, automation state and audit log go with them (on
@@ -33,6 +45,40 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   const user = await requireUser(req, res);
   if (!user) return;
   const { userId } = user;
+
+  if (req.method === "GET" && req.query.view === "activity") {
+    const before = beforeSchema.safeParse(req.query.before);
+    if (!before.success) {
+      sendError(res, 400, "invalid_input", "Invalid page");
+      return;
+    }
+    if (!(await rateLimit(res, "activity", userId))) return;
+    // One more than a page, to tell whether there's another.
+    const rows = await withUser(
+      userId,
+      (tx) => tx<(AuditRow & { id: string })[]>`
+        select id::text as id, created_at, action, details, host(ip) as ip
+        from private.audit_log
+        where ${before.data ?? null}::bigint is null
+          or id < ${before.data ?? null}::bigint
+        order by id desc
+        limit ${PAGE_SIZE + 1}`,
+    );
+    const entries = rows.slice(0, PAGE_SIZE);
+    const body: ActivityPage = {
+      entries: entries.map((r) => ({
+        id: r.id,
+        at: r.created_at.toISOString(),
+        action: r.action,
+        details: r.details,
+        ip: r.ip,
+      })),
+      nextBefore: rows.length > PAGE_SIZE ? (entries.at(-1)?.id ?? null) : null,
+    };
+    res.setHeader("Cache-Control", "private, no-store");
+    res.json(body);
+    return;
+  }
 
   if (req.method === "GET") {
     if (!(await rateLimit(res, "export", userId))) return;

@@ -24,6 +24,7 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
   - automatic charging, with an optional charge window, power rate and stop SOC
   - password and MFA
   - data export and account deletion
+- **Activity:** each user's own activity log (logins, changes to settings and details, inverter changes, automatic charging), newest first, loading more as they scroll.
 - **Automatic charging:** every 5 minutes, each opted-in user's planned dispatches are checked and applied to their inverter when they change.
 - **About, contact, privacy notice and terms** at `/about`, `/contact`, `/privacy` and `/terms`, open to everyone.
 
@@ -66,13 +67,13 @@ api/                    Vercel functions (9 of the Hobby plan's 12)
   credentials.ts        save, check and remove Growatt / Octopus details
   settings.ts           charge window, power rate, stop SOC, automation
   automation.ts         automatic charging status, Check now
-  account.ts            data export, account deletion
+  account.ts            data export, activity log, account deletion
   cron/[action].ts      user (one user's scheduled check), update (everyone, by hand)
   contact.ts            the contact form (emails hello@angelov.uk through Resend)
   _handlers/            the handlers behind the [action] routes (not routed)
   _lib/                 session, CSRF, rate limits, crypto, database, audit log…
 src/
-  features/             auth, dashboard, growatt, octopus, settings, legal
+  features/             auth, dashboard, growatt, octopus, settings, activity, about, legal
   components/           shared UI
   lib/                  React-free code shared with the server (Growatt/Octopus clients, charge planner, schemas)
   types/                all TypeScript types
