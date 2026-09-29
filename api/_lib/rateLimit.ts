@@ -22,6 +22,8 @@ const LIMITS = {
   growattWrite: { max: 50, windowSeconds: 10 * 60 },
   octopusRead: { max: 60, windowSeconds: 10 * 60 },
   octopusJoin: { max: 10, windowSeconds: 60 * 60 },
+  // Check now can write the inverter.
+  automationRun: { max: 10, windowSeconds: 10 * 60 },
   export: { max: 10, windowSeconds: 60 * 60 },
   // Can check the current password, so guesses must stay few.
   accountDelete: { max: 5, windowSeconds: 60 * 60 },

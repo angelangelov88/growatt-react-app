@@ -5,7 +5,7 @@ import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
 import { allowMethods, sendError } from "./_lib/http";
 import { requireUser } from "./_lib/session";
-import { readSettings } from "./_lib/userData";
+import { readSettings, recheckInverter } from "./_lib/userData";
 
 // GET → Settings.
 // PUT Settings → Settings. Automation can only be turned on once both Growatt
@@ -40,15 +40,18 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     }
     await tx`
       insert into private.user_settings
-        (user_id, charge_start, charge_end, power_rate, stop_soc,
-          automation_enabled)
-      values (${userId}, ${settings.chargeStart}, ${settings.chargeEnd},
-        ${settings.powerRate}, ${settings.stopSOC},
+        (user_id, window_enabled, charge_start, charge_end, power_rate,
+          stop_soc, automation_enabled)
+      values (${userId}, ${settings.windowEnabled}, ${settings.chargeStart},
+        ${settings.chargeEnd}, ${settings.powerRate}, ${settings.stopSOC},
         ${settings.automationEnabled})
       on conflict (user_id) do update set
+        window_enabled = excluded.window_enabled,
         charge_start = excluded.charge_start, charge_end = excluded.charge_end,
         power_rate = excluded.power_rate, stop_soc = excluded.stop_soc,
         automation_enabled = excluded.automation_enabled`;
+    // The inverter may have changed while automation was off.
+    await recheckInverter(tx);
     await audit(tx, req, userId, "settings_saved", settings);
     return readSettings(tx);
   });

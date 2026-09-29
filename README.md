@@ -17,14 +17,14 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
 - **Sign in** with Google, or email and password (email confirmation, password reset, optional authenticator-app MFA).
 - **Dashboard:**
   - the inverter's Battery First (charge) and Grid First (discharge) slots, editable
-  - Octopus's planned dispatches, with an Apply button that turns them into a charge plan
+  - Octopus's planned dispatches, with an Apply button that turns them into a charge plan (or, with automatic charging on, Check now and when it last ran)
   - saving sessions, with Join
 - **Settings:**
   - Growatt and Octopus details (checked before saving, write-only)
-  - automatic charging, with the charge window, power rate and stop SOC
+  - automatic charging, with an optional charge window, power rate and stop SOC
   - password and MFA
   - data export and account deletion
-- **Automatic charging:** a scheduled job applies each opted-in user's planned dispatches to their inverter.
+- **Automatic charging:** every 5 minutes, each opted-in user's planned dispatches are checked and applied to their inverter when they change.
 - **Privacy notice and terms** at `/privacy` and `/terms`.
 
 ## How it works
@@ -34,7 +34,7 @@ Browser (React)  ──cookies──▶  /api (Vercel functions, London)  ──
    no tokens,                   checks the session on every call  ──▶  Postgres (private schema)
    no secrets                                                     ──▶  Growatt server
                                                                   ──▶  Octopus GraphQL API
-GitHub Actions (schedule) ──Bearer CRON_SECRET──▶ /api/cron/update
+Supabase pg_cron (every 5 min) ──Bearer CRON_SECRET──▶ /api/cron/user, one request per user
 ```
 
 - **The browser only talks to our `/api`.**
@@ -59,14 +59,15 @@ GitHub Actions (schedule) ──Bearer CRON_SECRET──▶ /api/cron/update
 ## Project structure
 
 ```
-api/                    Vercel functions (7 of the Hobby plan's 12)
+api/                    Vercel functions (8 of the Hobby plan's 12)
   auth/[action].ts      login, signup, google, callback, confirm, logout, me, mfa, password
   growatt/[action].ts   charge / discharge (read and write the inverter)
   octopus/[action].ts   slots, sessions, join
   credentials.ts        save, check and remove Growatt / Octopus details
   settings.ts           charge window, power rate, stop SOC, automation
+  automation.ts         automatic charging status, Check now
   account.ts            data export, account deletion
-  cron/update.ts        the scheduled automation run
+  cron/[action].ts      user (one user's scheduled check), update (everyone, by hand)
   _handlers/            the handlers behind the [action] routes (not routed)
   _lib/                 session, CSRF, rate limits, crypto, database, audit log…
 src/
@@ -76,7 +77,7 @@ src/
   types/                all TypeScript types
 supabase/migrations/    SQL migrations, applied by hand in order
 scripts/                local and CI checks
-.github/workflows/      CI and the automation schedule
+.github/workflows/      CI and a manual automation run
 ```
 
 Coding conventions and security rules for contributors are in [CLAUDE.md](CLAUDE.md).
@@ -113,7 +114,7 @@ All of them are **server-only**: they're read in `api/` and never reach the brow
 | `CREDENTIALS_ENC_KEY_V1`   | Encrypts saved Growatt and Octopus details: `openssl rand -base64 32`. **Losing it means users must re-enter their details.** | `.env`, Vercel                                                                                                    |
 | `GOOGLE_CLIENT_ID`         | The Google OAuth client's ID (step 2 below)                                                                                   | `.env`, Vercel                                                                                                    |
 | `GOOGLE_CLIENT_SECRET`     | The Google OAuth client's secret                                                                                              | `.env`, Vercel                                                                                                    |
-| `CRON_SECRET`              | Lets the GitHub schedule call `/api/cron/update`: `openssl rand -base64 32`                                                   | `.env`, Vercel Production, GitHub                                                                                 |
+| `CRON_SECRET`              | Lets the schedule call `/api/cron/*`: `openssl rand -hex 32`                                                                  | `.env`, Vercel Production, Supabase Vault (`cron_secret`), GitHub                                                 |
 | `CI_DATABASE_URL`          | Postgres as `ci_check`, only for `pnpm check:database`                                                                        | `.env`, GitHub                                                                                                    |
 
 The local `.env` points at the **same Supabase project as production**. Test with throwaway accounts, and don't turn on automatic charging for a real inverter from a local run.
@@ -148,8 +149,9 @@ This is how production is set up, and what you'd repeat for a fresh copy.
    | `0004_has_password`    | Tells Google-only accounts apart from password accounts |
    | `0005_ci_check`        | The `ci_check` role                                     |
    | `0006_audit_retention` | Deletes audit log entries older than 12 months          |
+   | `0007_automation`      | The 5-minute schedule, automation state, window toggle  |
 
-   There's no migration tool. Each migration is applied by hand, once.
+   There's no migration tool. Each migration is applied by hand, once. Before `0007`, store `CRON_SECRET` in Vault (see [Automatic charging](#automatic-charging)).
 
 7. **Set the passwords for `app_server` and `ci_check`.** Set them as SCRAM hashes, so the plain password never appears in Supabase's query history.
    - Generate a password and its hash locally:
@@ -204,7 +206,7 @@ Previews share the production database and send email links to the production Si
 
 ### 5. GitHub
 
-1. **Actions secrets:** `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `CI_DATABASE_URL` for CI, and `CRON_SECRET` for the schedule.
+1. **Actions secrets:** `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `CI_DATABASE_URL` for CI, and `CRON_SECRET` for the manual automation run.
 2. **Branch protection on `main`:**
    - require a pull request
    - require the `checks` and `database` jobs to pass
@@ -250,21 +252,28 @@ The actions are pinned to commit SHAs. The repo and its Actions logs are public,
 
 ## Automatic charging
 
-`.github/workflows/update-growatt.yml` calls `/api/cron/update` on this schedule (UTC):
+Supabase's `pg_cron` runs `private.schedule_automation()` every 5 minutes. It sends one `POST /api/cron/user` per user with automatic charging on (skipping paused ones), in parallel through `pg_net`, so each user gets their own function and 60 seconds. The code is in `api/_lib/automation.ts`. Each check:
 
-- every hour from 19:00 to 03:00
-- every 30 minutes from 04:00 to 10:00
-- once at 11:00
+1. gets the user's planned dispatches from Octopus (1–2 seconds)
+2. builds a charge plan: their own window, if turned on, plus the Octopus slots around it, with their power rate and stop SOC
+3. compares it with the plan last seen on the inverter (`private.automation_state`). If it's the same and the inverter was read in the last 3 hours, it stops there, without contacting Growatt
+4. otherwise reads the inverter and writes the plan if it differs
 
-For each user with automatic charging on, the job:
+A "busy" mark (90 seconds) stops two checks for the same user running at once. If Growatt or Octopus refuses the saved login, the user's checks pause until they save new details or press Check now, so a wrong password isn't retried 288 times a day. Changes to the inverter are written to the audit log, and failures only when they start and stop.
 
-1. gets their planned dispatches from Octopus
-2. builds a charge plan with their charge window, power rate and stop SOC
-3. writes the plan to the inverter, only if it's different from what's already there
+**Check now** on the dashboard (`POST /api/automation`) runs the same check straight away and always reads the inverter. A manual change to Battery First, or saving settings or details, makes the next check read the inverter too.
 
-Runs that apply a plan or fail are written to the user's audit log. The reply holds counts only. Each run also deletes audit log entries older than 12 months.
+A second job, `housekeeping`, runs daily at 03:17 UTC. It deletes audit log entries older than 12 months and `pg_cron`'s own run history older than 7 days.
 
-To run it by hand: Actions → Update Growatt Charge Times → Run workflow.
+**Setting it up** (once, before running `0007_automation`), in the SQL Editor:
+
+```sql
+select vault.create_secret('<CRON_SECRET>', 'cron_secret');
+```
+
+Use the same value as `CRON_SECRET` in Vercel. Then run the migration. To see recent runs: `select * from cron.job_run_details order by start_time desc limit 20;`, and the replies: `select * from net._http_response order by created desc limit 20;`. To change the secret, update Vercel first, then `select vault.update_secret((select id from vault.secrets where name = 'cron_secret'), '<new value>');`.
+
+To check everyone at once by hand: Actions → Update Growatt Charge Times → Run workflow (it calls `/api/cron/update`).
 
 ## Deploying
 
@@ -305,7 +314,7 @@ If a secret leaks:
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `SUPABASE_SECRET_KEY` or `SUPABASE_PUBLISHABLE_KEY` | Create a new key in Supabase (Project Settings → API Keys), update Vercel and GitHub, then delete the old key.                                   |
 | `DATABASE_URL` or `CI_DATABASE_URL`                 | Set a new password for the role (step 1.7 above) and update the connection strings.                                                              |
-| `CRON_SECRET`                                       | Generate a new one and update Vercel and GitHub together.                                                                                        |
+| `CRON_SECRET`                                       | Generate a new one and update Vercel, Supabase Vault (`cron_secret`) and GitHub together.                                                        |
 | `GOOGLE_CLIENT_SECRET`                              | Add a new secret to the OAuth client in Google Cloud, update Supabase's Google provider and Vercel, then disable and delete the old one.         |
 | `CREDENTIALS_ENC_KEY_V1`                            | Add a `…_V2` key and re-encrypt the saved details with it (the stored rows record their key version), or ask users to enter their details again. |
 | Everyone needs signing out                          | Revoke all sessions in Supabase.                                                                                                                 |
@@ -321,7 +330,7 @@ If the app starts collecting new data, keeping it longer, or sending it to a new
 - [ ] Turn sign-up on in Supabase, if it's off.
 - [ ] Publish the Google app (Google Auth Platform → Audience).
 - [ ] Consider a CAPTCHA (Cloudflare Turnstile) on sign-up, login and password reset. The CSP will need `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
-- [ ] Turn automatic charging off, and email the user, after repeated Growatt or Octopus login failures.
+- [ ] Email the user when their automatic charging pauses after a refused Growatt or Octopus login.
 - [ ] Supabase Pro, for backups and no pausing, once there are real users.
 - [ ] Check the ICO's data protection fee self-assessment.
 - [ ] Set up `privacy@angelov.uk` so it reaches a real inbox.

@@ -24,7 +24,8 @@ const withUser = async <T>(
     return fn(tx);
   })) as T;
 
-// Only for the cron job: the ids of users with automation on.
+// Only for /api/cron/update: the ids of users with automation on. Old audit
+// rows are pruned by pg_cron's daily housekeeping job.
 const automationUserIds = async () =>
   (
     await sql<
@@ -32,13 +33,4 @@ const automationUserIds = async () =>
     >`select id from private.automation_user_ids() as id`
   ).map((r) => r.id);
 
-// Only for the cron job: deletes audit rows older than 12 months (the privacy
-// notice promises this). Returns how many went.
-const pruneAuditLog = async () => {
-  const [row] = await sql<
-    { count: string }[]
-  >`select private.prune_audit_log() as count`;
-  return Number(row.count);
-};
-
-export { sql, withUser, automationUserIds, pruneAuditLog };
+export { sql, withUser, automationUserIds };

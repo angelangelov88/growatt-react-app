@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `src/lib/growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. The Vercel functions in `api/` (including the scheduled job, `api/cron/update.ts`, which a GitHub Action calls) reuse the React-free modules in `src/lib/`, so keep them free of React and browser-only globals (ESLint blocks React, TanStack Query, component and context imports there, and blocks `src/` from importing `api/`, Supabase, `postgres` or `node:*`).
+React 18 + TypeScript app built with Vite, styled with Tailwind CSS. It controls a Growatt inverter (`tcpSet.do` calls in `src/lib/growattApi.ts`) and reads Octopus Energy data (GraphQL over `fetch`). Data fetching uses TanStack Query v5. The Vercel functions in `api/` (including automatic charging, `api/_lib/automation.ts`, which Supabase `pg_cron` runs per user every 5 minutes through `api/cron/[action].ts`) reuse the React-free modules in `src/lib/`, so keep them free of React and browser-only globals (ESLint blocks React, TanStack Query, component and context imports there, and blocks `src/` from importing `api/`, Supabase, `postgres` or `node:*`).
 
 ## Coding Style
 
@@ -89,7 +89,7 @@ export default ActionButton;
 The app is public and changes real inverters, so these rules always apply:
 
 - **No secrets in the browser.** Everything the Vite build outputs is public. Never add a `VITE_*` variable that holds a secret; server settings have no prefix and are only read in `api/`. `pnpm check:bundle` fails the build if a secret or server code reaches `dist/`.
-- **Every endpoint calls `requireUser`** (`api/_lib/session.ts`) before anything else, except the auth endpoints that sign people in and the cron job (`CRON_SECRET`). Each handler starts with `allowMethods` and `checkOrigin` (`api/_lib/csrf.ts`, which blocks writes from other sites), and rate limits with `rateLimit` or `limitByIp` (`api/_lib/rateLimit.ts`).
+- **Every endpoint calls `requireUser`** (`api/_lib/session.ts`) before anything else, except the auth endpoints that sign people in and the cron endpoints (`CRON_SECRET`, checked by `isCronRequest`). Each handler starts with `allowMethods` and `checkOrigin` (`api/_lib/csrf.ts`, which blocks writes from other sites), and rate limits with `rateLimit` or `limitByIp` (`api/_lib/rateLimit.ts`).
 - **Every new table** goes in the `private` schema, in a migration: RLS enabled and forced, `own_rows` policies for `app_server` only, `revoke all ... from public, anon, authenticated`. New functions: `revoke all ... from public, anon, authenticated`, then grant to `app_server`. `pnpm check:database` checks all of this.
 - **Never log request bodies, headers, cookies or credentials.** Log error codes and at most the first 8 characters of a user id. Audit rows (`audit`) never hold a secret.
 - Error replies use `sendError` with safe messages: never pass on another service's raw reply.

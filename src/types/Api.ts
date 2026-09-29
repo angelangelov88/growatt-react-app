@@ -14,7 +14,7 @@ import type {
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
 import type { settingsSchema } from "../lib/settingsSchema";
-import type { Dispatch, PowerDownSession } from "./Octopus";
+import type { ChargePlan, Dispatch, PowerDownSession } from "./Octopus";
 
 // Shared by the api/ functions and the app.
 
@@ -77,6 +77,31 @@ type JoinBody = z.infer<typeof joinSchema>;
 // GET and PUT /api/settings.
 type Settings = z.infer<typeof settingsSchema>;
 
+// GET /api/automation: what automatic charging last did. Times are ISO
+// strings, null until it first happens.
+type AutomationStatus = {
+  // When the last check finished.
+  checkedAt: string | null;
+  // Why the last check failed, or null if it worked.
+  error: { code: string; message: string } | null;
+  // A saved login was refused, so scheduled checks wait for new details or
+  // Check now.
+  paused: boolean;
+  // The charge times the inverter was last set to or found with, e.g.
+  // "01:00-05:00, 18:00-19:00"; "" for none.
+  slots: string | null;
+  // When automatic charging last changed the inverter.
+  appliedAt: string | null;
+};
+
+// POST /api/automation (Check now). busy: another check was already running.
+// plan: what the inverter now has, when the check got that far.
+type CheckNowResult = {
+  result: "applied" | "unchanged" | "failed" | "busy";
+  plan: ChargePlan | null;
+  status: AutomationStatus;
+};
+
 // DELETE /api/account.
 type DeleteAccountBody = z.infer<typeof deleteAccountSchema>;
 
@@ -94,6 +119,7 @@ type AccountExport = {
     mfaEnrolled: boolean;
   };
   settings: Settings;
+  automation: AutomationStatus;
   credentials: Credentials;
   auditLog: {
     at: string;
@@ -124,6 +150,8 @@ export type {
   Provider,
   Credentials,
   Settings,
+  AutomationStatus,
+  CheckNowResult,
   PeriodsBody,
   OctopusSlots,
   SessionJson,

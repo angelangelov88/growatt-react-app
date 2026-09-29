@@ -1,10 +1,13 @@
 import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
+import CheckNow from "./CheckNow";
+import useSettings from "../settings/useSettings";
 import useToast from "../../contexts/useToast";
 import type { OctopusProps } from "../../types/Octopus";
 
-// canApply: false until the user has saved their Growatt login.
+// canApply: false until the user has saved their Growatt login. With automatic
+// charging on, Check now replaces the Apply button.
 const Octopus = ({ canApply }: OctopusProps) => {
   const {
     slotsLoading,
@@ -22,7 +25,9 @@ const Octopus = ({ canApply }: OctopusProps) => {
     extraSlotsMessage,
     isPending,
   } = useApplySlots({ slotsData });
+  const { data: settings } = useSettings();
   const { showToast } = useToast();
+  const isAutomated = canApply && (settings?.automationEnabled ?? false);
 
   useEffect(() => {
     if (slotsError) showToast(`Octopus error: ${slotsError.message}`, "error");
@@ -59,7 +64,9 @@ const Octopus = ({ canApply }: OctopusProps) => {
 
       {slotsData && slots.length === 0 && (
         <p className="text-sm text-gray-500 mb-3">
-          No upcoming dispatch slots.
+          {isAutomated
+            ? "Octopus hasn't planned any slots yet. It can take a few minutes after you plug in. We'll keep checking every 5 minutes."
+            : "No upcoming dispatch slots."}
         </p>
       )}
 
@@ -87,12 +94,14 @@ const Octopus = ({ canApply }: OctopusProps) => {
         </p>
       )}
 
-      {slotsData && canApply && (
+      {isAutomated && <CheckNow onChecked={fetchSlots} />}
+
+      {slotsData && canApply && !isAutomated && (
         <>
           <p className="text-xs text-gray-400 mb-3">
             Will apply (UK time):{" "}
             <span className="font-mono text-gray-200">
-              {planSummary ?? "…"}
+              {planSummary === null ? "…" : planSummary || "no charge slots"}
             </span>
           </p>
           <button
@@ -104,7 +113,9 @@ const Octopus = ({ canApply }: OctopusProps) => {
               ? "Applying…"
               : slots.length > 0
                 ? "Apply Slots to Growatt"
-                : "Apply Default to Growatt"}
+                : settings?.windowEnabled === false
+                  ? "Clear Growatt Charge Slots"
+                  : "Apply My Window to Growatt"}
           </button>
         </>
       )}
