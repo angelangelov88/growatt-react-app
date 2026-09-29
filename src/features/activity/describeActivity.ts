@@ -110,6 +110,24 @@ const describeAutomation = (details: unknown): ActivityDescription => {
   }
 };
 
+// "High Export 18:00–19:00, 95%, stop at 20%", from highName, highStart…
+const describePreset = (details: unknown, key: "high" | "low") => {
+  const start = text(details, `${key}Start`);
+  const end = text(details, `${key}End`);
+  const power = number(details, `${key}Power`);
+  const stop = number(details, `${key}Stop`);
+  const parts = [
+    start && end && `${start}–${end}`,
+    power !== undefined && `${String(power)}%`,
+    stop !== undefined && `stop at ${String(stop)}%`,
+  ].filter((part): part is string => typeof part === "string" && part !== "");
+  const name = text(details, `${key}Name`);
+  if (!name && parts.length === 0) return undefined;
+  return [name ?? (key === "high" ? "First" : "Second"), parts.join(", ")]
+    .filter(Boolean)
+    .join(" ");
+};
+
 const describeActivity = ({
   action,
   details,
@@ -199,6 +217,15 @@ const describeActivity = ({
         failed: !ok,
       };
     }
+    case "export_presets_saved":
+      return {
+        title: "Grid First presets saved",
+        detail: join([
+          describePreset(details, "high"),
+          describePreset(details, "low"),
+        ]),
+        failed: false,
+      };
     case "automation_run":
       return describeAutomation(details);
     default:

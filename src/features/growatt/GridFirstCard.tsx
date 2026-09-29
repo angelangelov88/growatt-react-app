@@ -1,10 +1,19 @@
-import type { Preset } from "../../types/Growatt";
+import { Link } from "react-router";
+import type { Preset } from "../../types/Api";
 import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
 import SlotList from "./SlotList";
-import { PRESETS, RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
+import {
+  RATE_OPTIONS,
+  SOC_OPTIONS,
+  selectClass,
+  timeToSlot,
+} from "./slotOptions";
+import useExportPresets from "./useExportPresets";
+
+const PRESET_KEYS: Preset[] = ["high", "low"];
 
 const GridFirstCard = ({
   form,
@@ -12,6 +21,7 @@ const GridFirstCard = ({
   setDischargeMutation,
 }: GridFirstProps) => {
   const { showToast } = useToast();
+  const presets = useExportPresets();
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
@@ -92,22 +102,37 @@ const GridFirstCard = ({
         />
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            {(
-              Object.entries(PRESETS) as [Preset, (typeof PRESETS)[Preset]][]
-            ).map(([key, p]) => (
-              <button
-                key={key}
-                onClick={() => {
-                  form.setDefaults(p.powerRate, p.stopSOC, p.defaultSlot);
-                }}
-                className="rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
-              >
-                <p className="text-sm font-medium text-white">{p.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{p.desc}</p>
-              </button>
-            ))}
+          <div className="grid grid-cols-2 gap-3">
+            {PRESET_KEYS.map((key) => {
+              const p = presets[key];
+              return (
+                <button
+                  key={key}
+                  onClick={() => {
+                    form.setDefaults(
+                      String(p.powerRate),
+                      String(p.stopSOC),
+                      timeToSlot(p.start, p.end),
+                    );
+                  }}
+                  className="min-w-0 rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
+                >
+                  <p className="text-sm font-medium text-white truncate">
+                    {p.name}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {p.start}–{p.end} · {p.powerRate}% · stop at {p.stopSOC}%
+                  </p>
+                </button>
+              );
+            })}
           </div>
+          <p className="mt-2 mb-4 text-xs text-gray-500">
+            Replaces the slots below.{" "}
+            <Link to="/settings" className="text-violet-400 hover:underline">
+              Change presets
+            </Link>
+          </p>
 
           <div className="grid grid-cols-2 gap-3 mb-5">
             <div>

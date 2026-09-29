@@ -1,4 +1,11 @@
-import type { MfaEnrollment, Provider, Settings } from "./Api";
+import type {
+  ExportPreset,
+  MfaEnrollment,
+  Preset,
+  Provider,
+  Settings,
+} from "./Api";
+import type { FieldErrors } from "./Common";
 
 type MfaSetupProps = {
   enrollment: MfaEnrollment;
@@ -38,6 +45,25 @@ type AutomationSwitchProps = { saved: Settings; canTurnOn: boolean };
 
 type DeleteAccountFormProps = { onCancel: () => void };
 
+// One preset as typed in the form: the dropdowns give strings.
+type ExportPresetDraft = Omit<ExportPreset, "powerRate" | "stopSOC"> & {
+  powerRate: string;
+  stopSOC: string;
+};
+
+type ExportPresetDrafts = Record<Preset, ExportPresetDraft>;
+
+type ExportPresetsFormProps = { saved: Settings };
+
+// errors are keyed by field, e.g. "name".
+type ExportPresetFieldsProps = {
+  preset: Preset;
+  value: ExportPresetDraft;
+  errors: FieldErrors;
+  disabled: boolean;
+  onChange: (field: keyof ExportPresetDraft, value: string) => void;
+};
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
@@ -47,4 +73,8 @@ export type {
   ChargeSettingsFormProps,
   AutomationSwitchProps,
   DeleteAccountFormProps,
+  ExportPresetDraft,
+  ExportPresetDrafts,
+  ExportPresetsFormProps,
+  ExportPresetFieldsProps,
 };

@@ -14,7 +14,10 @@ import type {
 import type { contactSchema } from "../lib/contactSchema";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
-import type { settingsSchema } from "../lib/settingsSchema";
+import type {
+  exportPresetsSchema,
+  settingsSchema,
+} from "../lib/settingsSchema";
 import type { ChargePlan, Dispatch, PowerDownSession } from "./Octopus";
 
 // Shared by the api/ functions and the app.
@@ -76,8 +79,16 @@ type SavingSessions = {
 // POST /api/octopus/join
 type JoinBody = z.infer<typeof joinSchema>;
 
-// GET and PUT /api/settings.
-type Settings = z.infer<typeof settingsSchema>;
+// PUT /api/settings: the charge window, power, stop SOC and automation.
+type ChargeSettings = z.infer<typeof settingsSchema>;
+
+// PUT /api/settings?part=export: the two Grid First preset buttons.
+type ExportPresets = z.infer<typeof exportPresetsSchema>;
+type ExportPreset = ExportPresets["high"];
+type Preset = keyof ExportPresets;
+
+// GET /api/settings, and what both PUTs return.
+type Settings = ChargeSettings & { exportPresets: ExportPresets };
 
 // GET /api/automation: what automatic charging last did. Times are ISO
 // strings, null until it first happens.
@@ -171,6 +182,10 @@ export type {
   MfaEnrollment,
   Provider,
   Credentials,
+  ChargeSettings,
+  ExportPresets,
+  ExportPreset,
+  Preset,
   Settings,
   AutomationStatus,
   CheckNowResult,

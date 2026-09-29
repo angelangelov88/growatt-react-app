@@ -7,7 +7,7 @@ import type { PowerDownSession } from "../../types/Octopus";
 import useInverterRead from "./useInverterRead";
 import BatteryFirstCard from "./BatteryFirstCard";
 import GridFirstCard from "./GridFirstCard";
-import { PRESETS } from "./slotOptions";
+import useExportPresets from "./useExportPresets";
 import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
 import useSavingSessions from "../octopus/useSavingSessions";
@@ -50,6 +50,7 @@ const Growatt = ({ showSessions }: GrowattProps) => {
   const sessionsQuery = useSavingSessions();
 
   const { showToast } = useToast();
+  const { high } = useExportPresets();
   const gridFirstRef = useRef<HTMLDivElement>(null);
   // A session slot to add once Grid First finishes loading. A ref, not state:
   // it doesn't affect rendering, it's just a pending action.
@@ -71,13 +72,14 @@ const Growatt = ({ showSessions }: GrowattProps) => {
         showToast("Grid First already has 6 slots — remove one first", "error");
         return;
       }
+      // The session's own times, with the first preset's power and stop.
       dischargeForm.appendSlot(
-        PRESETS.high.powerRate,
-        PRESETS.high.stopSOC,
+        String(high.powerRate),
+        String(high.stopSOC),
         slot,
       );
       showToast(
-        `Added ${formatSlot(slot)} to Grid First with High Export — review it and press Apply`,
+        `Added ${formatSlot(slot)} to Grid First with ${high.name}'s power and stop level — review it and press Apply`,
         "info",
       );
       gridFirstRef.current?.scrollIntoView({
@@ -85,7 +87,7 @@ const Growatt = ({ showSessions }: GrowattProps) => {
         block: "start",
       });
     },
-    [dischargeForm, showToast],
+    [dischargeForm, showToast, high],
   );
 
   const exportDuringSession = (session: PowerDownSession) => {

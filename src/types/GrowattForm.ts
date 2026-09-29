@@ -25,9 +25,16 @@ type GrowattProps = { showSessions: boolean };
 
 type SlotListProps = { form: SlotForm };
 
+// label names the dropdowns for screen readers, e.g. "Peak" → "Peak start
+// hour". invalid marks it as having an error; describedBy points at the
+// error or hint under the picker.
 type TimePickerProps = {
   slot: SlotState;
   onChange: (field: keyof SlotState, value: string) => void;
+  label?: string;
+  disabled?: boolean;
+  invalid?: boolean;
+  describedBy?: string;
 };
 
 export type {

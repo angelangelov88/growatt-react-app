@@ -1,7 +1,12 @@
-import { defaultSettings } from "../../src/lib/settingsSchema";
+import {
+  defaultExportPresets,
+  defaultSettings,
+} from "../../src/lib/settingsSchema";
 import type {
   AutomationStatus,
   Credentials,
+  ExportPreset,
+  Preset,
   Settings,
 } from "../../src/types/Api";
 import type { Provider, Tx } from "../../src/types/Server";
@@ -16,7 +21,8 @@ type SettingsRow = {
   power_rate: number | null;
   stop_soc: number | null;
   automation_enabled: boolean;
-};
+} & Record<`${Preset}_export_${"name" | "start" | "end"}`, string | null> &
+  Record<`${Preset}_export_${"power" | "stop"}`, number | null>;
 
 type AutomationRow = {
   checked_at: Date | null;
@@ -31,9 +37,25 @@ type AutomationRow = {
 const readSettings = async (tx: Tx): Promise<Settings> => {
   const rows = await tx<SettingsRow[]>`
     select window_enabled, charge_start::text as charge_start,
-      charge_end::text as charge_end, power_rate, stop_soc, automation_enabled
+      charge_end::text as charge_end, power_rate, stop_soc, automation_enabled,
+      high_export_name, high_export_start::text as high_export_start,
+      high_export_end::text as high_export_end, high_export_power,
+      high_export_stop,
+      low_export_name, low_export_start::text as low_export_start,
+      low_export_end::text as low_export_end, low_export_power,
+      low_export_stop
     from private.user_settings`;
   const row = rows.at(0);
+  const preset = (key: Preset): ExportPreset => {
+    const fallback = defaultExportPresets[key];
+    return {
+      name: row?.[`${key}_export_name`] ?? fallback.name,
+      start: row?.[`${key}_export_start`]?.slice(0, 5) ?? fallback.start,
+      end: row?.[`${key}_export_end`]?.slice(0, 5) ?? fallback.end,
+      powerRate: row?.[`${key}_export_power`] ?? fallback.powerRate,
+      stopSOC: row?.[`${key}_export_stop`] ?? fallback.stopSOC,
+    };
+  };
   return {
     windowEnabled: row?.window_enabled ?? defaultSettings.windowEnabled,
     // Postgres gives HH:MM:SS.
@@ -42,6 +64,7 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
     powerRate: row?.power_rate ?? defaultSettings.powerRate,
     stopSOC: row?.stop_soc ?? defaultSettings.stopSOC,
     automationEnabled: row?.automation_enabled ?? false,
+    exportPresets: { high: preset("high"), low: preset("low") },
   };
 };
 

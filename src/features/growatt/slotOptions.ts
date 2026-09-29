@@ -1,4 +1,4 @@
-import type { Preset, SlotState } from "../../types/Growatt";
+import type { SlotState } from "../../types/Growatt";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 // 5-minute steps; minuteOptions adds any other value read from the inverter.
@@ -18,49 +18,19 @@ const minuteOptions = (current: string) => {
   return opts;
 };
 
-const PRESETS: Record<
-  Preset,
-  {
-    powerRate: string;
-    stopSOC: string;
-    label: string;
-    desc: string;
-    defaultSlot: SlotState;
-  }
-> = {
-  high: {
-    powerRate: "95",
-    stopSOC: "20",
-    label: "High Export",
-    desc: "95% · stop at 20% battery",
-    defaultSlot: {
-      startHour: "20",
-      startMin: "00",
-      endHour: "21",
-      endMin: "00",
-    },
-  },
-  low: {
-    powerRate: "60",
-    stopSOC: "15",
-    label: "Low Export",
-    desc: "60% · stop at 15% battery",
-    defaultSlot: {
-      startHour: "20",
-      startMin: "00",
-      endHour: "21",
-      endMin: "00",
-    },
-  },
+// "18:00", "19:00" → the form's slot.
+const timeToSlot = (start: string, end: string): SlotState => {
+  const [startHour, startMin] = start.split(":");
+  const [endHour, endMin] = end.split(":");
+  return { startHour, startMin, endHour, endMin };
 };
 
-export type { Preset };
 export {
   HOURS,
   MINUTES,
   SOC_OPTIONS,
   RATE_OPTIONS,
-  PRESETS,
+  timeToSlot,
   selectClass,
   minuteOptions,
 };
