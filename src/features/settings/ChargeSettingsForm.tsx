@@ -8,7 +8,7 @@ import useToast from "../../contexts/useToast";
 import { apiRequest } from "../../lib/apiClient";
 import { fieldErrors } from "../../lib/fieldErrors";
 import { settingsSchema } from "../../lib/settingsSchema";
-import type { Settings } from "../../types/Api";
+import type { ChargeSettings, Settings } from "../../types/Api";
 import type { FieldErrors } from "../../types/Common";
 import type { ChargeSettingsFormProps } from "../../types/Settings";
 import { SETTINGS_KEY } from "./useSettings";
@@ -26,7 +26,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const save = useMutation({
-    mutationFn: (body: Settings) =>
+    mutationFn: (body: ChargeSettings) =>
       apiRequest<Settings>("settings", { method: "PUT", body }),
     onSuccess: (settings) => {
       queryClient.setQueryData(SETTINGS_KEY, settings);

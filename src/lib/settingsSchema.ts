@@ -33,6 +33,35 @@ const settingsSchema = z
     path: ["chargeEnd"],
   });
 
+// The dashboard's Grid First dropdowns go in 5% steps.
+const stepSchema = percentSchema.multipleOf(5, "Use steps of 5%");
+
+// One of the Grid First preset buttons: what it fills the form with.
+const exportPresetSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Give it a name")
+      .max(20, "At most 20 characters"),
+    start: timeSchema,
+    end: timeSchema,
+    // Discharge power, percent of the inverter's maximum.
+    powerRate: stepSchema,
+    // Stop exporting at this battery level, in percent.
+    stopSOC: stepSchema,
+  })
+  .refine((p) => p.start < p.end, {
+    message: "It must end after it starts, before midnight",
+    path: ["end"],
+  });
+
+// PUT /api/settings?part=export
+const exportPresetsSchema = z.object({
+  high: exportPresetSchema,
+  low: exportPresetSchema,
+});
+
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   windowEnabled: true,
@@ -43,4 +72,28 @@ const defaultSettings: z.infer<typeof settingsSchema> = {
   automationEnabled: false,
 };
 
-export { timeSchema, percentSchema, settingsSchema, defaultSettings };
+const defaultExportPresets: z.infer<typeof exportPresetsSchema> = {
+  high: {
+    name: "High Export",
+    start: "18:00",
+    end: "19:00",
+    powerRate: 95,
+    stopSOC: 20,
+  },
+  low: {
+    name: "Low Export",
+    start: "20:00",
+    end: "22:15",
+    powerRate: 60,
+    stopSOC: 15,
+  },
+};
+
+export {
+  timeSchema,
+  percentSchema,
+  settingsSchema,
+  exportPresetsSchema,
+  defaultSettings,
+  defaultExportPresets,
+};

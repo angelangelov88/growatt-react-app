@@ -1,7 +1,7 @@
 import TimePicker from "./TimePicker";
 import type { SlotListProps } from "../../types/GrowattForm";
 
-const SlotList = ({ form }: SlotListProps) => (
+const SlotList = ({ form, readOnly = false }: SlotListProps) => (
   <>
     <div className="flex flex-col gap-3 mb-4">
       {form.slots.length === 0 && (
@@ -15,25 +15,28 @@ const SlotList = ({ form }: SlotListProps) => (
             <span className="text-xs text-gray-400 font-medium">
               Slot {i + 1}
             </span>
-            <button
-              onClick={() => {
-                form.removeSlot(i);
-              }}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
-            >
-              Remove
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => {
+                  form.removeSlot(i);
+                }}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-0.5"
+              >
+                Remove
+              </button>
+            )}
           </div>
           <TimePicker
             slot={slot}
             onChange={(field, value) => {
               form.updateSlot(i, field, value);
             }}
+            disabled={readOnly}
           />
         </div>
       ))}
     </div>
-    {form.canAddSlot && (
+    {form.canAddSlot && !readOnly && (
       <button
         onClick={form.addSlot}
         className="w-full py-2 rounded-xl text-sm font-medium border border-dashed border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors mb-4"

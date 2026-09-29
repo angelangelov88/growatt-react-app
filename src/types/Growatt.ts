@@ -51,8 +51,6 @@ type SlotState = {
 
 type Snapshot = { powerRate: string; stopSOC: string; slots: SlotState[] };
 
-type Preset = "high" | "low";
-
 export type {
   SlotParam,
   PeriodsInput,
@@ -63,5 +61,4 @@ export type {
   GrowattConfig,
   SlotState,
   Snapshot,
-  Preset,
 };

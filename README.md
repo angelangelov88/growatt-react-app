@@ -17,11 +17,13 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
 - **Sign in** with Google, or email and password (email confirmation, password reset, optional authenticator-app MFA).
 - **Dashboard:**
   - the inverter's Battery First (charge) and Grid First (discharge) slots, editable
+  - two Grid First preset buttons (by default High Export, 18:00–19:00, and Low Export, 20:00–22:15)
   - Octopus's planned dispatches, with an Apply button that turns them into a charge plan (or, with automatic charging on, Check now and when it last ran)
   - saving sessions, with Join
 - **Settings:**
   - Growatt and Octopus details (checked before saving, write-only)
   - automatic charging, with an optional charge window, power rate and stop SOC
+  - the Grid First presets: each one's name, times, discharge power and stop SOC
   - password and MFA
   - data export and account deletion
 - **Activity:** each user's own activity log (logins, changes to settings and details, inverter changes, automatic charging), newest first, loading more as they scroll.
@@ -155,6 +157,7 @@ This is how production is set up, and what you'd repeat for a fresh copy.
    | `0006_audit_retention` | Deletes audit log entries older than 12 months          |
    | `0007_automation`      | The 5-minute schedule, automation state, window toggle  |
    | `0008_user_limit`      | Limits the beta to 20 accounts                          |
+   | `0009_export_presets`  | Each user's Grid First presets                          |
 
    There's no migration tool. Each migration is applied by hand, once. Before `0007`, store `CRON_SECRET` in Vault (see [Automatic charging](#automatic-charging)).
 

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { settingsSchema } from "../src/lib/settingsSchema";
+import { exportPresetsSchema, settingsSchema } from "../src/lib/settingsSchema";
+import type { ExportPresets } from "../src/types/Api";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
@@ -7,9 +8,23 @@ import { allowMethods, sendError } from "./_lib/http";
 import { requireUser } from "./_lib/session";
 import { readSettings, recheckInverter } from "./_lib/userData";
 
+// The presets as flat audit details, e.g. highName, highStart.
+const presetDetails = ({ high, low }: ExportPresets) =>
+  Object.fromEntries(
+    Object.entries({ high, low }).flatMap(([key, p]) => [
+      [`${key}Name`, p.name],
+      [`${key}Start`, p.start],
+      [`${key}End`, p.end],
+      [`${key}Power`, p.powerRate],
+      [`${key}Stop`, p.stopSOC],
+    ]),
+  ) as Record<string, string | number>;
+
 // GET → Settings.
-// PUT Settings → Settings. Automation can only be turned on once both Growatt
-//   and Octopus credentials are saved.
+// PUT ChargeSettings → Settings. Automation can only be turned on once both
+//   Growatt and Octopus credentials are saved. Leaves the presets alone.
+// PUT ?part=export ExportPresets → Settings. The Grid First preset buttons;
+//   leaves everything else alone.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "PUT"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
@@ -18,6 +33,53 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
 
   if (req.method === "GET") {
     res.json(await withUser(userId, readSettings));
+    return;
+  }
+
+  if (req.query.part === "export") {
+    const presets = exportPresetsSchema.safeParse(req.body);
+    if (!presets.success) {
+      sendError(
+        res,
+        400,
+        "invalid_input",
+        presets.error.issues[0]?.message ?? "Invalid input",
+      );
+      return;
+    }
+    const { high, low } = presets.data;
+    res.json(
+      await withUser(userId, async (tx) => {
+        await tx`
+          insert into private.user_settings
+            (user_id, high_export_name, high_export_start, high_export_end,
+              high_export_power, high_export_stop, low_export_name,
+              low_export_start, low_export_end, low_export_power,
+              low_export_stop)
+          values (${userId}, ${high.name}, ${high.start}, ${high.end},
+            ${high.powerRate}, ${high.stopSOC}, ${low.name}, ${low.start},
+            ${low.end}, ${low.powerRate}, ${low.stopSOC})
+          on conflict (user_id) do update set
+            high_export_name = excluded.high_export_name,
+            high_export_start = excluded.high_export_start,
+            high_export_end = excluded.high_export_end,
+            high_export_power = excluded.high_export_power,
+            high_export_stop = excluded.high_export_stop,
+            low_export_name = excluded.low_export_name,
+            low_export_start = excluded.low_export_start,
+            low_export_end = excluded.low_export_end,
+            low_export_power = excluded.low_export_power,
+            low_export_stop = excluded.low_export_stop`;
+        await audit(
+          tx,
+          req,
+          userId,
+          "export_presets_saved",
+          presetDetails(presets.data),
+        );
+        return readSettings(tx);
+      }),
+    );
     return;
   }
 
