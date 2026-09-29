@@ -13,11 +13,12 @@ import type {
 //
 // Rules, from the user's settings:
 // - Their charge power and stop-at-battery level.
-// - Slot 1 is always their overnight window (01:00–05:00 by default). It never
-//   crosses midnight; the settings form doesn't allow it.
+// - If they use their own overnight window (01:00–05:00 by default), it's slot
+//   1. It never crosses midnight; the settings form doesn't allow it.
 // - Octopus periods are trimmed to the parts outside that window (dropped entirely if
 //   inside it, split in two if they span it), then touching or overlapping ones merged.
-// - The inverter has 6 slots, so at most 5 Octopus periods are kept, soonest first.
+// - The inverter has 6 slots, so at most 5 Octopus periods are kept (6 without
+//   a window), soonest first. Without a window or periods, every slot is off.
 // - All times are UK local time, whatever time zone the machine is in.
 
 const MAX_SLOTS = 6;
@@ -107,12 +108,18 @@ const buildChargePlan = (
     const end = new Date(d.endDt);
     return end > now && end > start;
   });
+  const pieces = upcoming.flatMap(toPieces);
   const periods = merge(
-    upcoming.flatMap(toPieces).flatMap(outsideWindow(windowStart, windowEnd)),
+    settings.windowEnabled
+      ? pieces.flatMap(outsideWindow(windowStart, windowEnd))
+      : pieces,
   ).sort((a, b) => a.firstStart - b.firstStart);
-  const kept = periods.slice(0, MAX_SLOTS - 1);
+  const kept = periods.slice(
+    0,
+    settings.windowEnabled ? MAX_SLOTS - 1 : MAX_SLOTS,
+  );
   const slots: SlotParam[] = [
-    toSlot(windowStart, windowEnd),
+    ...(settings.windowEnabled ? [toSlot(windowStart, windowEnd)] : []),
     ...kept.map((p) => toSlot(p.start, p.end)),
   ];
   while (slots.length < MAX_SLOTS) slots.push(null);

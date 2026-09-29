@@ -14,7 +14,10 @@ const percentSchema = z
 
 const settingsSchema = z
   .object({
-    // The fixed overnight charge window, UK time.
+    // Charge every night in a fixed window of the user's own. Off: only
+    // Octopus slots are charged in.
+    windowEnabled: z.boolean(),
+    // That overnight window, UK time. Kept while windowEnabled is off.
     chargeStart: timeSchema,
     chargeEnd: timeSchema,
     // Percent of the inverter's maximum power used for AC charging.
@@ -25,13 +28,14 @@ const settingsSchema = z
     automationEnabled: z.boolean(),
   })
   // HH:MM strings sort like times. The charge plan can't cross midnight yet.
-  .refine((s) => s.chargeStart < s.chargeEnd, {
+  .refine((s) => !s.windowEnabled || s.chargeStart < s.chargeEnd, {
     message: "The window must end after it starts, before midnight",
     path: ["chargeEnd"],
   });
 
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
+  windowEnabled: true,
   chargeStart: "01:00",
   chargeEnd: "05:00",
   powerRate: 35,

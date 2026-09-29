@@ -9,6 +9,7 @@ import { allowMethods, sendError } from "../../_lib/http";
 import { rateLimit } from "../../_lib/rateLimit";
 import { requireUser } from "../../_lib/session";
 import { loadGrowatt } from "../../_lib/userConfig";
+import { recheckInverter } from "../../_lib/userData";
 
 type Kind = "charge" | "discharge";
 
@@ -19,6 +20,13 @@ const growattMessage = (err: unknown) => {
     ? message.slice(0, 200)
     : "The inverter didn't respond, try again";
 };
+
+// A timeout, network error or HTML error page, rather than a rejection.
+const isOutage = (err: unknown) =>
+  err instanceof TypeError ||
+  (err instanceof Error &&
+    (err.name === "TimeoutError" ||
+      err.message.startsWith("Unexpected response")));
 
 const toSlotParam = ({ start, end }: PeriodsBody["slots"][number]) => ({
   startHour: start.slice(0, 2),
@@ -115,15 +123,17 @@ const periodsHandler =
     } catch (err) {
       failure = err ?? new Error("Write failed");
     }
-    await withUser(user.userId, (tx) =>
-      audit(tx, req, user.userId, "growatt_write", {
+    await withUser(user.userId, async (tx) => {
+      // Automatic charging no longer knows what the inverter holds.
+      if (kind === "charge") await recheckInverter(tx);
+      await audit(tx, req, user.userId, "growatt_write", {
         kind,
         ok: !failure,
         powerRate,
         stopSOC,
         slots: slots.map((s) => `${s.start}-${s.end}`).join(", "),
-      }),
-    );
+      });
+    });
     if (failure) {
       console.error(`growatt ${kind} write failed:`, growattMessage(failure));
       sendError(res, 502, "growatt_failed", growattMessage(failure));
@@ -132,4 +142,4 @@ const periodsHandler =
     res.status(204).end();
   };
 
-export { growattMessage, periodsHandler };
+export { growattMessage, isOutage, periodsHandler };

@@ -1,6 +1,7 @@
 import type postgres from "postgres";
 import type { JwtPayload, SupabaseClient } from "@supabase/supabase-js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { ChargePlan } from "./Octopus";
 
 // Types for the Vercel functions in api/. Server-only: never imported by the app.
 
@@ -53,9 +54,35 @@ type AuditAction =
   | "octopus_join"
   | "automation_run";
 
-// What the scheduled job did for one user. skipped: automation was turned off
-// after the job listed the users.
-type AutomationResult = "applied" | "unchanged" | "skipped" | "failed";
+// What an automation check did for one user. skipped: automation is off.
+// busy: another check for them was running. paused: a saved login was
+// refused, so only Check now or new details restart it.
+type AutomationResult =
+  | "applied"
+  | "unchanged"
+  | "skipped"
+  | "busy"
+  | "paused"
+  | "failed";
+
+// A check's result, with the plan when it got that far.
+type AutomationOutcome = {
+  result: AutomationResult;
+  plan: ChargePlan | null;
+};
+
+// Who asked for a check, for the audit log.
+type AutomationTrigger = "schedule" | "check_now";
+
+// A private.automation_state row, as the check reads it.
+type AutomationStateRow = {
+  plan_power: number | null;
+  plan_stop: number | null;
+  plan_slots: string | null;
+  inverter_checked_at: Date | null;
+  last_code: string | null;
+  paused: boolean;
+};
 
 // The /api/cron/update reply. Counts only: GitHub Actions logs are public.
 type CronSummary = { users: number } & Record<AutomationResult, number>;
@@ -69,5 +96,8 @@ export type {
   Handler,
   AuditAction,
   AutomationResult,
+  AutomationOutcome,
+  AutomationTrigger,
+  AutomationStateRow,
   CronSummary,
 };

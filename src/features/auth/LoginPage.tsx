@@ -22,6 +22,7 @@ const LINK_ERRORS = new Map([
   ["sign_in_cancelled", "Google sign-in was cancelled"],
   ["sign_in_failed", "Google sign-in didn't work, try again"],
   ["google_unavailable", "Google sign-in isn't available right now, try later"],
+  ["signups_closed", "Kelpwatt's beta is full for now. Try again later"],
   ["rate_limited", "Too many attempts, try again in a few minutes"],
   ["invalid_link", "That link isn't valid"],
   [

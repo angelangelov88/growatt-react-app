@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import AppLogo from "../../components/AppLogo";
+import BetaBadge from "../../components/BetaBadge";
 import LegalLinks from "../../components/LegalLinks";
 import Wordmark from "../../components/Wordmark";
 import type { LegalPageProps } from "../../types/Legal";
@@ -16,6 +17,7 @@ const LegalPage = ({ title, children }: LegalPageProps) => (
       >
         <AppLogo className="size-7 shrink-0" />
         <Wordmark />
+        <BetaBadge />
       </Link>
     </header>
     <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-8 text-sm text-gray-300 leading-relaxed">

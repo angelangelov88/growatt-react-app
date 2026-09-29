@@ -2,6 +2,7 @@ import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
+import useSettings from "../settings/useSettings";
 import SlotList from "./SlotList";
 import { RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
 
@@ -11,6 +12,7 @@ const BatteryFirstCard = ({
   setChargePeriodsMutation,
 }: BatteryFirstProps) => {
   const { showToast } = useToast();
+  const { data: settings } = useSettings();
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
@@ -86,6 +88,13 @@ const BatteryFirstCard = ({
           </button>
         </div>
       </div>
+
+      {settings?.automationEnabled && (
+        <p className="-mt-2 mb-4 text-xs text-amber-400">
+          Automatic charging is on, so changes here are replaced at the next
+          check (every 5 minutes) if they differ from your Octopus plan.
+        </p>
+      )}
 
       {!form.isLoaded ? (
         <NotReadYet

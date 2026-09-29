@@ -7,6 +7,7 @@ import {
 import { OctopusError, checkAccount, obtainToken } from "../src/lib/octopusApi";
 import type { CredentialsBody } from "../src/types/Api";
 import type { Tx } from "../src/types/Server";
+import { isOutage } from "./_handlers/growatt/periods";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
 import { withUser } from "./_lib/db";
@@ -15,7 +16,7 @@ import { rateLimit } from "./_lib/rateLimit";
 import { requireUser } from "./_lib/session";
 import { requireStepUp } from "./_lib/stepUp";
 import { growattClientFor, sealSecret } from "./_lib/userConfig";
-import { readStatus } from "./_lib/userData";
+import { readStatus, recheckInverter } from "./_lib/userData";
 
 // Failed checks allowed per user per hour, so this endpoint can't be used to
 // guess other people's Growatt or Octopus logins.
@@ -24,13 +25,6 @@ const MAX_FAILED_CHECKS_PER_HOUR = 5;
 // unavailable: Growatt or Octopus didn't answer, so it says nothing about the
 // credentials and doesn't count as a failed check.
 type Problem = { code: string; message: string; unavailable?: boolean };
-
-// A timeout, network error or HTML error page, rather than a rejection.
-const isOutage = (err: unknown) =>
-  err instanceof TypeError ||
-  (err instanceof Error &&
-    (err.name === "TimeoutError" ||
-      err.message.startsWith("Unexpected response")));
 
 const md5 = (text: string) => createHash("md5").update(text).digest("hex");
 
@@ -219,6 +213,8 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
 
   const status = await withUser(userId, async (tx) => {
     const identifier = await save(tx, userId, body.data);
+    // New details: a check paused by a refused login can try again.
+    await recheckInverter(tx, { unpause: true });
     await audit(tx, req, userId, "credentials_saved", {
       provider: body.data.provider,
       identifier,

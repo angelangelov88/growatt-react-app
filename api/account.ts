@@ -9,7 +9,11 @@ import { rateLimit } from "./_lib/rateLimit";
 import { requireUser } from "./_lib/session";
 import { requireStepUp } from "./_lib/stepUp";
 import { supabaseAdmin } from "./_lib/supabase";
-import { readSettings, readStatus } from "./_lib/userData";
+import {
+  readAutomationStatus,
+  readSettings,
+  readStatus,
+} from "./_lib/userData";
 
 type AuditRow = {
   created_at: Date;
@@ -20,9 +24,9 @@ type AuditRow = {
 
 // GET → AccountExport, as a download.
 // DELETE DeleteAccountBody (optional) → 204. Deletes the user; their
-//   credentials, settings and audit log go with them (on delete cascade). Needs
-//   a step-up: the MFA code, the current password, or a recent login. Clears
-//   the cookies.
+//   credentials, settings, automation state and audit log go with them (on
+//   delete cascade). Needs a step-up: the MFA code, the current password, or a
+//   recent login. Clears the cookies.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "DELETE"]) || !checkOrigin(req, res))
     return;
@@ -41,12 +45,13 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
       sendError(res, 401, "unauthenticated", "Please log in");
       return;
     }
-    const { settings, credentials, rows } = await withUser(
+    const { settings, automation, credentials, rows } = await withUser(
       userId,
       async (tx) => {
         await audit(tx, req, userId, "account_exported");
         return {
           settings: await readSettings(tx),
+          automation: await readAutomationStatus(tx),
           credentials: await readStatus(tx),
           rows: await tx<AuditRow[]>`
             select created_at, action, details, host(ip) as ip
@@ -65,6 +70,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
         mfaEnrolled: factors.data.totp.length > 0,
       },
       settings,
+      automation,
       credentials,
       auditLog: rows.map((r) => ({
         at: r.created_at.toISOString(),

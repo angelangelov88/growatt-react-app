@@ -45,8 +45,15 @@ const PrivacyPage = () => (
         </li>
         <li>
           <strong className="text-gray-100">Your settings:</strong> your charge
-          window, charge power, battery stop level and whether automatic
-          charging is on.
+          window and whether it&apos;s used, charge power, battery stop level
+          and whether automatic charging is on.
+        </li>
+        <li>
+          <strong className="text-gray-100">Automatic charging status:</strong>{" "}
+          if you turn automatic charging on, the charge times, power and stop
+          level last set on your inverter, when it was last checked and last
+          changed, and why the last check failed, if it did. We keep these so we
+          only change your inverter when your plan changes.
         </li>
         <li>
           <strong className="text-gray-100">An activity log:</strong> a record
@@ -54,9 +61,9 @@ const PrivacyPage = () => (
           they came from: changing your password, turning two-step verification
           on or off, saving, removing or failing to verify your Growatt or
           Octopus details, saving settings, changes sent to your inverter,
-          saving sessions you join, automatic charging runs that changed or
-          failed to change your inverter, and downloads of your data. It never
-          contains passwords or keys.
+          saving sessions you join, automatic charging checks that changed your
+          inverter, started failing or started working again, and downloads of
+          your data. It never contains passwords or keys.
         </li>
         <li>
           <strong className="text-gray-100">Technical data:</strong> to stop
@@ -69,8 +76,10 @@ const PrivacyPage = () => (
       <p>
         To show your dashboard and plan charging, the app also fetches your
         inverter&apos;s charge settings from Growatt and your planned charging
-        times and saving sessions from Octopus. These are fetched when needed
-        and not stored, apart from what the activity log records.
+        times and saving sessions from Octopus. With automatic charging on, it
+        fetches your planned charging times every 5 minutes. These are fetched
+        when needed and not stored, apart from what the activity log and the
+        automatic charging status record.
       </p>
     </LegalSection>
 
@@ -154,8 +163,8 @@ const PrivacyPage = () => (
     <LegalSection title="How long we keep it">
       <ul className="list-disc pl-5 flex flex-col gap-2">
         <li>
-          Your account, settings and Growatt and Octopus details: until you
-          remove them or delete your account.
+          Your account, settings, automatic charging status and Growatt and
+          Octopus details: until you remove them or delete your account.
         </li>
         <li>
           The activity log: 12 months, then entries are deleted automatically.

@@ -1,4 +1,4 @@
-import type { Settings } from "./Api";
+import type { AutomationStatus, Settings } from "./Api";
 import type { SlotParam } from "./Growatt";
 
 // Octopus types. Kept free of React: the server imports them.
@@ -10,13 +10,14 @@ type Slots = [SlotParam, SlotParam, SlotParam, SlotParam, SlotParam, SlotParam];
 // The saved settings the charge plan is built from.
 type ChargeSettings = Pick<
   Settings,
-  "chargeStart" | "chargeEnd" | "powerRate" | "stopSOC"
+  "windowEnabled" | "chargeStart" | "chargeEnd" | "powerRate" | "stopSOC"
 >;
 
 type ChargePlan = {
   powerRate: string;
   stopSOC: string;
-  // The overnight window first, then Octopus periods, padded with null.
+  // The overnight window first (if the user has one), then Octopus periods,
+  // padded with null.
   slots: Slots;
   // Octopus periods left out because the inverter only has 6 slots.
   skipped: number;
@@ -88,6 +89,12 @@ type PowerDownSessionsProps = {
 
 type OctopusProps = { canApply: boolean };
 
+// onChecked runs after each check, e.g. to refresh the slots shown.
+type CheckNowProps = { onChecked: () => void };
+
+// undefined while loading.
+type AutomationStatusLineProps = { status: AutomationStatus | undefined };
+
 type SectionHeadingProps = { children: string };
 
 export type {
@@ -106,5 +113,7 @@ export type {
   HistoryDays,
   PowerDownSessionsProps,
   OctopusProps,
+  CheckNowProps,
+  AutomationStatusLineProps,
   SectionHeadingProps,
 };

@@ -1,10 +1,16 @@
 import { defaultSettings } from "../../src/lib/settingsSchema";
-import type { Credentials, Settings } from "../../src/types/Api";
+import type {
+  AutomationStatus,
+  Credentials,
+  Settings,
+} from "../../src/types/Api";
 import type { Provider, Tx } from "../../src/types/Server";
 
-// Reads of the user's own rows, shared by several endpoints. Run inside withUser.
+// Reads (and small updates) of the user's own rows, shared by several
+// endpoints. Run inside withUser.
 
 type SettingsRow = {
+  window_enabled: boolean;
   charge_start: string | null;
   charge_end: string | null;
   power_rate: number | null;
@@ -12,14 +18,24 @@ type SettingsRow = {
   automation_enabled: boolean;
 };
 
+type AutomationRow = {
+  checked_at: Date | null;
+  plan_slots: string | null;
+  applied_at: Date | null;
+  last_code: string | null;
+  last_message: string | null;
+  paused: boolean;
+};
+
 // The user's settings, or the defaults for anything not saved yet.
 const readSettings = async (tx: Tx): Promise<Settings> => {
   const rows = await tx<SettingsRow[]>`
-    select charge_start::text as charge_start, charge_end::text as charge_end,
-      power_rate, stop_soc, automation_enabled
+    select window_enabled, charge_start::text as charge_start,
+      charge_end::text as charge_end, power_rate, stop_soc, automation_enabled
     from private.user_settings`;
   const row = rows.at(0);
   return {
+    windowEnabled: row?.window_enabled ?? defaultSettings.windowEnabled,
     // Postgres gives HH:MM:SS.
     chargeStart: row?.charge_start?.slice(0, 5) ?? defaultSettings.chargeStart,
     chargeEnd: row?.charge_end?.slice(0, 5) ?? defaultSettings.chargeEnd,
@@ -46,4 +62,29 @@ const readStatus = async (tx: Tx): Promise<Credentials> => {
   };
 };
 
-export { readSettings, readStatus };
+// What automatic charging last did, for the dashboard and the data export.
+const readAutomationStatus = async (tx: Tx): Promise<AutomationStatus> => {
+  const rows = await tx<AutomationRow[]>`
+    select checked_at, plan_slots, applied_at, last_code, last_message, paused
+    from private.automation_state`;
+  const row = rows.at(0);
+  return {
+    checkedAt: row?.checked_at?.toISOString() ?? null,
+    error:
+      row?.last_code && row.last_message
+        ? { code: row.last_code, message: row.last_message }
+        : null,
+    paused: row?.paused ?? false,
+    slots: row?.plan_slots ?? null,
+    appliedAt: row?.applied_at?.toISOString() ?? null,
+  };
+};
+
+// Makes the next automation check read the inverter instead of trusting what it
+// last saw: after a manual change to it, or new settings. unpause: new login
+// details were saved, so scheduled checks start again.
+const recheckInverter = (tx: Tx, { unpause = false } = {}) =>
+  tx`update private.automation_state set inverter_checked_at = null,
+    paused = paused and ${!unpause}`;
+
+export { readSettings, readStatus, readAutomationStatus, recheckInverter };
