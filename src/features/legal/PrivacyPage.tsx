@@ -58,12 +58,14 @@ const PrivacyPage = () => (
         <li>
           <strong className="text-gray-100">An activity log:</strong> a record
           of important actions on your account, with the time and the IP address
-          they came from: changing your password, turning two-step verification
-          on or off, saving, removing or failing to verify your Growatt or
-          Octopus details, saving settings, changes sent to your inverter,
-          saving sessions you join, automatic charging checks that changed your
+          they came from: logging in (and how: password, Google or an email
+          link), changing your password, turning two-step verification on or
+          off, saving, removing or failing to verify your Growatt or Octopus
+          details, saving settings, changes sent to your inverter, saving
+          sessions you join, automatic charging checks that changed your
           inverter, started failing or started working again, and downloads of
-          your data. It never contains passwords or keys.
+          your data. It never contains passwords or keys. You can read it on the
+          Activity page.
         </li>
         <li>
           <strong className="text-gray-100">Messages you send us:</strong> if

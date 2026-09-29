@@ -2,6 +2,7 @@ import { Navigate, RouterProvider, createBrowserRouter } from "react-router";
 import AppLayout from "./components/AppLayout";
 import AboutPage from "./features/about/AboutPage";
 import ContactPage from "./features/about/ContactPage";
+import ActivityPage from "./features/activity/ActivityPage";
 import AuthRoute from "./features/auth/AuthRoute";
 import ForgotPasswordPage from "./features/auth/ForgotPasswordPage";
 import LoginPage from "./features/auth/LoginPage";
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
           { path: "/reset-password", element: <ResetPasswordPage /> },
           { path: "/", element: <DashboardPage /> },
           { path: "/settings", element: <SettingsPage /> },
+          { path: "/activity", element: <ActivityPage /> },
         ],
       },
       // Open to everyone, signed in or not.

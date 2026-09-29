@@ -52,7 +52,8 @@ type AuditAction =
   | "settings_saved"
   | "growatt_write"
   | "octopus_join"
-  | "automation_run";
+  | "automation_run"
+  | "signed_in";
 
 // What an automation check did for one user. skipped: automation is off.
 // busy: another check for them was running. paused: a saved login was

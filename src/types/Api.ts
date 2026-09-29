@@ -131,6 +131,25 @@ type AccountExport = {
   }[];
 };
 
+// GET /api/account?view=activity&before=<id>: the activity log, newest first,
+// a page at a time. nextBefore: pass it as before for the next page, or null
+// when there's no more.
+type ActivityEntry = {
+  id: string;
+  at: string;
+  action: string;
+  details: unknown;
+  // null for the scheduled job's entries.
+  ip: string | null;
+};
+type ActivityPage = {
+  entries: ActivityEntry[];
+  nextBefore: string | null;
+};
+
+// How a signed_in entry in the activity log logged in.
+type SignInMethod = "password" | "google" | "email_link";
+
 type Provider = z.infer<typeof providerSchema>;
 
 // GET /api/credentials, and the reply to PUT and DELETE. Never the secrets.
@@ -161,5 +180,8 @@ export type {
   SavingSessions,
   JoinBody,
   AccountExport,
+  ActivityEntry,
+  ActivityPage,
+  SignInMethod,
   DeleteAccountBody,
 };

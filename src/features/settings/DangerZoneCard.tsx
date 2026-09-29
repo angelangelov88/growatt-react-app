@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { Link } from "react-router";
 import FormAlert from "../../components/FormAlert";
 import { apiRequest } from "../../lib/apiClient";
 import type { AccountExport } from "../../types/Api";
@@ -45,6 +46,11 @@ const DangerZoneCard = () => {
             <p className="text-sm text-gray-400">
               Download everything stored about you: your account, settings,
               which logins are saved (never the secrets) and the activity log.
+              You can also read the log on the{" "}
+              <Link to="/activity" className="text-violet-400 hover:underline">
+                Activity page
+              </Link>
+              .
             </p>
             <button
               onClick={() => {

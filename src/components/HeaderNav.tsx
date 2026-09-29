@@ -32,6 +32,9 @@ const HeaderNav = () => {
           {me?.email && (
             <span className="text-sm text-gray-400 truncate">{me.email}</span>
           )}
+          <Link to="/activity" className={LINK}>
+            Activity
+          </Link>
           <Link to="/settings" className={LINK}>
             Settings
           </Link>

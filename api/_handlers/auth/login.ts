@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { loginSchema } from "../../../src/lib/authSchemas";
+import { auditSignIn } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { allowMethods, sendError } from "../../_lib/http";
 import { limitByIp } from "../../_lib/rateLimit";
@@ -15,9 +16,10 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     sendError(res, 400, "invalid_input", "Enter your email and password");
     return;
   }
-  const { error } = await createSupabase(req, res).auth.signInWithPassword(
-    body.data,
-  );
+  const { data, error } = await createSupabase(
+    req,
+    res,
+  ).auth.signInWithPassword(body.data);
   if (error?.code === "email_not_confirmed") {
     sendError(res, 403, "email_not_confirmed", "Confirm your email first");
     return;
@@ -31,6 +33,8 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     sendError(res, 401, "invalid_credentials", "Invalid email or password");
     return;
   }
+  // With MFA on, this is before the code: it still shows the password worked.
+  await auditSignIn(req, data.user.id, "password");
   res.status(204).end();
 };
 

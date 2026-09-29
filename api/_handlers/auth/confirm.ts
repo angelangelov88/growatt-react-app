@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { auditSignIn } from "../../_lib/audit";
 import { allowMethods } from "../../_lib/http";
 import { createSupabase } from "../../_lib/session";
 
@@ -16,7 +17,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     res.redirect(302, "/login?error=invalid_link");
     return;
   }
-  const { error } = await createSupabase(req, res).auth.verifyOtp({
+  const { data, error } = await createSupabase(req, res).auth.verifyOtp({
     token_hash: tokenHash,
     type: otpType,
   });
@@ -24,6 +25,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     res.redirect(302, "/login?error=link_expired");
     return;
   }
+  if (data.user) await auditSignIn(req, data.user.id, "email_link");
   res.redirect(302, otpType === "recovery" ? "/reset-password" : "/");
 };
 
