@@ -38,6 +38,12 @@ const TermsPage = () => (
         Growatt or Octopus Energy.
       </p>
       <p>
+        <strong className="text-gray-100">Kelpwatt is in beta:</strong>{" "}
+        it&apos;s still being built and tested, features may change or be
+        removed, and it may have bugs. Check your inverter settings in
+        Growatt&apos;s own app if something looks wrong.
+      </p>
+      <p>
         <strong className="text-gray-100">
           Growatt doesn&apos;t offer an official way for apps like this to
           connect.

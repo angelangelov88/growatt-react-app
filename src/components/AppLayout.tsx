@@ -2,6 +2,7 @@ import { Link, Outlet } from "react-router";
 import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
 import AppLogo from "./AppLogo";
+import BetaBadge from "./BetaBadge";
 import LegalLinks from "./LegalLinks";
 import Wordmark from "./Wordmark";
 
@@ -19,6 +20,7 @@ const AppLayout = () => {
         >
           <AppLogo className="size-7 shrink-0" />
           <Wordmark />
+          <BetaBadge />
         </Link>
         <div className="flex items-center gap-4 min-w-0">
           {me?.email && (
