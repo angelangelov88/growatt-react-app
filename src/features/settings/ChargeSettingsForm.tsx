@@ -38,7 +38,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       apiRequest<Settings>("settings", { method: "PUT", body }),
     onSuccess: (settings) => {
       queryClient.setQueryData(SETTINGS_KEY, settings);
-      showToast("Battery First settings saved", "success");
+      showToast("Battery charging settings saved", "success");
     },
   });
 
@@ -68,7 +68,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
     save.mutate(parsed.data);
   };
 
-  // The same 5% dropdowns as the dashboard's Battery First card.
+  // The same 5% dropdowns as the dashboard's Charge battery card.
   const renderSelect = (
     id: string,
     label: string,
@@ -194,7 +194,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       </p>
       {isChanged && (
         <SubmitButton
-          label="Save Battery First settings"
+          label="Save battery charging settings"
           pendingLabel="Saving…"
           isPending={save.isPending}
         />

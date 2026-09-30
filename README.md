@@ -16,14 +16,15 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
 
 - **Sign in** with Google, or email and password (email confirmation, password reset, optional authenticator-app MFA).
 - **Dashboard:**
-  - the inverter's Battery First (charge) and Grid First (discharge) slots, editable
-  - two Grid First preset buttons (by default High Export, 18:00–19:00, and Low Export, 20:00–22:15)
+  - **Charge battery** and **Export to grid**: the inverter's Battery First (charge) and Grid First (discharge) slots, editable
+  - two Export to grid preset buttons (by default High Export, 18:00–19:00, and Low Export, 20:00–22:15)
   - Octopus's planned dispatches, with an Apply button that turns them into a charge plan (or, with automatic charging on, Check now and when it last ran)
   - saving sessions, with Join
 - **Settings:**
   - Growatt and Octopus details (checked before saving, write-only)
-  - automatic charging, with an optional charge window, power rate and stop SOC
-  - the Grid First presets: each one's name, times, discharge power and stop SOC
+  - automatic charging
+  - battery charging settings: an optional charge window (by default 23:30–05:30), power rate and stop SOC
+  - the Export to grid presets: each one's name, times, discharge power and stop SOC
   - password and MFA
   - data export and account deletion
 - **Activity:** each user's own activity log (logins, changes to settings and details, inverter changes, automatic charging), newest first, loading more as they scroll.

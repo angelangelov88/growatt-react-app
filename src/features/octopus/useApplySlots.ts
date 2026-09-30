@@ -17,7 +17,7 @@ const useApplySlots = ({ slotsData }: { slotsData: SlotsData }) => {
   const mutation = useMutation({
     mutationFn: (plan: ChargePlan) => putPeriods("charge", plan),
     onSuccess: (_, plan) => {
-      // Show the new charge periods on the Battery First card straight away, then
+      // Show the new charge periods on the Charge battery card straight away, then
       // check them against the inverter in the background. query() is used because
       // refetchQueries skips queries with enabled: false.
       queryClient.setQueryData(CHARGE_KEY, toPeriods(plan));

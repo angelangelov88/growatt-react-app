@@ -53,24 +53,27 @@ const Growatt = ({ showSessions }: GrowattProps) => {
   const { showToast } = useToast();
   const { high } = useExportPresets();
   const gridFirstRef = useRef<HTMLDivElement>(null);
-  // A session slot to add once Grid First finishes loading. A ref, not state:
+  // A session slot to add once Export to grid finishes loading. A ref, not state:
   // it doesn't affect rendering, it's just a pending action.
   const pendingSessionSlot = useRef<SlotState | null>(null);
 
-  // Fills the Grid First form only; the user reviews it and presses Apply.
+  // Fills the Export to grid form only; the user reviews it and presses Apply.
   // Memoised because the pending-slot effect below depends on it.
   const addSessionSlot = useCallback(
     (slot: SlotState) => {
       const clash = dischargeForm.slots.find((s) => slotsOverlap(s, slot));
       if (clash) {
         showToast(
-          `Grid First already has ${formatSlot(clash)}, which overlaps this session`,
+          `Export to grid already has ${formatSlot(clash)}, which overlaps this session`,
           "error",
         );
         return;
       }
       if (!dischargeForm.canAddSlot) {
-        showToast("Grid First already has 6 slots — remove one first", "error");
+        showToast(
+          "Export to grid already has 6 slots — remove one first",
+          "error",
+        );
         return;
       }
       // The session's own times, with the first preset's power and stop.
@@ -80,7 +83,7 @@ const Growatt = ({ showSessions }: GrowattProps) => {
         slot,
       );
       showToast(
-        `Added ${formatSlot(slot)} to Grid First with ${high.name}'s power and stop level — review it and press Apply`,
+        `Added ${formatSlot(slot)} to Export to grid with ${high.name}'s power and stop level — review it and press Apply`,
         "info",
       );
       gridFirstRef.current?.scrollIntoView({
@@ -101,7 +104,7 @@ const Growatt = ({ showSessions }: GrowattProps) => {
     dischargeReader.read();
   };
 
-  // Once Grid First has loaded, add the waiting slot; drop it if the load failed
+  // Once Export to grid has loaded, add the waiting slot; drop it if the load failed
   // (the card already shows the read error). This runs after the render that
   // loaded the form, so the overlap check sees the loaded slots.
   useEffect(() => {

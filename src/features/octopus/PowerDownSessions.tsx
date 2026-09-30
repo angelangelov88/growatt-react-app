@@ -113,8 +113,9 @@ const PowerDownSessions = ({
               </li>
               <li>
                 <b>Export during session</b> adds the session&apos;s times to
-                Grid First, using your &ldquo;{high.name}&rdquo; preset&apos;s
-                power and stop level. Check it and press Apply Grid First.
+                Export to grid, using your &ldquo;{high.name}&rdquo;
+                preset&apos;s power and stop level. Check it and press Apply
+                export times.
               </li>
               <li>
                 <b>History</b> shows the sessions you joined and your points.

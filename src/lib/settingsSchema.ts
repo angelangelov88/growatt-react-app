@@ -33,10 +33,10 @@ const settingsSchema = z
     path: ["chargeEnd"],
   });
 
-// The dashboard's Grid First dropdowns go in 5% steps.
+// The dashboard's Export to grid dropdowns go in 5% steps.
 const stepSchema = percentSchema.multipleOf(5, "Use steps of 5%");
 
-// One of the Grid First preset buttons: what it fills the form with.
+// One of the Export to grid preset buttons: what it fills the form with.
 const exportPresetSchema = z
   .object({
     name: z

@@ -39,11 +39,11 @@ const ChargeSettingsCard = () => {
           id="charge-settings-heading"
           className="text-base font-semibold text-white"
         >
-          Battery First settings
+          Battery charging settings
         </h2>
-        <InfoTip label="Battery First settings">
+        <InfoTip label="Battery charging settings">
           <p>
-            How the inverter charges from the grid in Battery First. Used by
+            How the inverter charges your battery from the grid. Used by
             automatic charging and by the green button on the dashboard&apos;s
             Octopus card.
           </p>

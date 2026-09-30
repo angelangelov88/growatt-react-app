@@ -37,9 +37,9 @@ const AutomationCard = () => {
         <InfoTip label="Automatic charging">
           <p>
             When it&apos;s on, we check your Octopus slots every 5 minutes and
-            set Battery First on your inverter for you.
+            set your battery charge times on your inverter for you.
           </p>
-          <p>It uses your Battery First settings below.</p>
+          <p>It uses your battery charging settings below.</p>
         </InfoTip>
       </div>
       {renderBody()}
