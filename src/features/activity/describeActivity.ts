@@ -194,13 +194,12 @@ const describeActivity = ({
       };
     }
     case "growatt_write": {
-      const name =
-        text(details, "kind") === "discharge" ? "Grid First" : "Battery First";
+      const isExport = text(details, "kind") === "discharge";
       const ok = flag(details, "ok") ?? true;
       return {
         title: ok
-          ? `${name} times changed`
-          : `Couldn't change the ${name} times`,
+          ? `${isExport ? "Export" : "Charge"} times changed`
+          : `Couldn't change the ${isExport ? "export" : "charge"} times`,
         detail: join([
           formatSlots(text(details, "slots")),
           ...powerAndStop(details),
@@ -219,7 +218,7 @@ const describeActivity = ({
     }
     case "export_presets_saved":
       return {
-        title: "Grid First presets saved",
+        title: "Export to grid presets saved",
         detail: join([
           describePreset(details, "high"),
           describePreset(details, "low"),

@@ -28,7 +28,7 @@ const useAutomation = ({ onChecked }: { onChecked: () => void }) => {
       queryClient.setQueryData(AUTOMATION_KEY, status);
       onChecked();
       if (result === "applied" && plan) {
-        // Show the new charge periods on the Battery First card straight away.
+        // Show the new charge periods on the Charge battery card straight away.
         queryClient.setQueryData(CHARGE_KEY, toPeriods(plan));
         showToast(
           `Inverter updated: ${describePlan(plan) || "no charge slots"}`,

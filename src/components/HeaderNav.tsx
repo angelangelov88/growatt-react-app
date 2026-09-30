@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
+import AccountMenu from "./AccountMenu";
 
 const LINK = "text-sm text-gray-300 hover:text-white shrink-0";
 const BUTTON =
@@ -25,30 +26,51 @@ const HeaderNav = () => {
     );
   if (status !== "signedIn" && status !== "needsMfa") return null;
 
+  const handleLogout = () => {
+    logout.mutate();
+  };
+  const logoutButton = (
+    <button
+      onClick={handleLogout}
+      disabled={logout.isPending}
+      className={BUTTON}
+    >
+      {logout.isPending ? "Logging out…" : "Log out"}
+    </button>
+  );
+
+  if (status === "needsMfa")
+    return (
+      <nav aria-label="Account" className="flex items-center">
+        {logoutButton}
+      </nav>
+    );
+
+  // Below sm the links don't fit next to the logo, so they go in a menu.
   return (
-    <nav aria-label="Account" className="flex items-center gap-4 min-w-0">
-      {status === "signedIn" && (
-        <>
-          {me?.email && (
-            <span className="text-sm text-gray-400 truncate">{me.email}</span>
-          )}
-          <Link to="/activity" className={LINK}>
-            Activity
-          </Link>
-          <Link to="/settings" className={LINK}>
-            Settings
-          </Link>
-        </>
-      )}
-      <button
-        onClick={() => {
-          logout.mutate();
-        }}
-        disabled={logout.isPending}
-        className={BUTTON}
-      >
-        {logout.isPending ? "Logging out…" : "Log out"}
-      </button>
+    <nav aria-label="Account" className="min-w-0">
+      <div className="hidden sm:flex items-center gap-4 min-w-0">
+        {me?.email && (
+          <span className="text-sm text-gray-400 truncate">{me.email}</span>
+        )}
+        <Link to="/" className={LINK}>
+          Dashboard
+        </Link>
+        <Link to="/activity" className={LINK}>
+          Activity
+        </Link>
+        <Link to="/settings" className={LINK}>
+          Settings
+        </Link>
+        {logoutButton}
+      </div>
+      <div className="sm:hidden">
+        <AccountMenu
+          email={me?.email}
+          onLogout={handleLogout}
+          isLoggingOut={logout.isPending}
+        />
+      </div>
     </nav>
   );
 };

@@ -11,7 +11,15 @@ import { settingsSchema } from "../../lib/settingsSchema";
 import type { ChargeSettings, Settings } from "../../types/Api";
 import type { FieldErrors } from "../../types/Common";
 import type { ChargeSettingsFormProps } from "../../types/Settings";
+import {
+  RATE_OPTIONS,
+  SOC_OPTIONS,
+  selectClass,
+  withCurrent,
+} from "../growatt/slotOptions";
 import { SETTINGS_KEY } from "./useSettings";
+
+const SELECT = `${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`;
 
 // The fixed overnight charge window (optional), and how the inverter charges
 // from the grid. Starts from what's saved; edits stay here until Save.
@@ -30,7 +38,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       apiRequest<Settings>("settings", { method: "PUT", body }),
     onSuccess: (settings) => {
       queryClient.setQueryData(SETTINGS_KEY, settings);
-      showToast("Charge settings saved", "success");
+      showToast("Battery charging settings saved", "success");
     },
   });
 
@@ -43,14 +51,12 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Empty boxes become NaN, so they fail as "Use a whole number".
-    const toNumber = (text: string) => (text.trim() ? Number(text) : NaN);
     const parsed = settingsSchema.safeParse({
       windowEnabled,
       chargeStart,
       chargeEnd,
-      powerRate: toNumber(powerRate),
-      stopSOC: toNumber(stopSOC),
+      powerRate: Number(powerRate),
+      stopSOC: Number(stopSOC),
       // Changed only by the switch.
       automationEnabled: saved.automationEnabled,
     });
@@ -61,6 +67,44 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
     setErrors({});
     save.mutate(parsed.data);
   };
+
+  // The same 5% dropdowns as the dashboard's Charge battery card.
+  const renderSelect = (
+    id: string,
+    label: string,
+    value: string,
+    setValue: (value: string) => void,
+    options: string[],
+    error: string | undefined,
+  ) => (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm text-gray-300">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        disabled={save.isPending}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={SELECT}
+      >
+        {options.map((v) => (
+          <option key={v} value={v}>
+            {v}%
+          </option>
+        ))}
+      </select>
+      {error && (
+        <p id={`${id}-error`} className="text-xs text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <form
@@ -121,43 +165,28 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
             />
           </div>
           <p className="-mt-2 text-xs text-gray-500">
-            UK time, every night. It has to end before midnight.
+            UK time, every night. Recommended: 23:30–05:30, Octopus&apos;s cheap
+            overnight rate.
           </p>
         </>
       )}
       <div className="grid grid-cols-2 gap-4">
-        <TextField
-          id="power-rate"
-          label="Charge power (%)"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={100}
-          step={1}
-          value={powerRate}
-          onChange={(e) => {
-            setPowerRate(e.target.value);
-          }}
-          error={errors.powerRate}
-          disabled={save.isPending}
-          required
-        />
-        <TextField
-          id="stop-soc"
-          label="Stop at battery (%)"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={100}
-          step={1}
-          value={stopSOC}
-          onChange={(e) => {
-            setStopSOC(e.target.value);
-          }}
-          error={errors.stopSOC}
-          disabled={save.isPending}
-          required
-        />
+        {renderSelect(
+          "power-rate",
+          "Charge power",
+          powerRate,
+          setPowerRate,
+          withCurrent(RATE_OPTIONS, powerRate),
+          errors.powerRate,
+        )}
+        {renderSelect(
+          "stop-soc",
+          "Stop at battery",
+          stopSOC,
+          setStopSOC,
+          withCurrent(SOC_OPTIONS, stopSOC),
+          errors.stopSOC,
+        )}
       </div>
       <p className="-mt-2 text-xs text-gray-500">
         How much of the inverter&apos;s power to charge from the grid with, and
@@ -165,7 +194,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       </p>
       {isChanged && (
         <SubmitButton
-          label="Save charge settings"
+          label="Save battery charging settings"
           pendingLabel="Saving…"
           isPending={save.isPending}
         />

@@ -40,7 +40,7 @@ const AutomationSwitch = ({ saved, canTurnOn }: AutomationSwitchProps) => {
           </span>
           <span id="automation-hint" className="text-sm text-gray-400">
             {!isOn && !canTurnOn
-              ? "Save your Growatt and Octopus details above first."
+              ? "Save your Growatt and Octopus details below first."
               : "Checked every 5 minutes. The inverter is only changed when your Octopus slots or settings change. With your own window on it has room for 5 Octopus slots, otherwise 6."}
           </span>
         </div>

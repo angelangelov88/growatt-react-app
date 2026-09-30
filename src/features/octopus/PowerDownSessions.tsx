@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
 import SectionHeading from "./SectionHeading";
 import useToast from "../../contexts/useToast";
 import useSavingSessions, { useJoinSession } from "./useSavingSessions";
+import useExportPresets from "../growatt/useExportPresets";
 import {
   joinedInLastDays,
   sessionStatus,
@@ -45,6 +47,7 @@ const PowerDownSessions = ({
   const { showToast } = useToast();
   const query = useSavingSessions();
   const join = useJoinSession();
+  const { high } = useExportPresets();
   const [historyDays, setHistoryDays] = useState<HistoryDays>(7);
   const [showHistory, setShowHistory] = useState(false);
   const now = new Date();
@@ -95,6 +98,31 @@ const PowerDownSessions = ({
           <h2 className="text-base font-semibold text-white">
             Power Down Sessions
           </h2>
+          <InfoTip label="Power Down Sessions">
+            <p>
+              Octopus pays you points for using less grid power during these
+              sessions.
+            </p>
+            <ul>
+              <li>
+                <b>Load</b> gets today&apos;s sessions from Octopus.
+              </li>
+              <li>
+                <b>Join</b> signs you up. You must join before the session
+                starts.
+              </li>
+              <li>
+                <b>Export during session</b> adds the session&apos;s times to
+                Export to grid, using your &ldquo;{high.name}&rdquo;
+                preset&apos;s power and stop level. Check it and press Apply
+                export times.
+              </li>
+              <li>
+                <b>History</b> shows the sessions you joined and your points.
+                Points can take a few days to appear.
+              </li>
+            </ul>
+          </InfoTip>
           {query.isFetching && (
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <Spinner />

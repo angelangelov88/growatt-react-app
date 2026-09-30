@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Preset } from "../../types/Api";
 import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
+import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
 import SlotList from "./SlotList";
@@ -10,6 +11,7 @@ import {
   SOC_OPTIONS,
   selectClass,
   timeToSlot,
+  withCurrent,
 } from "./slotOptions";
 import useExportPresets from "./useExportPresets";
 
@@ -35,11 +37,11 @@ const GridFirstCard = ({
       },
       {
         onSuccess: () => {
-          showToast("Grid First settings applied", "success");
+          showToast("Export times applied", "success");
           verify();
         },
         onError: (error) => {
-          showToast(`Grid First failed: ${error.message}`, "error");
+          showToast(`Apply failed: ${error.message}`, "error");
         },
       },
     );
@@ -49,27 +51,59 @@ const GridFirstCard = ({
     <div
       className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">Grid First</h2>
-          {isLoading && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-400">
-              <Spinner />
-              Loading…
-            </span>
-          )}
-          {isApplying && (
-            <span className="flex items-center gap-1.5 text-xs text-blue-400">
-              <Spinner className="text-blue-400" />
-              Applying…
-            </span>
-          )}
-          {isVerifying && (
-            <span className="flex items-center gap-1.5 text-xs text-emerald-400">
-              <Spinner className="text-emerald-400" />
-              Verifying…
-            </span>
-          )}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-white">
+              Export to grid
+            </h2>
+            <InfoTip label="Export to grid">
+              <p>
+                Your battery powers your home and sends what&apos;s left to the
+                grid during these times. Use it when exporting pays well.
+              </p>
+              <ul>
+                <li>
+                  <b>Load</b> shows what&apos;s on your inverter now.
+                </li>
+                <li>
+                  <b>Disable All</b> removes all the times, so the battery
+                  won&apos;t export.
+                </li>
+                <li>
+                  <b>The preset buttons</b> fill in your saved times, power and
+                  stop level. You can change them in Settings.
+                </li>
+                <li>
+                  <b>Discharge rate</b> is how fast the battery sends power out.{" "}
+                  <b>Stop at battery</b> is the level where it stops.
+                </li>
+              </ul>
+              <p>
+                Nothing changes on your inverter until you press Apply export
+                times.
+              </p>
+            </InfoTip>
+            {isLoading && (
+              <span className="flex items-center gap-1.5 text-xs text-gray-400">
+                <Spinner />
+                Loading…
+              </span>
+            )}
+            {isApplying && (
+              <span className="flex items-center gap-1.5 text-xs text-blue-400">
+                <Spinner className="text-blue-400" />
+                Applying…
+              </span>
+            )}
+            {isVerifying && (
+              <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                <Spinner className="text-emerald-400" />
+                Verifying…
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">Grid First on your inverter</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -146,7 +180,7 @@ const GridFirstCard = ({
                 }}
                 className={selectClass}
               >
-                {RATE_OPTIONS.map((v) => (
+                {withCurrent(RATE_OPTIONS, form.powerRate).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>
@@ -164,7 +198,7 @@ const GridFirstCard = ({
                 }}
                 className={selectClass}
               >
-                {SOC_OPTIONS.map((v) => (
+                {withCurrent(SOC_OPTIONS, form.stopSOC).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>
@@ -180,7 +214,7 @@ const GridFirstCard = ({
             disabled={isDisabled || !form.isDirty}
             className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {isApplying ? "Applying…" : "Apply Grid First"}
+            {isApplying ? "Applying…" : "Apply export times"}
           </button>
         </>
       )}

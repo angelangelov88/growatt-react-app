@@ -8,10 +8,10 @@ import {
   timeToSlot,
 } from "../growatt/slotOptions";
 
-// The same dropdowns as the dashboard's Grid First card.
+// The same dropdowns as the dashboard's Export to grid card.
 const SELECT = `${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`;
 
-// One Grid First preset: its name, times, discharge power and stop level.
+// One Export to grid preset: its name, times, discharge power and stop level.
 const ExportPresetFields = ({
   preset,
   value,

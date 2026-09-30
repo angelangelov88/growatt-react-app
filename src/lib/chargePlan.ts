@@ -13,8 +13,8 @@ import type {
 //
 // Rules, from the user's settings:
 // - Their charge power and stop-at-battery level.
-// - If they use their own overnight window (01:00–05:00 by default), it's slot
-//   1. It never crosses midnight; the settings form doesn't allow it.
+// - If they use their own overnight window (23:30–05:30 by default), it's slot
+//   1. It may cross midnight, e.g. 23:30–05:30.
 // - Octopus periods are trimmed to the parts outside that window (dropped entirely if
 //   inside it, split in two if they span it), then touching or overlapping ones merged.
 // - The inverter has 6 slots, so at most 5 Octopus periods are kept (6 without
@@ -65,14 +65,25 @@ const toPieces = (dispatch: Dispatch): Piece[] => {
   ];
 };
 
-// Keeps only what falls before or after the overnight window.
+// Keeps only what falls outside the overnight window. A window crossing
+// midnight covers the start and end of the day, so outside is between its end
+// and its start.
 const outsideWindow =
   (windowStart: number, windowEnd: number) =>
   (piece: Piece): Piece[] =>
-    [
-      { ...piece, end: Math.min(piece.end, windowStart) },
-      { ...piece, start: Math.max(piece.start, windowEnd) },
-    ].filter((p) => p.end > p.start);
+    (windowStart < windowEnd
+      ? [
+          { ...piece, end: Math.min(piece.end, windowStart) },
+          { ...piece, start: Math.max(piece.start, windowEnd) },
+        ]
+      : [
+          {
+            ...piece,
+            start: Math.max(piece.start, windowEnd),
+            end: Math.min(piece.end, windowStart),
+          },
+        ]
+    ).filter((p) => p.end > p.start);
 
 const merge = (pieces: Piece[]): Piece[] => {
   const merged: Piece[] = [];

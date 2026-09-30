@@ -13,7 +13,7 @@ const AppLayout = () => (
   <div className="min-h-dvh flex flex-col bg-gray-950 text-gray-100">
     {/* Opens each new page at the top, and restores the position on Back. */}
     <ScrollRestoration />
-    <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-6 py-4 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-4 sm:px-6 py-4 flex items-center justify-between gap-3 sm:gap-4">
       <Link
         to="/"
         className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"

@@ -2,16 +2,23 @@ import FormAlert from "../../components/FormAlert";
 import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import useAuth from "../auth/useAuth";
-import AutomationSwitch from "./AutomationSwitch";
+import ChargeSettingsForm from "./ChargeSettingsForm";
 import useSettings from "./useSettings";
 
-// Automatic charging: the on/off switch.
-const AutomationCard = () => {
+// How the inverter charges from the grid. Used by automatic charging and by
+// the green button on the dashboard's Octopus card, so only with Octopus.
+const ChargeSettingsCard = () => {
   const { me } = useAuth();
   const settings = useSettings();
-  const canTurnOn = (me?.hasGrowatt ?? false) && (me?.hasOctopus ?? false);
 
   const renderBody = () => {
+    if (!(me?.hasOctopus ?? false))
+      return (
+        <p className="text-sm text-gray-400">
+          These are used with your Octopus slots. Add your Octopus details below
+          to use them.
+        </p>
+      );
     if (settings.isPending)
       return (
         <p className="flex items-center gap-2 text-sm text-gray-400">
@@ -19,27 +26,27 @@ const AutomationCard = () => {
         </p>
       );
     if (settings.isError) return <FormAlert message={settings.error.message} />;
-    return <AutomationSwitch saved={settings.data} canTurnOn={canTurnOn} />;
+    return <ChargeSettingsForm saved={settings.data} />;
   };
 
   return (
     <section
-      aria-labelledby="automation-heading"
+      aria-labelledby="charge-settings-heading"
       className="rounded-2xl bg-gray-900 border border-gray-800 p-6"
     >
       <div className="flex items-center gap-2 mb-4">
         <h2
-          id="automation-heading"
+          id="charge-settings-heading"
           className="text-base font-semibold text-white"
         >
-          Automatic charging
+          Battery charging settings
         </h2>
-        <InfoTip label="Automatic charging">
+        <InfoTip label="Battery charging settings">
           <p>
-            When it&apos;s on, we check your Octopus slots every 5 minutes and
-            set your battery charge times on your inverter for you.
+            How the inverter charges your battery from the grid. Used by
+            automatic charging and by the green button on the dashboard&apos;s
+            Octopus card.
           </p>
-          <p>It uses your battery charging settings below.</p>
         </InfoTip>
       </div>
       {renderBody()}
@@ -47,4 +54,4 @@ const AutomationCard = () => {
   );
 };
 
-export default AutomationCard;
+export default ChargeSettingsCard;

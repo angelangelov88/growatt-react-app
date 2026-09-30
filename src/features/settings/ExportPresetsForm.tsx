@@ -40,7 +40,7 @@ const toDrafts = (presets: ExportPresets): ExportPresetDrafts => ({
 const sameDrafts = (a: ExportPresetDrafts, b: ExportPresetDrafts) =>
   JSON.stringify(a) === JSON.stringify(b);
 
-// The two Grid First preset buttons on the dashboard. Starts from what's
+// The two Export to grid preset buttons on the dashboard. Starts from what's
 // saved; edits stay here until Save.
 const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
   const queryClient = useQueryClient();
@@ -59,7 +59,7 @@ const ExportPresetsForm = ({ saved }: ExportPresetsFormProps) => {
       queryClient.setQueryData(SETTINGS_KEY, settings);
       // Shows the saved values, e.g. the trimmed names.
       setDrafts(toDrafts(settings.exportPresets));
-      showToast("Grid First presets saved", "success");
+      showToast("Export to grid presets saved", "success");
     },
   });
 

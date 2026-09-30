@@ -3,7 +3,7 @@ import Spinner from "../../components/Spinner";
 import ExportPresetsForm from "./ExportPresetsForm";
 import useSettings from "./useSettings";
 
-// The two Grid First preset buttons on the dashboard.
+// The two Export to grid preset buttons on the dashboard.
 const ExportPresetsCard = () => {
   const settings = useSettings();
 
@@ -27,11 +27,11 @@ const ExportPresetsCard = () => {
         id="export-presets-heading"
         className="text-base font-semibold text-white mb-1"
       >
-        Grid First presets
+        Export to grid presets
       </h2>
       <p className="text-sm text-gray-400 mb-5">
-        The two preset buttons on the dashboard&apos;s Grid First card fill it
-        in with these. Nothing changes on your inverter until you press Apply
+        The two preset buttons on the dashboard&apos;s Export to grid card fill
+        it in with these. Nothing changes on your inverter until you press Apply
         there.
       </p>
       {renderBody()}

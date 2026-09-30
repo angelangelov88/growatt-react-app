@@ -27,16 +27,16 @@ const settingsSchema = z
     // Let the scheduled job apply Octopus slots to the inverter.
     automationEnabled: z.boolean(),
   })
-  // HH:MM strings sort like times. The charge plan can't cross midnight yet.
-  .refine((s) => !s.windowEnabled || s.chargeStart < s.chargeEnd, {
-    message: "The window must end after it starts, before midnight",
+  // It may cross midnight (end before start), e.g. 23:30–05:30.
+  .refine((s) => !s.windowEnabled || s.chargeStart !== s.chargeEnd, {
+    message: "The window can't start and end at the same time",
     path: ["chargeEnd"],
   });
 
-// The dashboard's Grid First dropdowns go in 5% steps.
+// The dashboard's Export to grid dropdowns go in 5% steps.
 const stepSchema = percentSchema.multipleOf(5, "Use steps of 5%");
 
-// One of the Grid First preset buttons: what it fills the form with.
+// One of the Export to grid preset buttons: what it fills the form with.
 const exportPresetSchema = z
   .object({
     name: z
@@ -65,8 +65,8 @@ const exportPresetsSchema = z.object({
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   windowEnabled: true,
-  chargeStart: "01:00",
-  chargeEnd: "05:00",
+  chargeStart: "23:30",
+  chargeEnd: "05:30",
   powerRate: 35,
   stopSOC: 95,
   automationEnabled: false,

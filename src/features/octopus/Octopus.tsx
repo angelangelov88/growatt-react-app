@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import useOctopus from "./useOctopus";
 import useApplySlots from "./useApplySlots";
 import CheckNow from "./CheckNow";
+import InfoTip from "../../components/InfoTip";
+import Spinner from "../../components/Spinner";
 import useSettings from "../settings/useSettings";
 import useToast from "../../contexts/useToast";
 import type { OctopusProps } from "../../types/Octopus";
@@ -50,17 +52,68 @@ const Octopus = ({ canApply }: OctopusProps) => {
   return (
     <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-white">
-          Octopus Dispatch Slots
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold text-white">
+            Octopus Dispatch Slots
+          </h2>
+          <InfoTip label="Octopus Dispatch Slots">
+            {isAutomated ? (
+              <>
+                <p>
+                  The cheap charging times Octopus has planned for your car. We
+                  check them every 5 minutes and update your inverter for you.
+                </p>
+                <ul>
+                  <li>
+                    <b>Refresh</b> gets the latest times from Octopus.
+                  </li>
+                  <li>
+                    <b>Check now</b> runs that check straight away, for example
+                    just after you plug in your car.
+                  </li>
+                </ul>
+              </>
+            ) : (
+              <>
+                <p>
+                  The cheap charging times Octopus has planned for your car.
+                  Your home battery can charge at the same cheap rate.
+                </p>
+                <ul>
+                  <li>
+                    <b>Refresh</b> gets the latest times from Octopus. It
+                    doesn&apos;t change your inverter.
+                  </li>
+                  <li>
+                    <b>The green button</b> sets your battery to charge at these
+                    times, plus your own night window if you have one. It uses
+                    your battery charging settings from Settings.
+                  </li>
+                </ul>
+              </>
+            )}
+          </InfoTip>
+        </div>
         <button
           onClick={fetchSlots}
           disabled={slotsLoading}
           className="px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          {slotsLoading ? "Fetching…" : "Fetch Slots"}
+          {slotsLoading ? "Refreshing…" : "Refresh"}
         </button>
       </div>
+
+      {!slotsData && (
+        <p className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+          {slotsLoading ? (
+            <>
+              <Spinner /> Loading slots from Octopus…
+            </>
+          ) : (
+            "Couldn't load the slots. Press Refresh to try again."
+          )}
+        </p>
+      )}
 
       {slotsData && slots.length === 0 && (
         <p className="text-sm text-gray-500 mb-3">

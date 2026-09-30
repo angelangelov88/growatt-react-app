@@ -3,11 +3,13 @@ import { apiRequest } from "../../lib/apiClient";
 import type { OctopusSlots } from "../../types/Api";
 
 const useOctopus = () => {
-  // Loaded on demand with refetch(), like the inverter cards.
+  // Loaded when the dashboard opens, then again with Refresh. Not on window
+  // focus, so the plan doesn't change under the Apply button.
   const slotsQuery = useQuery({
     queryKey: ["octopus", "slots"],
     queryFn: () => apiRequest<OctopusSlots>("octopus/slots"),
-    enabled: false,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
     retry: false,
   });
 
