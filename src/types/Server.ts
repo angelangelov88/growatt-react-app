@@ -56,7 +56,9 @@ type AuditAction =
   | "signed_in"
   | "export_presets_saved"
   | "daily_export_saved"
-  | "export_restored";
+  | "export_restored"
+  | "battery_saved"
+  | "one_off_ended";
 
 // What an automation check did for one user. skipped: automation is off.
 // busy: another check for them was running. paused: a saved login was
@@ -91,6 +93,12 @@ type AutomationStateRow = {
   // at once), and the last day a restore failure was logged.
   export_restored_on: string | null;
   export_failed_on: string | null;
+  // Export until battery %: when the one-off slot ends and the slot itself
+  // (e.g. "16:05-17:27"), null when there's none; and whether turning it off
+  // has failed and been logged.
+  one_off_until: Date | null;
+  one_off_slot: string | null;
+  one_off_failed: boolean;
 };
 
 // The /api/cron/update reply. Counts only: GitHub Actions logs are public.

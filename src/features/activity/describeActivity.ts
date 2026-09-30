@@ -197,6 +197,17 @@ const describeActivity = ({
     case "growatt_write": {
       const isExport = text(details, "kind") === "discharge";
       const ok = flag(details, "ok") ?? true;
+      if (flag(details, "oneOff"))
+        return {
+          title: ok
+            ? "Export until battery % set"
+            : "Couldn't set Export until battery %",
+          detail: join([
+            formatSlots(text(details, "slots"), "no export times"),
+            ...powerAndStop(details),
+          ]),
+          failed: !ok,
+        };
       return {
         title: ok
           ? `${isExport ? "Export" : "Charge"} times changed`
@@ -252,6 +263,33 @@ const describeActivity = ({
             : "Export every day turned on",
         failed: false,
       };
+    case "battery_saved": {
+      const kwh = number(details, "batteryKwh");
+      const kw = number(details, "maxDischargeKw");
+      return {
+        title: "Battery details saved",
+        detail: join([
+          kwh !== undefined && `${String(kwh)} kWh`,
+          kw !== undefined && `max ${String(kw)} kW`,
+        ]),
+        failed: false,
+      };
+    }
+    // The 5-minute check, after an Export until battery % slot ended.
+    case "one_off_ended":
+      return flag(details, "ok") === false
+        ? {
+            title: "Couldn't turn off Export until battery %",
+            detail: text(details, "message"),
+            failed: true,
+          }
+        : {
+            title: "Export until battery % finished",
+            detail: flag(details, "removed")
+              ? "Export times turned off"
+              : "The export times had already changed, so they were left alone",
+            failed: false,
+          };
     case "automation_run":
       return describeAutomation(details);
     default:

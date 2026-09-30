@@ -10,6 +10,9 @@ const RESTORE_FROM = 23 * 60 + 31;
 
 const ukDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" });
 
+// The UK date (YYYY-MM-DD) of a moment.
+const ukDay = (date: Date) => ukDate.format(date);
+
 // The UK date (YYYY-MM-DD) of the last reset the times can be put back after:
 // today from 23:31, before that yesterday. A restore is due when it hasn't
 // been done for this date yet.
@@ -45,4 +48,4 @@ const keptPlan = (powerRate: number, stopSOC: number, slots: string) => {
   return plan;
 };
 
-export { GROWATT_RESET, resetDay, keptPlan };
+export { GROWATT_RESET, ukDay, resetDay, keptPlan };

@@ -23,6 +23,8 @@ type SettingsRow = {
   stop_soc: number | null;
   automation_enabled: boolean;
   keep_export: boolean;
+  battery_kwh: number | null;
+  battery_max_kw: number | null;
 } & Record<`${Preset}_export_${"name" | "start" | "end"}`, string | null> &
   Record<`${Preset}_export_${"power" | "stop"}`, number | null>;
 
@@ -45,7 +47,10 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
       high_export_stop,
       low_export_name, low_export_start::text as low_export_start,
       low_export_end::text as low_export_end, low_export_power,
-      low_export_stop, keep_export
+      low_export_stop, keep_export,
+      -- numeric comes back as a string otherwise.
+      battery_kwh::float8 as battery_kwh,
+      battery_max_kw::float8 as battery_max_kw
     from private.user_settings`;
   const row = rows.at(0);
   const preset = (key: Preset): ExportPreset => {
@@ -68,6 +73,8 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
     automationEnabled: row?.automation_enabled ?? false,
     exportPresets: { high: preset("high"), low: preset("low") },
     exportEveryDay: row?.keep_export ?? false,
+    batteryKwh: row?.battery_kwh ?? null,
+    maxDischargeKw: row?.battery_max_kw ?? null,
   };
 };
 

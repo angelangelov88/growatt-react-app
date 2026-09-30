@@ -15,6 +15,7 @@ import type { contactSchema } from "../lib/contactSchema";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
 import type {
+  batterySchema,
   dailyExportSchema,
   exportPresetsSchema,
   settingsSchema,
@@ -63,6 +64,9 @@ type MfaEnrollment = {
 // ChargePeriods type from Growatt.ts.
 type PeriodsBody = z.infer<typeof periodsSchema>;
 
+// GET /api/growatt/battery: how full the battery is now, in percent.
+type BatterySoc = { soc: number };
+
 // GET /api/octopus/slots
 type OctopusSlots = { plannedDispatches: Dispatch[] };
 
@@ -91,13 +95,16 @@ type Preset = keyof ExportPresets;
 // PUT /api/settings?part=daily: Export every day on or off.
 type DailyExport = z.infer<typeof dailyExportSchema>;
 
+// PUT /api/settings?part=battery: battery size and max discharge power.
+type BatteryInfo = z.infer<typeof batterySchema>;
+
 // GET /api/settings, and what the PUTs return. exportEveryDay: the export
 // times last applied on the dashboard are put back every night after
-// Growatt's 23:30 reset.
+// Growatt's 23:30 reset. batteryKwh, maxDischargeKw: null until saved.
 type Settings = ChargeSettings & {
   exportPresets: ExportPresets;
   exportEveryDay: boolean;
-};
+} & { [K in keyof BatteryInfo]: BatteryInfo[K] | null };
 
 // GET /api/automation: what automatic charging last did. Times are ISO
 // strings, null until it first happens.
@@ -196,10 +203,12 @@ export type {
   ExportPreset,
   Preset,
   DailyExport,
+  BatteryInfo,
   Settings,
   AutomationStatus,
   CheckNowResult,
   PeriodsBody,
+  BatterySoc,
   OctopusSlots,
   SessionJson,
   SavingSessions,

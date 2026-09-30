@@ -8,8 +8,13 @@ type SlotParam = {
 } | null;
 
 // Battery First or Grid First values to write, as the forms hold them. Empty
-// slots are null.
-type PeriodsInput = { powerRate: string; stopSOC: string; slots: SlotParam[] };
+// slots are null. oneOff: an Export until battery % slot.
+type PeriodsInput = {
+  powerRate: string;
+  stopSOC: string;
+  slots: SlotParam[];
+  oneOff?: true;
+};
 
 type ChargePeriod = { start: string; end: string; enabled: boolean };
 type ChargePeriods = {
@@ -51,6 +56,32 @@ type SlotState = {
 
 type Snapshot = { powerRate: string; stopSOC: string; slots: SlotState[] };
 
+// What Export until battery % works from: the battery % now, the chosen rate
+// and stop level, and the battery details from Settings.
+type ExportUntilInput = {
+  soc: number;
+  powerRate: number;
+  stopSOC: number;
+  batteryKwh: number;
+  maxDischargeKw: number;
+};
+
+// Its result. already: the battery is at or near the stop level, so there's
+// nothing to export. tooLate: it's too close to Growatt's 23:30 reset.
+// export: one slot, "HH:MM" UK time; capped: it was cut short to end by
+// 23:29.
+type ExportUntilPlan =
+  | { kind: "already"; soc: number }
+  | { kind: "tooLate"; soc: number }
+  | {
+      kind: "export";
+      soc: number;
+      start: string;
+      end: string;
+      minutes: number;
+      capped: boolean;
+    };
+
 export type {
   SlotParam,
   PeriodsInput,
@@ -61,4 +92,6 @@ export type {
   GrowattConfig,
   SlotState,
   Snapshot,
+  ExportUntilInput,
+  ExportUntilPlan,
 };

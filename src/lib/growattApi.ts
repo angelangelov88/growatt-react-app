@@ -213,9 +213,46 @@ const createGrowattClient = ({
     };
   };
 
+  // How full the battery is now, in percent. It's Growatt's copy, updated
+  // about every 5 minutes, so it doesn't use the inverter queue. The status
+  // needs the plant the inverter is in, so each of the account's plants is
+  // tried until one knows the serial.
+  const fetchBatterySoc = async (serial: string) => {
+    await ensureLoggedIn();
+    const plants = (await request("/index/getPlantListTitle", {})) as unknown;
+    const ids = Array.isArray(plants)
+      ? plants
+          .map((p: unknown) =>
+            typeof p === "object" && p !== null && "id" in p
+              ? String(p.id)
+              : "",
+          )
+          .filter((id) => /^\d+$/.test(id))
+      : [];
+    for (const id of ids) {
+      const status = (await request(
+        `/panel/mix/getMIXStatusData?plantId=${id}`,
+        {
+          mixSn: serial,
+        },
+      )) as GrowattResponse & { obj?: { SOC?: unknown; lost?: unknown } };
+      if (status.result !== 1 || !status.obj) continue;
+      if (String(status.obj.lost).toLowerCase().includes("lost"))
+        throw new Error(
+          "Your inverter is offline in Growatt, so its battery level isn't up to date",
+        );
+      const soc = Number(status.obj.SOC);
+      if (!Number.isInteger(soc) || soc < 0 || soc > 100) break;
+      return soc;
+    }
+    throw new Error("Growatt didn't give your battery level, try again");
+  };
+
   return {
     // Throws if Growatt rejects the username or password.
     login: () => enqueue(ensureLoggedIn),
+
+    fetchBatterySoc,
 
     fetchChargePeriods: (serial: string): Promise<ChargePeriods> =>
       enqueue(() =>
