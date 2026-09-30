@@ -99,10 +99,20 @@ Coding conventions and security rules for contributors are in [CLAUDE.md](CLAUDE
 pnpm install
 cp .env.example .env     # then fill it in (see below)
 npx vercel link          # once, to connect this folder to the Vercel project
-pnpm dev:api             # app and API on http://localhost:3000
+pnpm start               # app and API on http://localhost:3000
 ```
 
-`pnpm dev:api` runs `vercel dev`, which serves the Vite app and the `/api` functions together. `pnpm start` runs Vite alone, without the API, so nothing past the login page works.
+`pnpm start` runs `vercel dev`, which serves the Vite app and the `/api` functions together. `pnpm start:vite` runs Vite alone, without the API, so nothing past the login page works.
+
+### Testing on your phone
+
+1. Run `pnpm start:host`, which listens on your network as well as this computer.
+2. Find your computer's network address, e.g. `ipconfig getifaddr en0` on a Mac (say `192.168.1.20`).
+3. Open `http://192.168.1.20:3000` on your phone, on the same Wi-Fi.
+
+Nothing in `.env` changes: when running locally with `vercel dev` only, the API also accepts requests from home network addresses (`localhost`, `10.x`, `172.16–31.x`, `192.168.x`). Deployed, only `APP_ORIGIN` and the preview addresses count.
+
+Log in with email and password: Google sign-in only returns to the addresses allowed in Supabase. Hot reload may not reach the phone, so refresh it after a change. Use `pnpm start` otherwise, since `start:host` lets anyone on the same network open the app.
 
 ### Environment variables
 
@@ -228,8 +238,9 @@ Previews share the production database and send email links to the production Si
 
 | Command                             | What it does                                                                                                                                                      |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev:api`                      | App and API locally on port 3000 (`vercel dev`)                                                                                                                   |
-| `pnpm start`                        | Vite only, without the API                                                                                                                                        |
+| `pnpm start`                        | App and API locally on port 3000 (`vercel dev`)                                                                                                                   |
+| `pnpm start:host`                   | The same, also open to other devices on your network, to test on a phone (see [Testing on your phone](#testing-on-your-phone))                                    |
+| `pnpm start:vite`                   | Vite only, without the API                                                                                                                                        |
 | `pnpm build`                        | Type check and production build into `dist/`                                                                                                                      |
 | `pnpm lint` / `pnpm lint:fix`       | ESLint                                                                                                                                                            |
 | `pnpm format` / `pnpm format:check` | Prettier                                                                                                                                                          |

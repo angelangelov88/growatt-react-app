@@ -23,8 +23,18 @@ if (origins.length === 0)
 // The main address: APP_ORIGIN, or the branch's address on a preview.
 const appOrigin = origins[0];
 
+// vercel dev only: this computer on the home network (localhost, 10.x, 172.16–31.x
+// or 192.168.x), so a phone on the same Wi-Fi can use `pnpm start:host` without
+// changing APP_ORIGIN. vercel dev leaves VERCEL_ENV unset in functions; deployed,
+// VERCEL is always "1" and NODE_ENV is production.
+const isLocalDev =
+  !process.env.VERCEL && process.env.NODE_ENV === "development";
+const LOCAL_NETWORK =
+  /^http:\/\/(localhost|127\.0\.0\.1|10(\.\d{1,3}){3}|192\.168(\.\d{1,3}){2}|172\.(1[6-9]|2\d|3[01])(\.\d{1,3}){2}):\d{1,5}$/;
+
 const isAppOrigin = (origin: string | undefined) =>
-  origin !== undefined && origins.includes(origin);
+  origin !== undefined &&
+  (origins.includes(origin) || (isLocalDev && LOCAL_NETWORK.test(origin)));
 
 // The address this request came in on, if it's one of ours; otherwise the main
 // one. For redirects that must come back to the same host as its cookies.

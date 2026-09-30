@@ -17,8 +17,9 @@
     "zod": "^4.6.5"
   },
   "scripts": {
-    "start": "vite",
-    "dev:api": "vercel dev --listen 3000",
+    "start": "vercel dev --listen 3000",
+    "start:host": "vercel dev --listen tcp://0.0.0.0:3000",
+    "start:vite": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
