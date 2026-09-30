@@ -68,6 +68,11 @@ type AccountMenuProps = {
 // An ⓘ button that explains a card. label names the card, e.g. "Battery First".
 type InfoTipProps = { label: string; children: ReactNode };
 
+type HoverTipProps = {
+  tip: string | null;
+  children: (describedBy: string | undefined) => ReactNode;
+};
+
 export type {
   SpinnerProps,
   AppLogoProps,
@@ -80,5 +85,6 @@ export type {
   SubmitButtonProps,
   FormAlertProps,
   InfoTipProps,
+  HoverTipProps,
   AccountMenuProps,
 };

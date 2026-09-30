@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
+import HoverTip from "../../components/HoverTip";
 import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
@@ -56,6 +57,9 @@ const BatteryFirstCard = ({
         onlySlot.startMin === mySlot.startMin &&
         onlySlot.endHour === mySlot.endHour &&
         onlySlot.endMin === mySlot.endMin));
+  // Off only because there's nothing to fill in, so the tooltip says so.
+  const isAlreadyMine =
+    hasMySettings && form.isLoaded && !isAutomatic && !isDisabled;
 
   const handleApply = () => {
     setChargePeriodsMutation.mutate(
@@ -80,7 +84,7 @@ const BatteryFirstCard = ({
     <div
       className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
+      <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-white">
@@ -162,15 +166,26 @@ const BatteryFirstCard = ({
           >
             Load
           </button>
-          <button
-            onClick={fillMySettings}
-            disabled={
-              isDisabled || !form.isLoaded || isAutomatic || hasMySettings
+          <HoverTip
+            tip={
+              isAlreadyMine
+                ? "These are already your saved battery charging settings."
+                : null
             }
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Apply my settings
-          </button>
+            {(describedBy) => (
+              <button
+                onClick={fillMySettings}
+                disabled={
+                  isDisabled || !form.isLoaded || isAutomatic || hasMySettings
+                }
+                aria-describedby={describedBy}
+                className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Apply my settings
+              </button>
+            )}
+          </HoverTip>
         </div>
       </div>
 
