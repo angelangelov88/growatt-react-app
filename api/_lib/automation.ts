@@ -4,6 +4,7 @@ import {
   describePlan,
   planMatches,
 } from "../../src/lib/chargePlan";
+import { resetDay } from "../../src/lib/keepExport";
 import {
   OctopusError,
   fetchPlannedDispatches,
@@ -13,15 +14,17 @@ import type { Settings } from "../../src/types/Api";
 import type { ChargePlan } from "../../src/types/Octopus";
 import type {
   AutomationOutcome,
+  AutomationResult,
   AutomationStateRow,
   AutomationTrigger,
+  Tx,
 } from "../../src/types/Server";
 import { growattMessage, isOutage } from "../_handlers/growatt/periods";
 import { octopusMessage } from "../_handlers/octopus/connect";
 import { audit } from "./audit";
 import { withUser } from "./db";
 import { loadGrowatt, loadOctopus } from "./userConfig";
-import { readSettings } from "./userData";
+import { readKeptExport, readSettings } from "./userData";
 
 // How often the inverter is read even when the plan hasn't changed, in case it
 // was changed some other way (Growatt's own app, say).
@@ -52,7 +55,8 @@ const takeLease = async (userId: string) => {
       on conflict (user_id) do update set busy_until = excluded.busy_until
       where s.busy_until is null or s.busy_until < now()
       returning plan_power, plan_stop, plan_slots, inverter_checked_at,
-        last_code, paused`,
+        last_code, paused, export_restored_on::text as export_restored_on,
+        export_failed_on::text as export_failed_on`,
   );
   return rows.at(0) ?? null;
 };
@@ -83,11 +87,12 @@ const fetchDispatches = async (apiKey: string, account: string) => {
   }
 };
 
-// Reads the inverter and writes the plan unless it's already there. Returns
-// true if it wrote.
+// Reads the inverter's charge (or export) times and writes the plan unless
+// it's already there. Returns true if it wrote.
 const applyToInverter = async (
   growatt: NonNullable<Awaited<ReturnType<typeof loadGrowatt>>>,
   plan: ChargePlan,
+  kind: "charge" | "discharge" = "charge",
 ) => {
   const { client, serial } = growatt;
   try {
@@ -102,14 +107,14 @@ const applyToInverter = async (
         );
   }
   try {
-    const current = await client.fetchChargePeriods(serial);
+    const current =
+      kind === "charge"
+        ? await client.fetchChargePeriods(serial)
+        : await client.fetchDischargePeriods(serial);
     if (planMatches(plan, current)) return false;
-    await client.setChargePeriods(
-      serial,
-      plan.powerRate,
-      plan.stopSOC,
-      ...plan.slots,
-    );
+    const write =
+      kind === "charge" ? client.setChargePeriods : client.setDischargePeriods;
+    await write(serial, plan.powerRate, plan.stopSOC, ...plan.slots);
     return true;
   } catch (err) {
     throw new AutomationError("growatt_failed", growattMessage(err));
@@ -146,24 +151,16 @@ const sync = async (
   return { plan, reached: true, applied: await applyToInverter(growatt, plan) };
 };
 
-const check = async (
+// Automatic charging: builds the plan from the user's Octopus slots and sets
+// the inverter's charge times if they differ. paused: a saved login was
+// refused, so nothing else should try it this check.
+const checkCharge = async (
   userId: string,
+  settings: Settings,
+  state: AutomationStateRow,
   trigger: AutomationTrigger,
   req: VercelRequest | null,
-): Promise<AutomationOutcome> => {
-  const settings = await withUser(userId, readSettings);
-  if (!settings.automationEnabled) return { result: "skipped", plan: null };
-  const state = await takeLease(userId);
-  if (!state) return { result: "busy", plan: null };
-  // Check now runs even when paused: the user may have fixed the login elsewhere.
-  if (state.paused && trigger === "schedule") {
-    await withUser(
-      userId,
-      (tx) => tx`update private.automation_state set busy_until = null`,
-    );
-    return { result: "paused", plan: null };
-  }
-
+): Promise<{ outcome: AutomationOutcome; paused: boolean }> => {
   try {
     const { plan, reached, applied } = await sync(
       userId,
@@ -173,7 +170,7 @@ const check = async (
     );
     await withUser(userId, async (tx) => {
       await tx`
-        update private.automation_state set busy_until = null,
+        update private.automation_state set
           checked_at = now(), last_code = null, last_message = null,
           paused = false`;
       if (reached)
@@ -200,7 +197,10 @@ const check = async (
           trigger,
         });
     });
-    return { result: applied ? "applied" : "unchanged", plan };
+    return {
+      outcome: { result: applied ? "applied" : "unchanged", plan },
+      paused: false,
+    };
   } catch (err) {
     const failure =
       err instanceof AutomationError
@@ -218,7 +218,7 @@ const check = async (
     await withUser(userId, async (tx) => {
       // The inverter may be half-written, so the next check reads it.
       await tx`
-        update private.automation_state set busy_until = null,
+        update private.automation_state set
           checked_at = now(), last_code = ${failure.code},
           last_message = ${failure.message}, paused = ${failure.pause},
           inverter_checked_at = null`;
@@ -232,12 +232,114 @@ const check = async (
           paused: failure.pause,
         });
     });
-    return { result: "failed", plan: null };
+    return { outcome: { result: "failed", plan: null }, paused: failure.pause };
+  }
+};
+
+// "Keep every day": after Growatt's nightly reset, reads the export times and
+// writes the saved ones back if they've gone. Changes go in the audit log, and
+// a failure once a day. A failed check is tried again 5 minutes later, except
+// a refused login, which waits for the next reset so the account can't get
+// locked.
+const restoreExport = async (
+  userId: string,
+  state: AutomationStateRow,
+  req: VercelRequest | null,
+): Promise<AutomationResult> => {
+  const day = resetDay();
+  const [plan, growatt] = await Promise.all([
+    withUser(userId, readKeptExport),
+    loadGrowatt(userId),
+  ]);
+  const markDone = (tx: Tx) =>
+    tx`update private.automation_state set export_restored_on = ${day}::date`;
+  if (!plan || !growatt) {
+    await withUser(userId, markDone);
+    return "unchanged";
+  }
+  try {
+    const wrote = await applyToInverter(growatt, plan, "discharge");
+    await withUser(userId, async (tx) => {
+      await markDone(tx);
+      if (wrote)
+        await audit(tx, req, userId, "export_restored", {
+          ok: true,
+          powerRate: Number(plan.powerRate),
+          stopSOC: Number(plan.stopSOC),
+          slots: describePlan(plan),
+        });
+    });
+    return wrote ? "applied" : "unchanged";
+  } catch (err) {
+    const failure =
+      err instanceof AutomationError
+        ? err
+        : new AutomationError("internal", "Something went wrong on our side");
+    console.error(
+      `export restore failed for ${userId.slice(0, 8)}:`,
+      failure.code,
+    );
+    await withUser(userId, async (tx) => {
+      if (failure.pause) await markDone(tx);
+      if (state.export_failed_on === day) return;
+      await tx`
+        update private.automation_state set export_failed_on = ${day}::date`;
+      await audit(tx, req, userId, "export_restored", {
+        ok: false,
+        code: failure.code,
+        message: failure.message,
+      });
+    });
+    return "failed";
+  }
+};
+
+// Runs whichever of automatic charging and "Keep every day" the user has on,
+// holding the lease so only one check talks to their inverter at a time.
+const check = async (
+  userId: string,
+  trigger: AutomationTrigger,
+  req: VercelRequest | null,
+): Promise<AutomationOutcome> => {
+  const settings = await withUser(userId, readSettings);
+  if (!settings.automationEnabled && !settings.keepExport)
+    return { result: "skipped", plan: null };
+  const state = await takeLease(userId);
+  if (!state) return { result: "busy", plan: null };
+  try {
+    // Check now runs even when paused: the user may have fixed the login elsewhere.
+    if (state.paused && trigger === "schedule")
+      return { result: "paused", plan: null };
+
+    let outcome: AutomationOutcome = { result: "unchanged", plan: null };
+    let canRestore = true;
+    if (settings.automationEnabled) {
+      const charge = await checkCharge(userId, settings, state, trigger, req);
+      outcome = charge.outcome;
+      // One inverter write per check (each takes 25–35s of the function's
+      // 60), and no second go at a login that was just refused.
+      canRestore = outcome.result !== "applied" && !charge.paused;
+    }
+    if (
+      settings.keepExport &&
+      canRestore &&
+      state.export_restored_on !== resetDay()
+    ) {
+      const result = await restoreExport(userId, state, req);
+      if (!settings.automationEnabled) outcome = { result, plan: null };
+    }
+    return outcome;
+  } finally {
+    await withUser(
+      userId,
+      (tx) => tx`update private.automation_state set busy_until = null`,
+    );
   }
 };
 
 // One automation check for one user: asks Octopus for their slots, works out
-// the charge plan, and sets the inverter if it differs. The scheduled check
+// the charge plan, and sets the inverter if it differs; and after Growatt's
+// 23:30 reset, puts their kept export times back. The scheduled check
 // skips paused users and trusts what it last saw on the inverter for up to 3
 // hours; Check now always reads the inverter. req: the user's request, for the
 // audit log's IP (null for the schedule). Never throws.

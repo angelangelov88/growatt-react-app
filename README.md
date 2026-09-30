@@ -18,6 +18,7 @@ The logo shows energy flowing into a battery (the violet arrow) and back out to 
 - **Dashboard:**
   - **Charge battery** and **Export to grid**: the inverter's Battery First (charge) and Grid First (discharge) slots, editable
   - two Export to grid preset buttons (by default High Export, 18:00–19:00, and Low Export, 20:00–22:15)
+  - "Keep these times every day": Growatt clears the export times every night at 23:30, and the 5-minute check puts them back a few minutes later
   - Octopus's planned dispatches, with an Apply button that turns them into a charge plan (or, with automatic charging on, Check now and when it last ran)
   - saving sessions, with Join
 - **Settings:**
@@ -169,6 +170,7 @@ This is how production is set up, and what you'd repeat for a fresh copy.
    | `0007_automation`      | The 5-minute schedule, automation state, window toggle  |
    | `0008_user_limit`      | Limits the beta to 20 accounts                          |
    | `0009_export_presets`  | Each user's Grid First presets                          |
+   | `0010_keep_export`     | Puts kept export times back after Growatt's 23:30 reset |
 
    There's no migration tool. Each migration is applied by hand, once. Before `0007`, store `CRON_SECRET` in Vault (see [Automatic charging](#automatic-charging)).
 

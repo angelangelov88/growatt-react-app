@@ -54,7 +54,8 @@ type AuditAction =
   | "octopus_join"
   | "automation_run"
   | "signed_in"
-  | "export_presets_saved";
+  | "export_presets_saved"
+  | "export_restored";
 
 // What an automation check did for one user. skipped: automation is off.
 // busy: another check for them was running. paused: a saved login was
@@ -84,6 +85,10 @@ type AutomationStateRow = {
   inverter_checked_at: Date | null;
   last_code: string | null;
   paused: boolean;
+  // UK dates (YYYY-MM-DD) for "Keep every day": the reset the export times
+  // were last checked after, and the last day a restore failure was logged.
+  export_restored_on: string | null;
+  export_failed_on: string | null;
 };
 
 // The /api/cron/update reply. Counts only: GitHub Actions logs are public.

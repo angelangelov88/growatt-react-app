@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import type { Preset } from "../../types/Api";
 import type { GridFirstProps } from "../../types/GrowattForm";
@@ -14,6 +15,8 @@ import {
   withCurrent,
 } from "./slotOptions";
 import useExportPresets from "./useExportPresets";
+import useSettings from "../settings/useSettings";
+import { GROWATT_RESET } from "../../lib/keepExport";
 
 const PRESET_KEYS: Preset[] = ["high", "low"];
 
@@ -24,6 +27,10 @@ const GridFirstCard = ({
 }: GridFirstProps) => {
   const { showToast } = useToast();
   const presets = useExportPresets();
+  // "Keep every day": saved with the times on Apply. null: not changed here.
+  const savedKeep = useSettings().data?.keepExport ?? false;
+  const [keep, setKeep] = useState<boolean | null>(null);
+  const isKeep = keep ?? savedKeep;
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
@@ -34,9 +41,11 @@ const GridFirstCard = ({
         powerRate: form.powerRate,
         stopSOC: form.stopSOC,
         slots: form.toParams(),
+        keep: isKeep,
       },
       {
         onSuccess: () => {
+          setKeep(null);
           showToast("Export times applied", "success");
           verify();
         },
@@ -65,6 +74,10 @@ const GridFirstCard = ({
               <ul>
                 <li>
                   <b>Load</b> shows what&apos;s on your inverter now.
+                </li>
+                <li>
+                  <b>Keep these times every day</b> puts them back after Growatt
+                  clears them at {GROWATT_RESET} each night.
                 </li>
                 <li>
                   <b>Disable All</b> removes all the times, so the battery
@@ -208,6 +221,29 @@ const GridFirstCard = ({
           </div>
 
           <SlotList form={form} />
+
+          <div className="flex items-start gap-3 mt-4 mb-4">
+            <input
+              id="keep-export"
+              type="checkbox"
+              checked={isKeep}
+              onChange={(e) => {
+                setKeep(e.target.checked);
+              }}
+              aria-describedby="keep-export-hint"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-violet-600"
+            />
+            <div className="flex flex-col gap-1">
+              <label htmlFor="keep-export" className="text-sm text-gray-200">
+                Keep these times every day
+              </label>
+              <span id="keep-export-hint" className="text-xs text-gray-500">
+                Growatt clears export times every night at {GROWATT_RESET}. We
+                put them back a few minutes later. A slot across {GROWATT_RESET}{" "}
+                pauses for about 5 minutes.
+              </span>
+            </div>
+          </div>
 
           <button
             onClick={handleApply}

@@ -5,7 +5,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { apiRequest } from "../../lib/apiClient";
-import type { PeriodsBody } from "../../types/Api";
+import { SETTINGS_KEY } from "../settings/useSettings";
+import type { PeriodsBody, Settings } from "../../types/Api";
 import type {
   ChargePeriod,
   ChargePeriods,
@@ -48,7 +49,10 @@ const enabledSlots = (slots: SlotParam[]) =>
   slots.filter((s): s is NonNullable<SlotParam> => s !== null);
 
 // Writes Battery First (charge) or Grid First (discharge) periods.
-const putPeriods = (kind: Kind, { powerRate, stopSOC, slots }: PeriodsInput) =>
+const putPeriods = (
+  kind: Kind,
+  { powerRate, stopSOC, slots, keep }: PeriodsInput,
+) =>
   growattRequest(kind, {
     method: "PUT",
     body: {
@@ -58,6 +62,7 @@ const putPeriods = (kind: Kind, { powerRate, stopSOC, slots }: PeriodsInput) =>
         start: `${s.startHour}:${s.startMin}`,
         end: `${s.endHour}:${s.endMin}`,
       })),
+      keep,
     },
   });
 
@@ -124,6 +129,18 @@ const useGrowatt = () => {
     mutationFn: (input: PeriodsInput) => putPeriods("discharge", input),
     onSuccess: (_, input) => {
       queryClient.setQueryData(DISCHARGE_KEY, toPeriods(input));
+      // "Keep every day" is saved with the times (the server turns it off
+      // when there are none).
+      const { keep } = input;
+      if (keep !== undefined)
+        queryClient.setQueryData<Settings>(
+          SETTINGS_KEY,
+          (old) =>
+            old && {
+              ...old,
+              keepExport: keep && enabledSlots(input.slots).length > 0,
+            },
+        );
     },
   });
 

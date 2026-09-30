@@ -12,6 +12,9 @@ const periodsSchema = z.object({
   stopSOC: percentSchema,
   // Enabled slots in order; the rest are turned off. None turns them all off.
   slots: z.array(slotSchema).max(6, "The inverter has 6 slots"),
+  // Export times only: put them back every night after Growatt clears them
+  // (true), or stop doing that (false). Left out: unchanged.
+  keep: z.boolean().optional(),
 });
 
 export { periodsSchema };

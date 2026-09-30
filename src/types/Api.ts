@@ -88,7 +88,12 @@ type ExportPreset = ExportPresets["high"];
 type Preset = keyof ExportPresets;
 
 // GET /api/settings, and what both PUTs return.
-type Settings = ChargeSettings & { exportPresets: ExportPresets };
+// keepExport: the export times are put back every night after Growatt's 23:30
+// reset (they're saved on the server, set by PUT /api/growatt/discharge).
+type Settings = ChargeSettings & {
+  exportPresets: ExportPresets;
+  keepExport: boolean;
+};
 
 // GET /api/automation: what automatic charging last did. Times are ISO
 // strings, null until it first happens.
