@@ -159,7 +159,8 @@ const ExportUntilCard = ({
     return (
       <>
         <p className="text-sm text-gray-300">
-          Battery {plan.soc}% → {input.stopSOC}% at {input.powerRate}%.
+          Battery {plan.soc}% → {input.stopSOC}% at {input.powerRate}% discharge
+          rate.
         </p>
         <p className="text-base font-semibold text-white mt-1">
           Export {plan.start}–{plan.end}{" "}
@@ -173,7 +174,10 @@ const ExportUntilCard = ({
               Cut short to end before Growatt&apos;s {GROWATT_RESET} reset.
             </li>
           )}
-          <li>This replaces your export times for today.</li>
+          <li>
+            This removes your other export times for today, and turns export off
+            when it ends.
+          </li>
           {isEveryDay && (
             <li>
               Export every day puts your usual times back after {GROWATT_RESET}.
