@@ -1,4 +1,5 @@
 import AutomationCard from "./AutomationCard";
+import ChargeSettingsCard from "./ChargeSettingsCard";
 import CredentialsCard from "./CredentialsCard";
 import DangerZoneCard from "./DangerZoneCard";
 import ExportPresetsCard from "./ExportPresetsCard";
@@ -9,6 +10,7 @@ const SettingsPage = () => (
   <main className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
     <h1 className="text-xl font-semibold text-white">Settings</h1>
     <AutomationCard />
+    <ChargeSettingsCard />
     <ExportPresetsCard />
     <CredentialsCard />
     <PasswordCard />

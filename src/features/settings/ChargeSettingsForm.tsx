@@ -30,7 +30,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       apiRequest<Settings>("settings", { method: "PUT", body }),
     onSuccess: (settings) => {
       queryClient.setQueryData(SETTINGS_KEY, settings);
-      showToast("Charge settings saved", "success");
+      showToast("Battery First settings saved", "success");
     },
   });
 
@@ -165,7 +165,7 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
       </p>
       {isChanged && (
         <SubmitButton
-          label="Save charge settings"
+          label="Save Battery First settings"
           pendingLabel="Saving…"
           isPending={save.isPending}
         />

@@ -87,7 +87,7 @@ const Octopus = ({ canApply }: OctopusProps) => {
                   <li>
                     <b>The green button</b> sets your battery to charge at these
                     times, plus your own night window if you have one. It uses
-                    your charge settings from Settings.
+                    your Battery First settings from Settings.
                   </li>
                 </ul>
               </>

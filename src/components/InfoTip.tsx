@@ -110,6 +110,9 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
     else setIsPinned(true);
   };
 
+  // The icon is lit while the box shows (not on CSS hover), so the two always
+  // match: while the mouse is on the box, after a tap, and on keyboard focus.
+  //
   // Fades and slides a little towards the icon. Hidden with visibility, not
   // display, so the fade out can finish and screen readers can still read it.
   const motion = isOpen
@@ -131,7 +134,7 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
         onClick={handleClick}
         onFocus={handleFocus}
         onBlur={close}
-        className="-m-1 p-1 rounded-full text-gray-500 hover:text-gray-300 focus-visible:outline-2 focus-visible:outline-violet-400 transition-colors"
+        className={`-m-1 p-1 rounded-full ${isOpen ? "text-gray-300" : "text-gray-500"} focus-visible:outline-2 focus-visible:outline-violet-400 transition-colors duration-150 ease-out motion-reduce:transition-none`}
       >
         <svg
           viewBox="0 0 24 24"
