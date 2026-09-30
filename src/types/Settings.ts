@@ -69,6 +69,11 @@ type ExportPresetFieldsProps = {
 
 type DailyExportSwitchProps = { saved: Settings };
 
+// The battery fields as typed: text, so a half-typed "5." stays as it is.
+type BatteryDraft = { batteryKwh: string; maxDischargeKw: string };
+
+type BatteryFormProps = { saved: Settings };
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
@@ -83,4 +88,6 @@ export type {
   ExportPresetsFormProps,
   ExportPresetFieldsProps,
   DailyExportSwitchProps,
+  BatteryDraft,
+  BatteryFormProps,
 };

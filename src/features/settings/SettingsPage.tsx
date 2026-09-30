@@ -1,4 +1,5 @@
 import AutomationCard from "./AutomationCard";
+import BatteryCard from "./BatteryCard";
 import ChargeSettingsCard from "./ChargeSettingsCard";
 import CredentialsCard from "./CredentialsCard";
 import DailyExportCard from "./DailyExportCard";
@@ -14,6 +15,7 @@ const SettingsPage = () => (
     <ChargeSettingsCard />
     <DailyExportCard />
     <ExportPresetsCard />
+    <BatteryCard />
     <CredentialsCard />
     <PasswordCard />
     <SecurityCard />

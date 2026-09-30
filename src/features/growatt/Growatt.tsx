@@ -8,6 +8,7 @@ import useInverterRead from "./useInverterRead";
 import InfoTip from "../../components/InfoTip";
 import BatteryFirstCard from "./BatteryFirstCard";
 import GridFirstCard from "./GridFirstCard";
+import ExportUntilCard from "./ExportUntilCard";
 import useExportPresets from "./useExportPresets";
 import useToast from "../../contexts/useToast";
 import PowerDownSessions from "../octopus/PowerDownSessions";
@@ -179,6 +180,10 @@ const Growatt = ({ showSessions }: GrowattProps) => {
           setDischargeMutation={setDischargeMutation}
         />
       </div>
+      <ExportUntilCard
+        reader={dischargeReader}
+        setDischargeMutation={setDischargeMutation}
+      />
     </div>
   );
 };

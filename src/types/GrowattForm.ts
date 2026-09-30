@@ -21,6 +21,13 @@ type GridFirstProps = {
   setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
 };
 
+// Export until battery %: writes through the Export to grid card's mutation,
+// and refreshes that card afterwards.
+type ExportUntilProps = {
+  reader: InverterRead;
+  setDischargeMutation: ReturnType<typeof useGrowatt>["setDischargeMutation"];
+};
+
 type GrowattProps = { showSessions: boolean };
 
 // readOnly: shows the slots without letting them change.
@@ -43,6 +50,7 @@ export type {
   InverterRead,
   BatteryFirstProps,
   GridFirstProps,
+  ExportUntilProps,
   GrowattProps,
   SlotListProps,
   TimePickerProps,

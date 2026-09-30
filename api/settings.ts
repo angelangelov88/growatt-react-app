@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
+  batterySchema,
   dailyExportSchema,
   exportPresetsSchema,
   settingsSchema,
@@ -31,6 +32,8 @@ const presetDetails = ({ high, low }: ExportPresets) =>
 //   leaves everything else alone.
 // PUT ?part=daily DailyExport → Settings. Turns Export every day on or off;
 //   on needs Growatt credentials. Leaves everything else alone.
+// PUT ?part=battery BatteryInfo → Settings. Battery size and max discharge
+//   power, for Export until battery %. Leaves everything else alone.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "PUT"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
@@ -83,6 +86,34 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
           "export_presets_saved",
           presetDetails(presets.data),
         );
+        return readSettings(tx);
+      }),
+    );
+    return;
+  }
+
+  if (req.query.part === "battery") {
+    const battery = batterySchema.safeParse(req.body);
+    if (!battery.success) {
+      sendError(
+        res,
+        400,
+        "invalid_input",
+        battery.error.issues[0]?.message ?? "Invalid input",
+      );
+      return;
+    }
+    const { batteryKwh, maxDischargeKw } = battery.data;
+    res.json(
+      await withUser(userId, async (tx) => {
+        await tx`
+          insert into private.user_settings
+            (user_id, battery_kwh, battery_max_kw)
+          values (${userId}, ${batteryKwh}, ${maxDischargeKw})
+          on conflict (user_id) do update set
+            battery_kwh = excluded.battery_kwh,
+            battery_max_kw = excluded.battery_max_kw`;
+        await audit(tx, req, userId, "battery_saved", battery.data);
         return readSettings(tx);
       }),
     );

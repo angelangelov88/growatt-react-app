@@ -48,7 +48,10 @@ const enabledSlots = (slots: SlotParam[]) =>
   slots.filter((s): s is NonNullable<SlotParam> => s !== null);
 
 // Writes Battery First (charge) or Grid First (discharge) periods.
-const putPeriods = (kind: Kind, { powerRate, stopSOC, slots }: PeriodsInput) =>
+const putPeriods = (
+  kind: Kind,
+  { powerRate, stopSOC, slots, oneOff }: PeriodsInput,
+) =>
   growattRequest(kind, {
     method: "PUT",
     body: {
@@ -58,6 +61,7 @@ const putPeriods = (kind: Kind, { powerRate, stopSOC, slots }: PeriodsInput) =>
         start: `${s.startHour}:${s.startMin}`,
         end: `${s.endHour}:${s.endMin}`,
       })),
+      ...(oneOff && { oneOff }),
     },
   });
 

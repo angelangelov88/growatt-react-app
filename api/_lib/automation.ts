@@ -5,7 +5,7 @@ import {
   describePlan,
   planMatches,
 } from "../../src/lib/chargePlan";
-import { resetDay } from "../../src/lib/dailyExport";
+import { resetDay, ukDay } from "../../src/lib/dailyExport";
 import {
   OctopusError,
   fetchPlannedDispatches,
@@ -57,7 +57,8 @@ const takeLease = async (userId: string) => {
       where s.busy_until is null or s.busy_until < now()
       returning plan_power, plan_stop, plan_slots, inverter_checked_at,
         last_code, paused, export_restored_on::text as export_restored_on,
-        export_failed_on::text as export_failed_on`,
+        export_failed_on::text as export_failed_on, one_off_until,
+        one_off_slot, one_off_failed`,
   );
   return rows.at(0) ?? null;
 };
@@ -345,8 +346,84 @@ const restoreExport = async (
   }
 };
 
+// True when an Export until battery % slot is waiting to be turned off. Read
+// before the lease, so users with nothing to do don't get a state row.
+const hasOneOff = async (userId: string) => {
+  const rows = await withUser(
+    userId,
+    (tx) => tx`
+      select from private.automation_state where one_off_until is not null`,
+  );
+  return rows.length > 0;
+};
+
+// Export until battery %, once its slot has ended: turns the export times off
+// (keeping the power and stop), but only if the inverter still shows exactly
+// that slot; otherwise they were changed since, and are left alone. Once
+// Growatt's nightly reset has passed, it has cleared them anyway. A failure is
+// tried again next check and logged once; a refused login isn't retried, so
+// the account can't get locked, and the reset clears the slot instead.
+// paused: that login was refused, so nothing else should try it this check.
+const endOneOff = async (
+  userId: string,
+  state: AutomationStateRow,
+  req: VercelRequest | null,
+): Promise<{ result: AutomationResult; paused: boolean }> => {
+  const forget = (tx: Tx) => tx`
+    update private.automation_state
+    set one_off_until = null, one_off_slot = null, one_off_failed = false`;
+  const until = state.one_off_until;
+  const growatt = await loadGrowatt(userId);
+  if (!until || !growatt || resetDay() >= ukDay(until)) {
+    await withUser(userId, forget);
+    return { result: "unchanged", paused: false };
+  }
+  try {
+    const { client, serial } = growatt;
+    await logIn(client);
+    const removed = await onInverter(async () => {
+      const current = await client.fetchDischargePeriods(serial);
+      if (describePeriods(current) !== state.one_off_slot) return false;
+      await client.setDischargePeriods(
+        serial,
+        String(current.powerRate),
+        String(current.stopSOC),
+        null,
+      );
+      return true;
+    });
+    await withUser(userId, async (tx) => {
+      await forget(tx);
+      await audit(tx, req, userId, "one_off_ended", { ok: true, removed });
+    });
+    return { result: removed ? "applied" : "unchanged", paused: false };
+  } catch (err) {
+    const failure =
+      err instanceof AutomationError
+        ? err
+        : new AutomationError("internal", "Something went wrong on our side");
+    console.error(
+      `one-off turn-off failed for ${userId.slice(0, 8)}:`,
+      failure.code,
+    );
+    await withUser(userId, async (tx) => {
+      if (failure.pause) await forget(tx);
+      if (state.one_off_failed) return;
+      if (!failure.pause)
+        await tx`update private.automation_state set one_off_failed = true`;
+      await audit(tx, req, userId, "one_off_ended", {
+        ok: false,
+        code: failure.code,
+        message: failure.message,
+      });
+    });
+    return { result: "failed", paused: failure.pause };
+  }
+};
+
 // Runs whichever of automatic charging and Export every day the user has on,
-// holding the lease so only one check talks to their inverter at a time.
+// and turns off an ended Export until battery % slot, holding the lease so
+// only one check talks to their inverter at a time.
 const check = async (
   userId: string,
   trigger: AutomationTrigger,
@@ -354,7 +431,14 @@ const check = async (
 ): Promise<AutomationOutcome> => {
   const settings = await withUser(userId, readSettings);
   const { automationEnabled, exportEveryDay } = settings;
-  if (!automationEnabled && !exportEveryDay)
+  // A one-off is only turned off by the schedule: Check now's reply is about
+  // automatic charging.
+  const scheduled = trigger === "schedule";
+  if (
+    !automationEnabled &&
+    !exportEveryDay &&
+    !(scheduled && (await hasOneOff(userId)))
+  )
     return { result: "skipped", plan: null };
   const state = await takeLease(userId);
   if (!state) return { result: "busy", plan: null };
@@ -364,12 +448,22 @@ const check = async (
       return { result: "paused", plan: null };
 
     let outcome: AutomationOutcome = { result: "unchanged", plan: null };
-    let canRestore = true;
-    if (automationEnabled) {
+    // One inverter write per check (each takes 25–35s of the function's 60),
+    // and no second go at a login that was just refused.
+    let canWrite = true;
+    if (
+      scheduled &&
+      state.one_off_until &&
+      state.one_off_until.getTime() <= Date.now()
+    ) {
+      const ended = await endOneOff(userId, state, req);
+      outcome = { result: ended.result, plan: null };
+      canWrite = ended.result !== "applied" && !ended.paused;
+    }
+    let canRestore = canWrite;
+    if (automationEnabled && canWrite) {
       const charge = await checkCharge(userId, settings, state, trigger, req);
       outcome = charge.outcome;
-      // One inverter write per check (each takes 25–35s of the function's
-      // 60), and no second go at a login that was just refused.
       canRestore = outcome.result !== "applied" && !charge.paused;
     }
     if (

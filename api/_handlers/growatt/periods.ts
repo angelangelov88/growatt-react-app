@@ -46,7 +46,30 @@ const keepExportTimes = async (
       set export_restored_on = ${resetDay()}::date`;
 };
 
-const toSlotParam = ({ start, end }: PeriodsBody["slots"][number]) => ({
+type Slot = PeriodsBody["slots"][number];
+
+// Export until battery %: remembered so the 5-minute check turns the slot off
+// once it ends (today, UK time). It also marks Export every day's first check
+// done, so that check can't keep the one-off as the times to put back.
+const startOneOff = (tx: Tx, userId: string, { start, end }: Slot) => tx`
+  insert into private.automation_state as s
+    (user_id, one_off_until, one_off_slot, export_restored_on)
+  values (${userId},
+    ((now() at time zone 'Europe/London')::date + ${end}::time)
+      at time zone 'Europe/London',
+    ${`${start}-${end}`}, ${resetDay()}::date)
+  on conflict (user_id) do update set
+    one_off_until = excluded.one_off_until,
+    one_off_slot = excluded.one_off_slot, one_off_failed = false,
+    export_restored_on =
+      coalesce(s.export_restored_on, excluded.export_restored_on)`;
+
+// Other export times were applied, so there's no one-off to turn off.
+const forgetOneOff = (tx: Tx) =>
+  tx`update private.automation_state
+    set one_off_until = null, one_off_slot = null, one_off_failed = false`;
+
+const toSlotParam = ({ start, end }: Slot) => ({
   startHour: start.slice(0, 2),
   startMin: start.slice(3, 5),
   endHour: end.slice(0, 2),
@@ -79,6 +102,15 @@ const periodsHandler =
         return;
       }
       body = parsed.data;
+      if (body.oneOff && kind !== "discharge") {
+        sendError(
+          res,
+          400,
+          "invalid_input",
+          "Only export times can be one-off",
+        );
+        return;
+      }
     }
 
     const growatt = await loadGrowatt(user.userId);
@@ -118,7 +150,7 @@ const periodsHandler =
       return;
     }
 
-    const { powerRate, stopSOC, slots } = body;
+    const { powerRate, stopSOC, slots, oneOff } = body;
     const p: SlotParam[] = Array.from({ length: 6 }, (_, i) => {
       const slot = slots.at(i);
       return slot ? toSlotParam(slot) : null;
@@ -145,14 +177,20 @@ const periodsHandler =
     await withUser(user.userId, async (tx) => {
       // Automatic charging no longer knows what the inverter holds.
       if (kind === "charge") await recheckInverter(tx);
-      if (kind === "discharge" && !failure)
-        await keepExportTimes(tx, { powerRate, stopSOC, slots: slotsText });
+      if (kind === "discharge" && !failure) {
+        if (oneOff) await startOneOff(tx, user.userId, slots[0]);
+        else {
+          await keepExportTimes(tx, { powerRate, stopSOC, slots: slotsText });
+          await forgetOneOff(tx);
+        }
+      }
       await audit(tx, req, user.userId, "growatt_write", {
         kind,
         ok: !failure,
         powerRate,
         stopSOC,
         slots: slotsText,
+        ...(oneOff && { oneOff }),
       });
     });
     if (failure) {

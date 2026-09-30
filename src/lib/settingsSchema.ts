@@ -66,6 +66,23 @@ const exportPresetsSchema = z.object({
 // dashboard back after Growatt clears them each night.
 const dailyExportSchema = z.object({ enabled: z.boolean() });
 
+// PUT /api/settings?part=battery: what the Export until battery % button
+// works the end time out from. Growatt doesn't give either.
+const batterySchema = z.object({
+  // How much the battery holds, in kWh.
+  batteryKwh: z
+    .number("Enter a number")
+    .min(0.5, "At least 0.5 kWh")
+    .max(100, "At most 100 kWh")
+    .multipleOf(0.1, "Use at most 1 decimal place"),
+  // How fast it discharges at a 100% discharge rate, in kW.
+  maxDischargeKw: z
+    .number("Enter a number")
+    .min(0.1, "At least 0.1 kW")
+    .max(30, "At most 30 kW")
+    .multipleOf(0.01, "Use at most 2 decimal places"),
+});
+
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   windowEnabled: true,
@@ -99,6 +116,7 @@ export {
   settingsSchema,
   exportPresetsSchema,
   dailyExportSchema,
+  batterySchema,
   defaultSettings,
   defaultExportPresets,
 };
