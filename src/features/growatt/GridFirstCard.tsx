@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Preset } from "../../types/Api";
 import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
+import HoverTip from "../../components/HoverTip";
 import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
@@ -14,6 +15,8 @@ import {
   withCurrent,
 } from "./slotOptions";
 import useExportPresets from "./useExportPresets";
+import useSettings from "../settings/useSettings";
+import { GROWATT_RESET } from "../../lib/dailyExport";
 
 const PRESET_KEYS: Preset[] = ["high", "low"];
 
@@ -24,9 +27,12 @@ const GridFirstCard = ({
 }: GridFirstProps) => {
   const { showToast } = useToast();
   const presets = useExportPresets();
+  const isEveryDay = useSettings().data?.exportEveryDay ?? false;
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
+  // Nothing to remove: the loaded form has no export times.
+  const hasNoSlots = form.isLoaded && form.slots.length === 0;
 
   const handleApply = () => {
     setDischargeMutation.mutate(
@@ -51,7 +57,7 @@ const GridFirstCard = ({
     <div
       className={`rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6 transition-opacity ${isDisabled ? "opacity-60 pointer-events-none" : ""}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
+      <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-white">
@@ -65,6 +71,11 @@ const GridFirstCard = ({
               <ul>
                 <li>
                   <b>Load</b> shows what&apos;s on your inverter now.
+                </li>
+                <li>
+                  Growatt clears these times every night at {GROWATT_RESET}.
+                  With Export every day on in Settings, the times you apply here
+                  are put back a few minutes later.
                 </li>
                 <li>
                   <b>Disable All</b> removes all the times, so the battery
@@ -115,15 +126,26 @@ const GridFirstCard = ({
           >
             Load
           </button>
-          <button
-            onClick={() => {
-              form.disableAll("95", "20");
-            }}
-            disabled={isDisabled || !form.isLoaded}
-            className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          <HoverTip
+            tip={
+              hasNoSlots && !isDisabled
+                ? "There are no export times to disable."
+                : null
+            }
           >
-            Disable All
-          </button>
+            {(describedBy) => (
+              <button
+                onClick={() => {
+                  form.disableAll("95", "20");
+                }}
+                disabled={isDisabled || !form.isLoaded || hasNoSlots}
+                aria-describedby={describedBy}
+                className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Disable All
+              </button>
+            )}
+          </HoverTip>
         </div>
       </div>
 
@@ -208,6 +230,16 @@ const GridFirstCard = ({
           </div>
 
           <SlotList form={form} />
+
+          <p className="-mt-1 mb-4 text-xs text-gray-500">
+            {isEveryDay
+              ? `Export every day is on: the times you apply here are put back after Growatt clears them at ${GROWATT_RESET}. `
+              : `Growatt clears export times every night at ${GROWATT_RESET}. To keep them every day, turn on Export every day in `}
+            <Link to="/settings" className="text-violet-400 hover:underline">
+              Settings
+            </Link>
+            .
+          </p>
 
           <button
             onClick={handleApply}

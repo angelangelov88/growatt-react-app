@@ -1,3 +1,4 @@
+import { GROWATT_RESET } from "../../lib/dailyExport";
 import type { ActivityDescription } from "../../types/Activity";
 import type { ActivityEntry } from "../../types/Api";
 
@@ -29,13 +30,13 @@ const flag = (details: unknown, key: string) => {
 
 // "01:00-05:00, 18:30-19:00" → "01:00–05:00, 18:30–19:00". Empty slots are
 // left out.
-const formatSlots = (slots: string | undefined) => {
+const formatSlots = (slots: string | undefined, none = "no charge times") => {
   const real = (slots ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter((s) => s !== "" && s !== "00:00-00:00")
     .map((s) => s.replace("-", "–"));
-  return real.length > 0 ? real.join(", ") : "no charge times";
+  return real.length > 0 ? real.join(", ") : none;
 };
 
 // "power 100% · stop at 90%", with whichever of the two is there.
@@ -181,7 +182,7 @@ const describeActivity = ({
       const end = text(details, "chargeEnd");
       const automation = flag(details, "automationEnabled");
       return {
-        title: "Charge settings saved",
+        title: "Battery charging settings saved",
         detail: join([
           windowOn
             ? start && end && `Window ${start}–${end}`
@@ -201,12 +202,30 @@ const describeActivity = ({
           ? `${isExport ? "Export" : "Charge"} times changed`
           : `Couldn't change the ${isExport ? "export" : "charge"} times`,
         detail: join([
-          formatSlots(text(details, "slots")),
+          isExport
+            ? formatSlots(text(details, "slots"), "no export times")
+            : formatSlots(text(details, "slots")),
           ...powerAndStop(details),
         ]),
         failed: !ok,
       };
     }
+    // Daily export, after a save in Settings or Growatt's nightly reset.
+    case "export_restored":
+      return flag(details, "ok") === false
+        ? {
+            title: "Couldn't put your export times back",
+            detail: text(details, "message"),
+            failed: true,
+          }
+        : {
+            title: `Export times put back after Growatt's ${GROWATT_RESET} reset`,
+            detail: join([
+              formatSlots(text(details, "slots"), "no export times"),
+              ...powerAndStop(details),
+            ]),
+            failed: false,
+          };
     case "octopus_join": {
       const ok = flag(details, "ok") ?? true;
       return {
@@ -223,6 +242,14 @@ const describeActivity = ({
           describePreset(details, "high"),
           describePreset(details, "low"),
         ]),
+        failed: false,
+      };
+    case "daily_export_saved":
+      return {
+        title:
+          flag(details, "enabled") === false
+            ? "Export every day turned off"
+            : "Export every day turned on",
         failed: false,
       };
     case "automation_run":

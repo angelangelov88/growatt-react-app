@@ -62,6 +62,10 @@ const exportPresetsSchema = z.object({
   low: exportPresetSchema,
 });
 
+// PUT /api/settings?part=daily: put the export times last applied on the
+// dashboard back after Growatt clears them each night.
+const dailyExportSchema = z.object({ enabled: z.boolean() });
+
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   windowEnabled: true,
@@ -94,6 +98,7 @@ export {
   percentSchema,
   settingsSchema,
   exportPresetsSchema,
+  dailyExportSchema,
   defaultSettings,
   defaultExportPresets,
 };

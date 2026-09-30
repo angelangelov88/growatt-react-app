@@ -1,6 +1,7 @@
 import AutomationCard from "./AutomationCard";
 import ChargeSettingsCard from "./ChargeSettingsCard";
 import CredentialsCard from "./CredentialsCard";
+import DailyExportCard from "./DailyExportCard";
 import DangerZoneCard from "./DangerZoneCard";
 import ExportPresetsCard from "./ExportPresetsCard";
 import PasswordCard from "./PasswordCard";
@@ -11,6 +12,7 @@ const SettingsPage = () => (
     <h1 className="text-xl font-semibold text-white">Settings</h1>
     <AutomationCard />
     <ChargeSettingsCard />
+    <DailyExportCard />
     <ExportPresetsCard />
     <CredentialsCard />
     <PasswordCard />

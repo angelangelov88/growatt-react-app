@@ -1,5 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { exportPresetsSchema, settingsSchema } from "../src/lib/settingsSchema";
+import {
+  dailyExportSchema,
+  exportPresetsSchema,
+  settingsSchema,
+} from "../src/lib/settingsSchema";
 import type { ExportPresets } from "../src/types/Api";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
@@ -25,6 +29,8 @@ const presetDetails = ({ high, low }: ExportPresets) =>
 //   Growatt and Octopus credentials are saved. Leaves the presets alone.
 // PUT ?part=export ExportPresets → Settings. The Grid First preset buttons;
 //   leaves everything else alone.
+// PUT ?part=daily DailyExport → Settings. Turns Export every day on or off;
+//   on needs Growatt credentials. Leaves everything else alone.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "PUT"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
@@ -80,6 +86,53 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
         return readSettings(tx);
       }),
     );
+    return;
+  }
+
+  if (req.query.part === "daily") {
+    const daily = dailyExportSchema.safeParse(req.body);
+    if (!daily.success) {
+      sendError(
+        res,
+        400,
+        "invalid_input",
+        daily.error.issues[0]?.message ?? "Invalid input",
+      );
+      return;
+    }
+    const { enabled } = daily.data;
+    const saved = await withUser(userId, async (tx) => {
+      if (enabled) {
+        const rows = await tx`
+          select from private.user_credentials where provider = 'growatt'`;
+        if (rows.length === 0) return null;
+      }
+      // Off forgets the kept times, so turning it on again starts afresh.
+      await tx`
+        insert into private.user_settings (user_id, keep_export)
+        values (${userId}, ${enabled})
+        on conflict (user_id) do update set
+          keep_export = excluded.keep_export,
+          keep_export_power = null, keep_export_stop = null,
+          keep_export_slots = null`;
+      // The next check (within 5 minutes) keeps the export times on the
+      // inverter now.
+      if (enabled)
+        await tx`
+          update private.automation_state set export_restored_on = null`;
+      await audit(tx, req, userId, "daily_export_saved", { enabled });
+      return readSettings(tx);
+    });
+    if (!saved) {
+      sendError(
+        res,
+        409,
+        "credentials_missing",
+        "Save your Growatt details before turning on Export every day",
+      );
+      return;
+    }
+    res.json(saved);
     return;
   }
 

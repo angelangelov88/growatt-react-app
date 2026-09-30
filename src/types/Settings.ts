@@ -67,6 +67,8 @@ type ExportPresetFieldsProps = {
   isDefault: boolean;
 };
 
+type DailyExportSwitchProps = { saved: Settings };
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
@@ -80,4 +82,5 @@ export type {
   ExportPresetDrafts,
   ExportPresetsFormProps,
   ExportPresetFieldsProps,
+  DailyExportSwitchProps,
 };

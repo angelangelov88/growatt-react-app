@@ -15,6 +15,7 @@ import type { contactSchema } from "../lib/contactSchema";
 import type { periodsSchema } from "../lib/growattSchemas";
 import type { joinSchema } from "../lib/octopusSchemas";
 import type {
+  dailyExportSchema,
   exportPresetsSchema,
   settingsSchema,
 } from "../lib/settingsSchema";
@@ -87,8 +88,16 @@ type ExportPresets = z.infer<typeof exportPresetsSchema>;
 type ExportPreset = ExportPresets["high"];
 type Preset = keyof ExportPresets;
 
-// GET /api/settings, and what both PUTs return.
-type Settings = ChargeSettings & { exportPresets: ExportPresets };
+// PUT /api/settings?part=daily: Export every day on or off.
+type DailyExport = z.infer<typeof dailyExportSchema>;
+
+// GET /api/settings, and what the PUTs return. exportEveryDay: the export
+// times last applied on the dashboard are put back every night after
+// Growatt's 23:30 reset.
+type Settings = ChargeSettings & {
+  exportPresets: ExportPresets;
+  exportEveryDay: boolean;
+};
 
 // GET /api/automation: what automatic charging last did. Times are ISO
 // strings, null until it first happens.
@@ -186,6 +195,7 @@ export type {
   ExportPresets,
   ExportPreset,
   Preset,
+  DailyExport,
   Settings,
   AutomationStatus,
   CheckNowResult,
