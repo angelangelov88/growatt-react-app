@@ -2,20 +2,31 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import type { FocusEvent, PointerEvent } from "react";
 import type { InfoTipProps } from "../types/Common";
 
-const WIDTH = 288;
+const WIDTH = 320;
 const GUTTER = 16;
+const GAP = 8;
 
 // Opens on mouse hover and keyboard focus, and stays open after a click or tap
 // until the next one, a click outside, Tab away or Esc. The text is also the
 // button's description, so screen readers read it on focus.
+//
+// The box is fixed to the screen, so it never makes the page longer (which made
+// it jump at the bottom of the page). It opens below the icon, or above when
+// there's more room there, and scrolls inside itself if neither side fits.
 const InfoTip = ({ label, children }: InfoTipProps) => {
   const id = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  // Moves the box left or right so it stays inside the screen.
-  const [place, setPlace] = useState({ shift: 0, width: WIDTH });
+  const [place, setPlace] = useState({
+    top: 0,
+    left: 0,
+    width: WIDTH,
+    maxHeight: 0,
+    isAbove: false,
+  });
   const isOpen = isHovered || isFocused || isPinned;
 
   const close = () => {
@@ -24,22 +35,44 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
     setIsPinned(false);
   };
 
+  // Placed before it's painted, then kept next to the icon while the page
+  // scrolls or resizes.
   useLayoutEffect(() => {
     if (!isOpen) return;
     const measure = () => {
-      // The box is placed from the wrapper, not the button (it has a -m-1).
       const wrapper = wrapperRef.current;
-      if (!wrapper) return;
-      const screen = document.documentElement.clientWidth;
-      const width = Math.min(WIDTH, screen - GUTTER * 2);
-      const { left } = wrapper.getBoundingClientRect();
-      const clamped = Math.min(Math.max(left, GUTTER), screen - GUTTER - width);
-      setPlace({ shift: clamped - left, width });
+      const box = boxRef.current;
+      if (!wrapper || !box) return;
+      const { clientWidth, clientHeight } = document.documentElement;
+      const width = Math.min(WIDTH, clientWidth - GUTTER * 2);
+      // Its height at the new width; + 2 for the border.
+      box.style.width = `${String(width)}px`;
+      const height = box.scrollHeight + 2;
+      const icon = wrapper.getBoundingClientRect();
+      const below = clientHeight - icon.bottom - GAP - GUTTER;
+      const above = icon.top - GAP - GUTTER;
+      const isAbove = height > below && above > below;
+      const room = isAbove ? above : below;
+      setPlace({
+        top: isAbove ? icon.top - GAP - Math.min(height, room) : icon.bottom,
+        left: Math.min(
+          Math.max(icon.left, GUTTER),
+          clientWidth - GUTTER - width,
+        ),
+        width,
+        maxHeight: room,
+        isAbove,
+      });
     };
     measure();
     window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, {
+      capture: true,
+      passive: true,
+    });
     return () => {
       window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, { capture: true });
     };
   }, [isOpen]);
 
@@ -77,12 +110,18 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
     else setIsPinned(true);
   };
 
+  // Fades and slides a little towards the icon. Hidden with visibility, not
+  // display, so the fade out can finish and screen readers can still read it.
+  const motion = isOpen
+    ? "visible opacity-100 translate-y-0"
+    : `invisible opacity-0 ${place.isAbove ? "translate-y-1" : "-translate-y-1"}`;
+
   return (
     <div
       ref={wrapperRef}
       onPointerEnter={handleEnter}
       onPointerLeave={handleLeave}
-      className="relative inline-flex"
+      className="inline-flex"
     >
       <button
         type="button"
@@ -95,27 +134,33 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
         className="-m-1 p-1 rounded-full text-gray-500 hover:text-gray-300 focus-visible:outline-2 focus-visible:outline-violet-400 transition-colors"
       >
         <svg
-          viewBox="0 0 20 20"
-          fill="currentColor"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
           aria-hidden="true"
           className="h-4 w-4"
         >
-          <path
-            fillRule="evenodd"
-            d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.25v2.75a.75.75 0 0 0 1.5 0V10a1 1 0 0 0-1-1H9Z"
-            clipRule="evenodd"
-          />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5" />
+          <circle cx="12" cy="7.75" r="0.75" fill="currentColor" />
         </svg>
       </button>
-      {/* The top padding bridges the gap, so the mouse can move onto the box. */}
+      {/* The padding on the icon's side bridges the gap, so the mouse can move
+          onto the box. */}
       <div
         id={id}
         role="tooltip"
-        hidden={!isOpen}
-        style={{ left: place.shift, width: place.width }}
-        className="absolute top-full z-20 pt-2"
+        style={{ top: place.top, left: place.left }}
+        className={`fixed z-50 ${place.isAbove ? "pb-2" : "pt-2"} transition-[opacity,transform,visibility] duration-150 ease-out motion-reduce:transition-none ${motion}`}
       >
-        <div className="flex flex-col gap-2 rounded-xl border border-gray-700 bg-gray-800 p-3 text-left text-xs font-normal leading-relaxed text-gray-300 shadow-xl [&_b]:font-medium [&_b]:text-white [&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-1 [&_ul]:pl-4">
+        <div
+          ref={boxRef}
+          style={{ width: place.width, maxHeight: place.maxHeight }}
+          className="flex flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-gray-700 bg-gray-800 p-3 text-left text-xs font-normal leading-relaxed text-gray-300 shadow-xl [&_b]:font-medium [&_b]:text-white [&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-1 [&_ul]:pl-4"
+        >
           {children}
         </div>
       </div>
