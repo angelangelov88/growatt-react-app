@@ -1,7 +1,8 @@
+import { resetDay } from "../../../src/lib/dailyExport";
 import { periodsSchema } from "../../../src/lib/growattSchemas";
 import type { PeriodsBody } from "../../../src/types/Api";
 import type { SlotParam } from "../../../src/types/Growatt";
-import type { Handler } from "../../../src/types/Server";
+import type { Handler, Tx } from "../../../src/types/Server";
 import { audit } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { withUser } from "../../_lib/db";
@@ -27,6 +28,23 @@ const isOutage = (err: unknown) =>
   (err instanceof Error &&
     (err.name === "TimeoutError" ||
       err.message.startsWith("Unexpected response")));
+
+// Export every day: export times just written are the ones to put back after
+// Growatt's nightly reset. They're on the inverter now, so the next restore is
+// after tonight's.
+const keepExportTimes = async (
+  tx: Tx,
+  kept: { powerRate: number; stopSOC: number; slots: string },
+) => {
+  const updated = await tx`
+    update private.user_settings set keep_export_power = ${kept.powerRate},
+      keep_export_stop = ${kept.stopSOC}, keep_export_slots = ${kept.slots}
+    where keep_export`;
+  if (updated.count > 0)
+    await tx`
+      update private.automation_state
+      set export_restored_on = ${resetDay()}::date`;
+};
 
 const toSlotParam = ({ start, end }: PeriodsBody["slots"][number]) => ({
   startHour: start.slice(0, 2),
@@ -123,15 +141,18 @@ const periodsHandler =
     } catch (err) {
       failure = err ?? new Error("Write failed");
     }
+    const slotsText = slots.map((s) => `${s.start}-${s.end}`).join(", ");
     await withUser(user.userId, async (tx) => {
       // Automatic charging no longer knows what the inverter holds.
       if (kind === "charge") await recheckInverter(tx);
+      if (kind === "discharge" && !failure)
+        await keepExportTimes(tx, { powerRate, stopSOC, slots: slotsText });
       await audit(tx, req, user.userId, "growatt_write", {
         kind,
         ok: !failure,
         powerRate,
         stopSOC,
-        slots: slots.map((s) => `${s.start}-${s.end}`).join(", "),
+        slots: slotsText,
       });
     });
     if (failure) {

@@ -86,8 +86,9 @@ type AutomationStateRow = {
   inverter_checked_at: Date | null;
   last_code: string | null;
   paused: boolean;
-  // UK dates (YYYY-MM-DD) for daily export: the reset the export times were
-  // last checked after (null: check at once), and the last day a restore failure was logged.
+  // UK dates (YYYY-MM-DD) for Export every day: the reset the export times
+  // were last checked after (null: just turned on, keep what's on the inverter
+  // at once), and the last day a restore failure was logged.
   export_restored_on: string | null;
   export_failed_on: string | null;
 };

@@ -152,14 +152,9 @@ const describePlan = (plan: ChargePlan) =>
     .map(formatSlot)
     .join(", ");
 
-// True when the inverter already has exactly this plan, so there's nothing to write.
-const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
-  if (
-    String(current.powerRate) !== plan.powerRate ||
-    String(current.stopSOC) !== plan.stopSOC
-  )
-    return false;
-  const have = [
+// The inverter's enabled slots, as describePlan writes them.
+const describePeriods = (current: ChargePeriods) =>
+  [
     current.period1,
     current.period2,
     current.period3,
@@ -168,8 +163,19 @@ const planMatches = (plan: ChargePlan, current: ChargePeriods) => {
     current.period6,
   ]
     .filter((p) => p.enabled && p.start !== "--")
-    .map((p) => `${p.start}-${p.end}`);
-  return describePlan(plan) === have.join(", ");
-};
+    .map((p) => `${p.start}-${p.end}`)
+    .join(", ");
 
-export { toUkMinutes, buildChargePlan, describePlan, planMatches };
+// True when the inverter already has exactly this plan, so there's nothing to write.
+const planMatches = (plan: ChargePlan, current: ChargePeriods) =>
+  String(current.powerRate) === plan.powerRate &&
+  String(current.stopSOC) === plan.stopSOC &&
+  describePlan(plan) === describePeriods(current);
+
+export {
+  toUkMinutes,
+  buildChargePlan,
+  describePlan,
+  describePeriods,
+  planMatches,
+};

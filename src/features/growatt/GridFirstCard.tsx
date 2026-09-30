@@ -26,7 +26,7 @@ const GridFirstCard = ({
 }: GridFirstProps) => {
   const { showToast } = useToast();
   const presets = useExportPresets();
-  const isDailyExport = useSettings().data?.dailyExport.enabled ?? false;
+  const isEveryDay = useSettings().data?.exportEveryDay ?? false;
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setDischargeMutation.isPending;
   const isDisabled = isLoading || isApplying;
@@ -70,8 +70,9 @@ const GridFirstCard = ({
                   <b>Load</b> shows what&apos;s on your inverter now.
                 </li>
                 <li>
-                  Growatt clears these times every night at {GROWATT_RESET}. To
-                  keep times every day, set them in Settings.
+                  Growatt clears these times every night at {GROWATT_RESET}.
+                  With Export every day on in Settings, the times you apply here
+                  are put back a few minutes later.
                 </li>
                 <li>
                   <b>Disable All</b> removes all the times, so the battery
@@ -217,13 +218,11 @@ const GridFirstCard = ({
           <SlotList form={form} />
 
           <p className="-mt-1 mb-4 text-xs text-gray-500">
-            {isDailyExport
-              ? `Your daily export times are put back every night after ${GROWATT_RESET}, so changes here last until then. `
-              : `Growatt clears export times every night at ${GROWATT_RESET}. To keep them every day, `}
+            {isEveryDay
+              ? `Export every day is on: the times you apply here are put back after Growatt clears them at ${GROWATT_RESET}. `
+              : `Growatt clears export times every night at ${GROWATT_RESET}. To keep them every day, turn on Export every day in `}
             <Link to="/settings" className="text-violet-400 hover:underline">
-              {isDailyExport
-                ? "Change them in Settings"
-                : "set them in Settings"}
+              Settings
             </Link>
             .
           </p>

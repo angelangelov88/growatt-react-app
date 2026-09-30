@@ -1,3 +1,4 @@
+import { GROWATT_RESET } from "../../lib/dailyExport";
 import type { ActivityDescription } from "../../types/Activity";
 import type { ActivityEntry } from "../../types/Api";
 
@@ -213,12 +214,12 @@ const describeActivity = ({
     case "export_restored":
       return flag(details, "ok") === false
         ? {
-            title: "Couldn't set your daily export times",
+            title: "Couldn't put your export times back",
             detail: text(details, "message"),
             failed: true,
           }
         : {
-            title: "Daily export times set",
+            title: `Export times put back after Growatt's ${GROWATT_RESET} reset`,
             detail: join([
               formatSlots(text(details, "slots"), "no export times"),
               ...powerAndStop(details),
@@ -245,15 +246,10 @@ const describeActivity = ({
       };
     case "daily_export_saved":
       return {
-        title: "Export to grid settings saved",
-        detail:
+        title:
           flag(details, "enabled") === false
-            ? "Daily export off"
-            : join([
-                "Every day",
-                formatSlots(text(details, "slots"), "no export times"),
-                ...powerAndStop(details),
-              ]),
+            ? "Export every day turned off"
+            : "Export every day turned on",
         failed: false,
       };
     case "automation_run":

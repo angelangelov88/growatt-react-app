@@ -88,14 +88,15 @@ type ExportPresets = z.infer<typeof exportPresetsSchema>;
 type ExportPreset = ExportPresets["high"];
 type Preset = keyof ExportPresets;
 
-// PUT /api/settings?part=daily: the export times set every day.
+// PUT /api/settings?part=daily: Export every day on or off.
 type DailyExport = z.infer<typeof dailyExportSchema>;
-type ExportSlot = DailyExport["slots"][number];
 
-// GET /api/settings, and what the PUTs return.
+// GET /api/settings, and what the PUTs return. exportEveryDay: the export
+// times last applied on the dashboard are put back every night after
+// Growatt's 23:30 reset.
 type Settings = ChargeSettings & {
   exportPresets: ExportPresets;
-  dailyExport: DailyExport;
+  exportEveryDay: boolean;
 };
 
 // GET /api/automation: what automatic charging last did. Times are ISO
@@ -195,7 +196,6 @@ export type {
   ExportPreset,
   Preset,
   DailyExport,
-  ExportSlot,
   Settings,
   AutomationStatus,
   CheckNowResult,

@@ -62,30 +62,9 @@ const exportPresetsSchema = z.object({
   low: exportPresetSchema,
 });
 
-// One export slot. It may cross midnight (end before start), as on the
-// dashboard.
-const exportSlotSchema = z
-  .object({ start: timeSchema, end: timeSchema })
-  .refine((s) => s.start !== s.end, {
-    message: "It can't start and end at the same time",
-    path: ["end"],
-  });
-
-// PUT /api/settings?part=daily: export times put on the inverter every day,
-// and back after Growatt clears them each night. Kept while enabled is off.
-const dailyExportSchema = z
-  .object({
-    enabled: z.boolean(),
-    slots: z.array(exportSlotSchema).max(6, "The inverter has 6 slots"),
-    // Discharge power, percent of the inverter's maximum.
-    powerRate: stepSchema,
-    // Stop exporting at this battery level, in percent.
-    stopSOC: stepSchema,
-  })
-  .refine((d) => !d.enabled || d.slots.length > 0, {
-    message: "Add at least one slot",
-    path: ["slots"],
-  });
+// PUT /api/settings?part=daily: put the export times last applied on the
+// dashboard back after Growatt clears them each night.
+const dailyExportSchema = z.object({ enabled: z.boolean() });
 
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
@@ -114,13 +93,6 @@ const defaultExportPresets: z.infer<typeof exportPresetsSchema> = {
   },
 };
 
-const defaultDailyExport: z.infer<typeof dailyExportSchema> = {
-  enabled: false,
-  slots: [{ start: "18:00", end: "19:00" }],
-  powerRate: 95,
-  stopSOC: 20,
-};
-
 export {
   timeSchema,
   percentSchema,
@@ -129,5 +101,4 @@ export {
   dailyExportSchema,
   defaultSettings,
   defaultExportPresets,
-  defaultDailyExport,
 };

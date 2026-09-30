@@ -3,11 +3,11 @@ import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import { GROWATT_RESET } from "../../lib/dailyExport";
 import useAuth from "../auth/useAuth";
-import DailyExportForm from "./DailyExportForm";
+import DailyExportSwitch from "./DailyExportSwitch";
 import useSettings from "./useSettings";
 
-// Export times set every day. Growatt clears them each night, so the
-// 5-minute check puts them back. Only with Growatt.
+// Export every day. Growatt clears export times each night, so the 5-minute
+// check puts back the ones last applied on the dashboard. Only with Growatt.
 const DailyExportCard = () => {
   const { me } = useAuth();
   const settings = useSettings();
@@ -16,7 +16,7 @@ const DailyExportCard = () => {
     if (!(me?.hasGrowatt ?? false))
       return (
         <p className="text-sm text-gray-400">
-          Add your Growatt details below to use these.
+          Add your Growatt details below to use this.
         </p>
       );
     if (settings.isPending)
@@ -26,7 +26,7 @@ const DailyExportCard = () => {
         </p>
       );
     if (settings.isError) return <FormAlert message={settings.error.message} />;
-    return <DailyExportForm saved={settings.data} />;
+    return <DailyExportSwitch saved={settings.data} />;
   };
 
   return (
@@ -45,11 +45,12 @@ const DailyExportCard = () => {
           <p>
             Growatt clears your inverter&apos;s export times every night at{" "}
             {GROWATT_RESET}. With <b>Export every day</b> on, we check a few
-            minutes later and put these back.
+            minutes later and put back the ones you last applied on the
+            dashboard&apos;s Export to grid card.
           </p>
           <p>
-            Changes on the dashboard&apos;s Export to grid card still work, but
-            only until the next {GROWATT_RESET} reset.
+            When you turn it on, we keep the export times already on your
+            inverter. A slot across {GROWATT_RESET} pauses for about 5 minutes.
           </p>
         </InfoTip>
       </div>
