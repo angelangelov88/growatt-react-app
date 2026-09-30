@@ -1,8 +1,9 @@
 import {
+  defaultDailyExport,
   defaultExportPresets,
   defaultSettings,
 } from "../../src/lib/settingsSchema";
-import { keptPlan } from "../../src/lib/keepExport";
+import { textToSlots } from "../../src/lib/dailyExport";
 import type {
   AutomationStatus,
   Credentials,
@@ -23,6 +24,9 @@ type SettingsRow = {
   stop_soc: number | null;
   automation_enabled: boolean;
   keep_export: boolean;
+  keep_export_power: number | null;
+  keep_export_stop: number | null;
+  keep_export_slots: string | null;
 } & Record<`${Preset}_export_${"name" | "start" | "end"}`, string | null> &
   Record<`${Preset}_export_${"power" | "stop"}`, number | null>;
 
@@ -45,7 +49,8 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
       high_export_stop,
       low_export_name, low_export_start::text as low_export_start,
       low_export_end::text as low_export_end, low_export_power,
-      low_export_stop, keep_export
+      low_export_stop, keep_export, keep_export_power, keep_export_stop,
+      keep_export_slots
     from private.user_settings`;
   const row = rows.at(0);
   const preset = (key: Preset): ExportPreset => {
@@ -67,20 +72,16 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
     stopSOC: row?.stop_soc ?? defaultSettings.stopSOC,
     automationEnabled: row?.automation_enabled ?? false,
     exportPresets: { high: preset("high"), low: preset("low") },
-    keepExport: row?.keep_export ?? false,
+    dailyExport: {
+      enabled: row?.keep_export ?? false,
+      slots:
+        typeof row?.keep_export_slots === "string"
+          ? textToSlots(row.keep_export_slots)
+          : defaultDailyExport.slots,
+      powerRate: row?.keep_export_power ?? defaultDailyExport.powerRate,
+      stopSOC: row?.keep_export_stop ?? defaultDailyExport.stopSOC,
+    },
   };
-};
-
-// The export times "Keep every day" puts back, or null when it's off.
-const readKeptExport = async (tx: Tx) => {
-  const rows = await tx<{ power: number; stop: number; slots: string }[]>`
-    select keep_export_power as power, keep_export_stop as stop,
-      keep_export_slots as slots
-    from private.user_settings
-    where keep_export and keep_export_power is not null
-      and keep_export_stop is not null and keep_export_slots is not null`;
-  const row = rows.at(0);
-  return row ? keptPlan(row.power, row.stop, row.slots) : null;
 };
 
 // What's saved, never the secrets.
@@ -125,10 +126,4 @@ const recheckInverter = (tx: Tx, { unpause = false } = {}) =>
   tx`update private.automation_state set inverter_checked_at = null,
     paused = paused and ${!unpause}`;
 
-export {
-  readSettings,
-  readKeptExport,
-  readStatus,
-  readAutomationStatus,
-  recheckInverter,
-};
+export { readSettings, readStatus, readAutomationStatus, recheckInverter };

@@ -4,7 +4,7 @@ import {
   describePlan,
   planMatches,
 } from "../../src/lib/chargePlan";
-import { resetDay } from "../../src/lib/keepExport";
+import { dailyPlan, resetDay } from "../../src/lib/dailyExport";
 import {
   OctopusError,
   fetchPlannedDispatches,
@@ -24,7 +24,7 @@ import { octopusMessage } from "../_handlers/octopus/connect";
 import { audit } from "./audit";
 import { withUser } from "./db";
 import { loadGrowatt, loadOctopus } from "./userConfig";
-import { readKeptExport, readSettings } from "./userData";
+import { readSettings } from "./userData";
 
 // How often the inverter is read even when the plan hasn't changed, in case it
 // was changed some other way (Growatt's own app, say).
@@ -236,24 +236,23 @@ const checkCharge = async (
   }
 };
 
-// "Keep every day": after Growatt's nightly reset, reads the export times and
-// writes the saved ones back if they've gone. Changes go in the audit log, and
-// a failure once a day. A failed check is tried again 5 minutes later, except
-// a refused login, which waits for the next reset so the account can't get
-// locked.
+// Daily export: after Growatt's nightly reset (or a save in Settings), reads
+// the export times and writes the user's back if they differ. Changes go in
+// the audit log, and a failure once a day. A failed check is tried again 5
+// minutes later, except a refused login, which waits for the next reset so the
+// account can't get locked.
 const restoreExport = async (
   userId: string,
+  settings: Settings,
   state: AutomationStateRow,
   req: VercelRequest | null,
 ): Promise<AutomationResult> => {
   const day = resetDay();
-  const [plan, growatt] = await Promise.all([
-    withUser(userId, readKeptExport),
-    loadGrowatt(userId),
-  ]);
+  const plan = dailyPlan(settings.dailyExport);
+  const growatt = await loadGrowatt(userId);
   const markDone = (tx: Tx) =>
     tx`update private.automation_state set export_restored_on = ${day}::date`;
-  if (!plan || !growatt) {
+  if (!growatt) {
     await withUser(userId, markDone);
     return "unchanged";
   }
@@ -294,7 +293,7 @@ const restoreExport = async (
   }
 };
 
-// Runs whichever of automatic charging and "Keep every day" the user has on,
+// Runs whichever of automatic charging and daily export the user has on,
 // holding the lease so only one check talks to their inverter at a time.
 const check = async (
   userId: string,
@@ -302,7 +301,8 @@ const check = async (
   req: VercelRequest | null,
 ): Promise<AutomationOutcome> => {
   const settings = await withUser(userId, readSettings);
-  if (!settings.automationEnabled && !settings.keepExport)
+  const isDailyExport = settings.dailyExport.enabled;
+  if (!settings.automationEnabled && !isDailyExport)
     return { result: "skipped", plan: null };
   const state = await takeLease(userId);
   if (!state) return { result: "busy", plan: null };
@@ -321,11 +321,11 @@ const check = async (
       canRestore = outcome.result !== "applied" && !charge.paused;
     }
     if (
-      settings.keepExport &&
+      isDailyExport &&
       canRestore &&
       state.export_restored_on !== resetDay()
     ) {
-      const result = await restoreExport(userId, state, req);
+      const result = await restoreExport(userId, settings, state, req);
       if (!settings.automationEnabled) outcome = { result, plan: null };
     }
     return outcome;
@@ -339,7 +339,7 @@ const check = async (
 
 // One automation check for one user: asks Octopus for their slots, works out
 // the charge plan, and sets the inverter if it differs; and after Growatt's
-// 23:30 reset, puts their kept export times back. The scheduled check
+// 23:30 reset, puts their daily export times back. The scheduled check
 // skips paused users and trusts what it last saw on the inverter for up to 3
 // hours; Check now always reads the inverter. req: the user's request, for the
 // audit log's IP (null for the schedule). Never throws.

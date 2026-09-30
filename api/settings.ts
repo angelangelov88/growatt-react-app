@@ -1,5 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { exportPresetsSchema, settingsSchema } from "../src/lib/settingsSchema";
+import { slotsToText } from "../src/lib/dailyExport";
+import {
+  dailyExportSchema,
+  exportPresetsSchema,
+  settingsSchema,
+} from "../src/lib/settingsSchema";
 import type { ExportPresets } from "../src/types/Api";
 import { audit } from "./_lib/audit";
 import { checkOrigin } from "./_lib/csrf";
@@ -25,6 +30,8 @@ const presetDetails = ({ high, low }: ExportPresets) =>
 //   Growatt and Octopus credentials are saved. Leaves the presets alone.
 // PUT ?part=export ExportPresets → Settings. The Grid First preset buttons;
 //   leaves everything else alone.
+// PUT ?part=daily DailyExport → Settings. Export times set every day; turning
+//   it on needs Growatt credentials. Leaves everything else alone.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "PUT"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
@@ -80,6 +87,58 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
         return readSettings(tx);
       }),
     );
+    return;
+  }
+
+  if (req.query.part === "daily") {
+    const daily = dailyExportSchema.safeParse(req.body);
+    if (!daily.success) {
+      sendError(
+        res,
+        400,
+        "invalid_input",
+        daily.error.issues[0]?.message ?? "Invalid input",
+      );
+      return;
+    }
+    const { enabled, powerRate, stopSOC } = daily.data;
+    const slots = slotsToText(daily.data.slots);
+    const saved = await withUser(userId, async (tx) => {
+      if (enabled) {
+        const rows = await tx`
+          select from private.user_credentials where provider = 'growatt'`;
+        if (rows.length === 0) return null;
+      }
+      await tx`
+        insert into private.user_settings
+          (user_id, keep_export, keep_export_power, keep_export_stop,
+            keep_export_slots)
+        values (${userId}, ${enabled}, ${powerRate}, ${stopSOC}, ${slots})
+        on conflict (user_id) do update set
+          keep_export = excluded.keep_export,
+          keep_export_power = excluded.keep_export_power,
+          keep_export_stop = excluded.keep_export_stop,
+          keep_export_slots = excluded.keep_export_slots`;
+      // The next check (within 5 minutes) sets them, not just after 23:30.
+      await tx`update private.automation_state set export_restored_on = null`;
+      await audit(tx, req, userId, "daily_export_saved", {
+        enabled,
+        powerRate,
+        stopSOC,
+        slots,
+      });
+      return readSettings(tx);
+    });
+    if (!saved) {
+      sendError(
+        res,
+        409,
+        "credentials_missing",
+        "Save your Growatt details before turning on daily export",
+      );
+      return;
+    }
+    res.json(saved);
     return;
   }
 

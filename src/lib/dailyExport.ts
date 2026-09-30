@@ -1,10 +1,10 @@
-import type { SlotParam } from "../types/Growatt";
+import type { DailyExport, ExportSlot } from "../types/Api";
 import type { ChargePlan, Slots } from "../types/Octopus";
 import { toUkMinutes } from "./chargePlan";
 
 // Growatt clears the inverter's Grid First (export) times every night at
-// 23:30 UK time. "Keep every day" puts the user's saved ones back from a
-// minute later.
+// 23:30 UK time. The daily export setting puts the user's back from a minute
+// later.
 const GROWATT_RESET = "23:30";
 const RESTORE_FROM = 23 * 60 + 31;
 
@@ -20,29 +20,37 @@ const resetDay = (now = new Date()) => {
   return ukDate.format(new Date(now.getTime() - (minutes + 1) * 60_000));
 };
 
-// "18:00-19:00, 20:00-22:15" (as describePlan writes it) back into a plan.
-const keptPlan = (powerRate: number, stopSOC: number, slots: string) => {
-  const parsed = slots
+// Stored as text, as describePlan writes it: "18:00-19:00, 20:00-22:15".
+const slotsToText = (slots: ExportSlot[]) =>
+  slots.map((s) => `${s.start}-${s.end}`).join(", ");
+
+const textToSlots = (text: string): ExportSlot[] =>
+  text
     .split(", ")
     .filter(Boolean)
-    .map((s): SlotParam => {
+    .map((s) => {
       const [start, end] = s.split("-");
+      return { start, end };
+    });
+
+// The daily export times as a plan for the inverter.
+const dailyPlan = ({ powerRate, stopSOC, slots }: DailyExport) => {
+  const plan: ChargePlan = {
+    powerRate: String(powerRate),
+    stopSOC: String(stopSOC),
+    slots: Array.from({ length: 6 }, (_, i) => {
+      if (i >= slots.length) return null;
+      const { start, end } = slots[i];
       return {
         startHour: start.slice(0, 2),
         startMin: start.slice(3, 5),
         endHour: end.slice(0, 2),
         endMin: end.slice(3, 5),
       };
-    });
-  const plan: ChargePlan = {
-    powerRate: String(powerRate),
-    stopSOC: String(stopSOC),
-    slots: Array.from({ length: 6 }, (_, i) =>
-      i < parsed.length ? parsed[i] : null,
-    ) as Slots,
+    }) as Slots,
     skipped: 0,
   };
   return plan;
 };
 
-export { GROWATT_RESET, resetDay, keptPlan };
+export { GROWATT_RESET, resetDay, slotsToText, textToSlots, dailyPlan };

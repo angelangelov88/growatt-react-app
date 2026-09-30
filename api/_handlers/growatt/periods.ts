@@ -1,8 +1,7 @@
 import { periodsSchema } from "../../../src/lib/growattSchemas";
-import { resetDay } from "../../../src/lib/keepExport";
 import type { PeriodsBody } from "../../../src/types/Api";
 import type { SlotParam } from "../../../src/types/Growatt";
-import type { Handler, Tx } from "../../../src/types/Server";
+import type { Handler } from "../../../src/types/Server";
 import { audit } from "../../_lib/audit";
 import { checkOrigin } from "../../_lib/csrf";
 import { withUser } from "../../_lib/db";
@@ -28,33 +27,6 @@ const isOutage = (err: unknown) =>
   (err instanceof Error &&
     (err.name === "TimeoutError" ||
       err.message.startsWith("Unexpected response")));
-
-// "Keep every day": saves the export times just written to be put back after
-// Growatt's nightly reset, or turns it off. They're on the inverter now, so
-// the next restore is after tonight's reset.
-const saveKeptExport = async (
-  tx: Tx,
-  userId: string,
-  kept: { keep: boolean; powerRate: number; stopSOC: number; slots: string },
-) => {
-  await tx`
-    insert into private.user_settings
-      (user_id, keep_export, keep_export_power, keep_export_stop,
-        keep_export_slots)
-    values (${userId}, ${kept.keep}, ${kept.keep ? kept.powerRate : null},
-      ${kept.keep ? kept.stopSOC : null}, ${kept.keep ? kept.slots : null})
-    on conflict (user_id) do update set
-      keep_export = excluded.keep_export,
-      keep_export_power = excluded.keep_export_power,
-      keep_export_stop = excluded.keep_export_stop,
-      keep_export_slots = excluded.keep_export_slots`;
-  if (kept.keep)
-    await tx`
-      insert into private.automation_state (user_id, export_restored_on)
-      values (${userId}, ${resetDay()})
-      on conflict (user_id) do update set
-        export_restored_on = excluded.export_restored_on`;
-};
 
 const toSlotParam = ({ start, end }: PeriodsBody["slots"][number]) => ({
   startHour: start.slice(0, 2),
@@ -128,7 +100,7 @@ const periodsHandler =
       return;
     }
 
-    const { powerRate, stopSOC, slots, keep } = body;
+    const { powerRate, stopSOC, slots } = body;
     const p: SlotParam[] = Array.from({ length: 6 }, (_, i) => {
       const slot = slots.at(i);
       return slot ? toSlotParam(slot) : null;
@@ -151,24 +123,15 @@ const periodsHandler =
     } catch (err) {
       failure = err ?? new Error("Write failed");
     }
-    const slotsText = slots.map((s) => `${s.start}-${s.end}`).join(", ");
     await withUser(user.userId, async (tx) => {
       // Automatic charging no longer knows what the inverter holds.
       if (kind === "charge") await recheckInverter(tx);
-      if (kind === "discharge" && keep !== undefined && !failure)
-        await saveKeptExport(tx, user.userId, {
-          keep: keep && slots.length > 0,
-          powerRate,
-          stopSOC,
-          slots: slotsText,
-        });
       await audit(tx, req, user.userId, "growatt_write", {
         kind,
         ok: !failure,
         powerRate,
         stopSOC,
-        slots: slotsText,
-        ...(kind === "discharge" && keep !== undefined && { keep }),
+        slots: slots.map((s) => `${s.start}-${s.end}`).join(", "),
       });
     });
     if (failure) {

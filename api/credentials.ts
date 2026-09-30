@@ -153,7 +153,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
         delete from private.user_credentials where provider = ${provider.data}`;
       if (deleted.count > 0) {
         // Automation needs both, so it stops rather than failing every run.
-        // Keeping the export times needs Growatt.
+        // Daily export needs Growatt.
         await tx`
           update private.user_settings set automation_enabled = false,
             keep_export = keep_export and ${provider.data !== "growatt"}`;

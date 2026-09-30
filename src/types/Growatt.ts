@@ -8,13 +8,8 @@ type SlotParam = {
 } | null;
 
 // Battery First or Grid First values to write, as the forms hold them. Empty
-// slots are null. keep: export times only, see periodsSchema.
-type PeriodsInput = {
-  powerRate: string;
-  stopSOC: string;
-  slots: SlotParam[];
-  keep?: boolean;
-};
+// slots are null.
+type PeriodsInput = { powerRate: string; stopSOC: string; slots: SlotParam[] };
 
 type ChargePeriod = { start: string; end: string; enabled: boolean };
 type ChargePeriods = {

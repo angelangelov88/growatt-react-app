@@ -1,6 +1,5 @@
 import type { ActivityDescription } from "../../types/Activity";
 import type { ActivityEntry } from "../../types/Api";
-import { GROWATT_RESET } from "../../lib/keepExport";
 
 // Turns activity log entries into words. details comes from the database as
 // JSON and has changed over time, so every field is read defensively.
@@ -197,7 +196,6 @@ const describeActivity = ({
     case "growatt_write": {
       const isExport = text(details, "kind") === "discharge";
       const ok = flag(details, "ok") ?? true;
-      const keep = flag(details, "keep");
       return {
         title: ok
           ? `${isExport ? "Export" : "Charge"} times changed`
@@ -207,25 +205,21 @@ const describeActivity = ({
             ? formatSlots(text(details, "slots"), "no export times")
             : formatSlots(text(details, "slots")),
           ...powerAndStop(details),
-          keep !== undefined && `keep every day ${keep ? "on" : "off"}`,
         ]),
         failed: !ok,
       };
     }
+    // Daily export, after a save in Settings or Growatt's nightly reset.
     case "export_restored":
       return flag(details, "ok") === false
         ? {
-            title: "Couldn't put your export times back",
-            detail: join([
-              `After Growatt's ${GROWATT_RESET} reset`,
-              text(details, "message"),
-            ]),
+            title: "Couldn't set your daily export times",
+            detail: text(details, "message"),
             failed: true,
           }
         : {
-            title: "Export times put back",
+            title: "Daily export times set",
             detail: join([
-              `After Growatt's ${GROWATT_RESET} reset`,
               formatSlots(text(details, "slots"), "no export times"),
               ...powerAndStop(details),
             ]),
@@ -247,6 +241,19 @@ const describeActivity = ({
           describePreset(details, "high"),
           describePreset(details, "low"),
         ]),
+        failed: false,
+      };
+    case "daily_export_saved":
+      return {
+        title: "Export to grid settings saved",
+        detail:
+          flag(details, "enabled") === false
+            ? "Daily export off"
+            : join([
+                "Every day",
+                formatSlots(text(details, "slots"), "no export times"),
+                ...powerAndStop(details),
+              ]),
         failed: false,
       };
     case "automation_run":

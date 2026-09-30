@@ -1,4 +1,5 @@
 import type {
+  DailyExport,
   ExportPreset,
   MfaEnrollment,
   Preset,
@@ -67,6 +68,14 @@ type ExportPresetFieldsProps = {
   isDefault: boolean;
 };
 
+type DailyExportFormProps = { saved: Settings };
+
+// The daily export times as the form holds them: the dropdowns give strings.
+type DailyExportDraft = Omit<DailyExport, "powerRate" | "stopSOC"> & {
+  powerRate: string;
+  stopSOC: string;
+};
+
 export type {
   MfaSetupProps,
   MfaTurnOffProps,
@@ -80,4 +89,6 @@ export type {
   ExportPresetDrafts,
   ExportPresetsFormProps,
   ExportPresetFieldsProps,
+  DailyExportFormProps,
+  DailyExportDraft,
 };

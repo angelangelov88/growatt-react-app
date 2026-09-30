@@ -1,4 +1,4 @@
--- 0010_keep_export: "Keep every day" for export times.
+-- 0010_keep_export: daily export times (Settings → Export to grid settings).
 --
 -- Growatt clears the inverter's Grid First (export) times every night at
 -- 23:30. With keep_export on, the 5-minute check reads them after the reset
@@ -6,7 +6,7 @@
 -- without automatic charging (or Octopus).
 -- app_server's existing table grants already cover the new columns.
 
--- The export times to put back, saved with each Apply that has keep on.
+-- The daily export times, kept while keep_export is off.
 -- slots: e.g. '18:00-19:00, 20:00-22:15'.
 alter table private.user_settings
   add column keep_export boolean not null default false,
