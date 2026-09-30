@@ -11,6 +11,7 @@ import {
   SOC_OPTIONS,
   selectClass,
   timeToSlot,
+  withCurrent,
 } from "./slotOptions";
 import useExportPresets from "./useExportPresets";
 
@@ -173,7 +174,7 @@ const GridFirstCard = ({
                 }}
                 className={selectClass}
               >
-                {RATE_OPTIONS.map((v) => (
+                {withCurrent(RATE_OPTIONS, form.powerRate).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>
@@ -191,7 +192,7 @@ const GridFirstCard = ({
                 }}
                 className={selectClass}
               >
-                {SOC_OPTIONS.map((v) => (
+                {withCurrent(SOC_OPTIONS, form.stopSOC).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>

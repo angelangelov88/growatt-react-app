@@ -1,15 +1,24 @@
 import FormAlert from "../../components/FormAlert";
 import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
+import useAuth from "../auth/useAuth";
 import ChargeSettingsForm from "./ChargeSettingsForm";
 import useSettings from "./useSettings";
 
 // How the inverter charges from the grid. Used by automatic charging and by
-// the green button on the dashboard's Octopus card.
+// the green button on the dashboard's Octopus card, so only with Octopus.
 const ChargeSettingsCard = () => {
+  const { me } = useAuth();
   const settings = useSettings();
 
   const renderBody = () => {
+    if (!(me?.hasOctopus ?? false))
+      return (
+        <p className="text-sm text-gray-400">
+          These are used with your Octopus slots. Add your Octopus details below
+          to use them.
+        </p>
+      );
     if (settings.isPending)
       return (
         <p className="flex items-center gap-2 text-sm text-gray-400">

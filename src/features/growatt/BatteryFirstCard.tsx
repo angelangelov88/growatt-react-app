@@ -4,9 +4,15 @@ import useToast from "../../contexts/useToast";
 import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
-import useSettings from "../settings/useSettings";
 import SlotList from "./SlotList";
-import { RATE_OPTIONS, SOC_OPTIONS, selectClass } from "./slotOptions";
+import {
+  RATE_OPTIONS,
+  SOC_OPTIONS,
+  selectClass,
+  timeToSlot,
+  withCurrent,
+} from "./slotOptions";
+import useChargeSettings from "./useChargeSettings";
 
 const BatteryFirstCard = ({
   form,
@@ -14,13 +20,42 @@ const BatteryFirstCard = ({
   setChargePeriodsMutation,
 }: BatteryFirstProps) => {
   const { showToast } = useToast();
-  const { data: settings } = useSettings();
+  const settings = useChargeSettings();
   const { read, verify, isReading: isLoading, isVerifying } = reader;
   const isApplying = setChargePeriodsMutation.isPending;
   const isDisabled = isLoading || isApplying;
   // Automatic charging sets Battery First itself, so it can only be viewed.
-  const isAutomatic = settings?.automationEnabled ?? false;
+  const isAutomatic = settings.automationEnabled;
   const selectDisabledClass = `${selectClass} disabled:opacity-50 disabled:cursor-not-allowed`;
+
+  // The saved Battery First settings. Without the window there are no times to
+  // fill in, so the ones in the form stay.
+  const { windowEnabled, chargeStart, chargeEnd, powerRate, stopSOC } =
+    settings;
+  const fillMySettings = () => {
+    if (windowEnabled)
+      form.setDefaults(
+        String(powerRate),
+        String(stopSOC),
+        timeToSlot(chargeStart, chargeEnd),
+      );
+    else {
+      form.setPowerRate(String(powerRate));
+      form.setStopSOC(String(stopSOC));
+    }
+  };
+  // True when the form already shows them, so the button would change nothing.
+  const mySlot = timeToSlot(chargeStart, chargeEnd);
+  const [onlySlot] = form.slots;
+  const hasMySettings =
+    form.powerRate === String(powerRate) &&
+    form.stopSOC === String(stopSOC) &&
+    (!windowEnabled ||
+      (form.slots.length === 1 &&
+        onlySlot.startHour === mySlot.startHour &&
+        onlySlot.startMin === mySlot.startMin &&
+        onlySlot.endHour === mySlot.endHour &&
+        onlySlot.endMin === mySlot.endMin));
 
   const handleApply = () => {
     setChargePeriodsMutation.mutate(
@@ -66,8 +101,18 @@ const BatteryFirstCard = ({
                     <b>Load</b> shows what&apos;s on your inverter now.
                   </li>
                   <li>
-                    <b>Defaults</b> fills in 01:00–05:00, 35% power, stop at
-                    95%.
+                    {windowEnabled ? (
+                      <>
+                        <b>Apply my settings</b> fills in your saved Battery
+                        First settings: {chargeStart}–{chargeEnd}, {powerRate}%
+                        power, stop at {stopSOC}%.
+                      </>
+                    ) : (
+                      <>
+                        <b>Apply my settings</b> sets your saved {powerRate}%
+                        power and stop at {stopSOC}%, and keeps the times.
+                      </>
+                    )}
                   </li>
                   <li>
                     <b>Charge rate</b> is how fast it charges.{" "}
@@ -111,18 +156,13 @@ const BatteryFirstCard = ({
             Load
           </button>
           <button
-            onClick={() => {
-              form.setDefaults("35", "95", {
-                startHour: "01",
-                startMin: "00",
-                endHour: "05",
-                endMin: "00",
-              });
-            }}
-            disabled={isDisabled || !form.isLoaded || isAutomatic}
+            onClick={fillMySettings}
+            disabled={
+              isDisabled || !form.isLoaded || isAutomatic || hasMySettings
+            }
             className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Defaults
+            Apply my settings
           </button>
         </div>
       </div>
@@ -164,7 +204,7 @@ const BatteryFirstCard = ({
                 disabled={isAutomatic}
                 className={selectDisabledClass}
               >
-                {RATE_OPTIONS.map((v) => (
+                {withCurrent(RATE_OPTIONS, form.powerRate).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>
@@ -183,7 +223,7 @@ const BatteryFirstCard = ({
                 disabled={isAutomatic}
                 className={selectDisabledClass}
               >
-                {SOC_OPTIONS.map((v) => (
+                {withCurrent(SOC_OPTIONS, form.stopSOC).map((v) => (
                   <option key={v} value={v}>
                     {v}%
                   </option>
