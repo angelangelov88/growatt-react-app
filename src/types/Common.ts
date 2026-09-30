@@ -58,6 +58,13 @@ type SubmitButtonProps = {
 
 type FormAlertProps = { message: string; tone?: "error" | "success" };
 
+// The header's menu on small screens: the signed-in user's email and links.
+type AccountMenuProps = {
+  email: string | null | undefined;
+  onLogout: () => void;
+  isLoggingOut: boolean;
+};
+
 // An ⓘ button that explains a card. label names the card, e.g. "Battery First".
 type InfoTipProps = { label: string; children: ReactNode };
 
@@ -73,4 +80,5 @@ export type {
   SubmitButtonProps,
   FormAlertProps,
   InfoTipProps,
+  AccountMenuProps,
 };
