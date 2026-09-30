@@ -165,7 +165,8 @@ const ChargeSettingsForm = ({ saved }: ChargeSettingsFormProps) => {
             />
           </div>
           <p className="-mt-2 text-xs text-gray-500">
-            UK time, every night. It has to end before midnight.
+            UK time, every night. Recommended: 23:30–05:30, Octopus&apos;s cheap
+            overnight rate.
           </p>
         </>
       )}
