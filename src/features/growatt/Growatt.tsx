@@ -5,6 +5,7 @@ import type { SlotState } from "../../types/Growatt";
 import type { GrowattProps } from "../../types/GrowattForm";
 import type { PowerDownSession } from "../../types/Octopus";
 import useInverterRead from "./useInverterRead";
+import InfoTip from "../../components/InfoTip";
 import BatteryFirstCard from "./BatteryFirstCard";
 import GridFirstCard from "./GridFirstCard";
 import useExportPresets from "./useExportPresets";
@@ -136,7 +137,17 @@ const Growatt = ({ showSessions }: GrowattProps) => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-400">Inverter settings</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-gray-400">Inverter settings</p>
+          <InfoTip label="Load all">
+            <p>
+              <b>Load all</b> gets the current settings from your inverter for
+              all the cards below
+              {showSessions ? ", and today's Power Down sessions" : ""}. Nothing
+              is changed.
+            </p>
+          </InfoTip>
+        </div>
         <button
           onClick={readAll}
           disabled={isBusy}

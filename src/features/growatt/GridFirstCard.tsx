@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Preset } from "../../types/Api";
 import type { GridFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
+import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
 import SlotList from "./SlotList";
@@ -52,6 +53,32 @@ const GridFirstCard = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-white">Grid First</h2>
+          <InfoTip label="Grid First">
+            <p>
+              Your battery powers your home and sends what&apos;s left to the
+              grid during these times. Use it when exporting pays well.
+            </p>
+            <ul>
+              <li>
+                <b>Load</b> shows what&apos;s on your inverter now.
+              </li>
+              <li>
+                <b>Disable All</b> removes all the times, so the battery
+                won&apos;t export.
+              </li>
+              <li>
+                <b>The preset buttons</b> fill in your saved times, power and
+                stop level. You can change them in Settings.
+              </li>
+              <li>
+                <b>Discharge rate</b> is how fast the battery sends power out.{" "}
+                <b>Stop at battery</b> is the level where it stops.
+              </li>
+            </ul>
+            <p>
+              Nothing changes on your inverter until you press Apply Grid First.
+            </p>
+          </InfoTip>
           {isLoading && (
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <Spinner />

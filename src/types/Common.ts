@@ -58,6 +58,9 @@ type SubmitButtonProps = {
 
 type FormAlertProps = { message: string; tone?: "error" | "success" };
 
+// An ⓘ button that explains a card. label names the card, e.g. "Battery First".
+type InfoTipProps = { label: string; children: ReactNode };
+
 export type {
   SpinnerProps,
   AppLogoProps,
@@ -69,4 +72,5 @@ export type {
   CodeFieldProps,
   SubmitButtonProps,
   FormAlertProps,
+  InfoTipProps,
 };

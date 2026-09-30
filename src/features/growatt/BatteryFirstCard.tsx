@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import type { BatteryFirstProps } from "../../types/GrowattForm";
 import useToast from "../../contexts/useToast";
+import InfoTip from "../../components/InfoTip";
 import Spinner from "../../components/Spinner";
 import NotReadYet from "../../components/NotReadYet";
 import useSettings from "../settings/useSettings";
@@ -47,6 +48,39 @@ const BatteryFirstCard = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="text-base font-semibold text-white">Battery First</h2>
+          <InfoTip label="Battery First">
+            {isAutomatic ? (
+              <p>
+                Your battery charges from the grid during these times. Automatic
+                charging sets them for you, so you can only view them here.{" "}
+                <b>Load</b> shows what&apos;s on your inverter now.
+              </p>
+            ) : (
+              <>
+                <p>
+                  Your battery charges from the grid during these times. Use it
+                  for cheap-rate hours.
+                </p>
+                <ul>
+                  <li>
+                    <b>Load</b> shows what&apos;s on your inverter now.
+                  </li>
+                  <li>
+                    <b>Defaults</b> fills in 01:00–05:00, 35% power, stop at
+                    95%.
+                  </li>
+                  <li>
+                    <b>Charge rate</b> is how fast it charges.{" "}
+                    <b>Stop at battery</b> is the level where charging stops.
+                  </li>
+                </ul>
+                <p>
+                  Nothing changes on your inverter until you press Apply Battery
+                  First.
+                </p>
+              </>
+            )}
+          </InfoTip>
           {isLoading && (
             <span className="flex items-center gap-1.5 text-xs text-gray-400">
               <Spinner />
