@@ -26,7 +26,10 @@ const BatteryCard = () => {
       className="rounded-2xl bg-gray-900 border border-gray-800 p-6"
     >
       <div className="flex items-center gap-2 mb-1">
-        <h2 id="battery-heading" className="text-base font-semibold text-white">
+        <h2
+          id="battery-heading"
+          className="text-base font-semibold text-strong"
+        >
           Your battery
         </h2>
         <InfoTip label="Your battery">

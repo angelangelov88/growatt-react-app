@@ -14,7 +14,7 @@ const CheckNow = ({ onChecked }: CheckNowProps) => {
       <button
         onClick={checkNow}
         disabled={isChecking}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         {isChecking && <Spinner className="text-white" />}
         {isChecking ? "Checking… (up to 30s)" : "Check now"}

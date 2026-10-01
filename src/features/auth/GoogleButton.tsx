@@ -14,8 +14,8 @@ const GoogleButton = ({
       disabled ? undefined : `/api/auth/google${next ? `?next=${next}` : ""}`
     }
     aria-disabled={disabled || undefined}
-    className={`w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium bg-white text-gray-900 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400 ${
-      disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
+    className={`w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium bg-white text-neutral-900 border border-neutral-300 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400 ${
+      disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-neutral-100"
     }`}
   >
     <svg aria-hidden="true" viewBox="0 0 48 48" className="h-4 w-4">

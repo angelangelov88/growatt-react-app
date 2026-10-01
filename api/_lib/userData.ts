@@ -9,6 +9,7 @@ import type {
   ExportPreset,
   Preset,
   Settings,
+  Theme,
 } from "../../src/types/Api";
 import type { Provider, Tx } from "../../src/types/Server";
 
@@ -18,6 +19,7 @@ import type { Provider, Tx } from "../../src/types/Server";
 type SettingsRow = {
   window_enabled: boolean;
   charge_start: string | null;
+  theme: Theme;
   charge_end: string | null;
   power_rate: number | null;
   stop_soc: number | null;
@@ -50,7 +52,8 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
       low_export_stop, keep_export,
       -- numeric comes back as a string otherwise.
       battery_kwh::float8 as battery_kwh,
-      battery_max_kw::float8 as battery_max_kw
+      battery_max_kw::float8 as battery_max_kw,
+      theme
     from private.user_settings`;
   const row = rows.at(0);
   const preset = (key: Preset): ExportPreset => {
@@ -75,6 +78,7 @@ const readSettings = async (tx: Tx): Promise<Settings> => {
     exportEveryDay: row?.keep_export ?? false,
     batteryKwh: row?.battery_kwh ?? null,
     maxDischargeKw: row?.battery_max_kw ?? null,
+    theme: row?.theme ?? "system",
   };
 };
 

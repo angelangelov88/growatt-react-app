@@ -4,6 +4,7 @@ import {
   dailyExportSchema,
   exportPresetsSchema,
   settingsSchema,
+  themeSchema,
 } from "../src/lib/settingsSchema";
 import type { ExportPresets } from "../src/types/Api";
 import { audit } from "./_lib/audit";
@@ -34,6 +35,9 @@ const presetDetails = ({ high, low }: ExportPresets) =>
 //   on needs Growatt credentials. Leaves everything else alone.
 // PUT ?part=battery BatteryInfo → Settings. Battery size and max discharge
 //   power, for Export until battery %. Leaves everything else alone.
+// PUT ?part=theme ThemeSetting → Settings. Light, dark or the device's
+//   setting. Leaves everything else alone. Not audited: it's only how the
+//   app looks.
 const handler = async (req: VercelRequest, res: VercelResponse) => {
   if (!allowMethods(req, res, ["GET", "PUT"]) || !checkOrigin(req, res)) return;
   const user = await requireUser(req, res);
@@ -86,6 +90,30 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
           "export_presets_saved",
           presetDetails(presets.data),
         );
+        return readSettings(tx);
+      }),
+    );
+    return;
+  }
+
+  if (req.query.part === "theme") {
+    const body = themeSchema.safeParse(req.body);
+    if (!body.success) {
+      sendError(
+        res,
+        400,
+        "invalid_input",
+        body.error.issues[0]?.message ?? "Invalid input",
+      );
+      return;
+    }
+    const { theme } = body.data;
+    res.json(
+      await withUser(userId, async (tx) => {
+        await tx`
+          insert into private.user_settings (user_id, theme)
+          values (${userId}, ${theme})
+          on conflict (user_id) do update set theme = excluded.theme`;
         return readSettings(tx);
       }),
     );

@@ -27,7 +27,7 @@ const ActivityPage = () => {
   return (
     <main className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-xl font-semibold text-white">Activity</h1>
+        <h1 className="text-xl font-semibold text-strong">Activity</h1>
         <p className="text-sm text-gray-400">
           Important actions on your account from the last 12 months, in UK time.
           If something wasn&apos;t you,{" "}
@@ -64,7 +64,9 @@ const ActivityPage = () => {
           aria-label={day.label}
           className="rounded-2xl bg-gray-900 border border-gray-800 px-6 py-3"
         >
-          <h2 className="pt-2 text-sm font-semibold text-white">{day.label}</h2>
+          <h2 className="pt-2 text-sm font-semibold text-strong">
+            {day.label}
+          </h2>
           <ul className="divide-y divide-gray-800">
             {day.entries.map((entry) => (
               <ActivityItem key={entry.id} entry={entry} />

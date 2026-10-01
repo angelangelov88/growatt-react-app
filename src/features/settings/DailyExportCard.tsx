@@ -37,7 +37,7 @@ const DailyExportCard = () => {
       <div className="flex items-center gap-2 mb-4">
         <h2
           id="daily-export-heading"
-          className="text-base font-semibold text-white"
+          className="text-base font-semibold text-strong"
         >
           Export to grid settings
         </h2>

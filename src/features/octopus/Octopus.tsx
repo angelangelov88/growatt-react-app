@@ -53,7 +53,7 @@ const Octopus = ({ canApply }: OctopusProps) => {
     <div className="rounded-2xl bg-gray-900 border border-gray-800 p-6">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-base font-semibold text-strong">
             Octopus Dispatch Slots
           </h2>
           <InfoTip label="Octopus Dispatch Slots">
@@ -160,7 +160,7 @@ const Octopus = ({ canApply }: OctopusProps) => {
           <button
             onClick={applySlots}
             disabled={isPending || !canBuildPlan}
-            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isPending
               ? "Applying…"

@@ -6,7 +6,7 @@ import { LAST_UPDATED } from "./legalInfo";
 const LegalPage = ({ title, children, showUpdated = true }: LegalPageProps) => (
   <main className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-8 text-sm text-gray-300 leading-relaxed">
     <div>
-      <h1 className="text-xl font-semibold text-white">{title}</h1>
+      <h1 className="text-xl font-semibold text-strong">{title}</h1>
       {showUpdated && (
         <p className="mt-1 text-gray-500">Last updated {LAST_UPDATED}</p>
       )}

@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import type { AccountMenuProps } from "../types/Common";
 
 const ITEM =
-  "block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
+  "block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 hover:text-strong disabled:opacity-40 disabled:cursor-not-allowed transition-colors";
 
 // Small screens only: the header's account links behind a menu button, as they
 // don't fit next to the logo. Closes on a choice, a click outside or Esc.

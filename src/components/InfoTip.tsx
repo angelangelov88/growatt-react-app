@@ -162,7 +162,7 @@ const InfoTip = ({ label, children }: InfoTipProps) => {
         <div
           ref={boxRef}
           style={{ width: place.width, maxHeight: place.maxHeight }}
-          className="flex flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-gray-700 bg-gray-800 p-3 text-left text-xs font-normal leading-relaxed text-gray-300 shadow-xl [&_b]:font-medium [&_b]:text-white [&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-1 [&_ul]:pl-4"
+          className="flex flex-col gap-2 overflow-y-auto overscroll-contain rounded-xl border border-gray-700 bg-gray-800 p-3 text-left text-xs font-normal leading-relaxed text-gray-300 shadow-xl [&_b]:font-medium [&_b]:text-strong [&_ul]:flex [&_ul]:list-disc [&_ul]:flex-col [&_ul]:gap-1 [&_ul]:pl-4"
         >
           {children}
         </div>

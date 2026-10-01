@@ -95,7 +95,7 @@ const PowerDownSessions = ({
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-base font-semibold text-strong">
             Power Down Sessions
           </h2>
           <InfoTip label="Power Down Sessions">
@@ -249,7 +249,7 @@ const PowerDownSessions = ({
                       }}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                         historyDays === days
-                          ? "bg-gray-600 text-white"
+                          ? "bg-gray-600 text-strong"
                           : "text-gray-400 hover:text-gray-200"
                       }`}
                     >

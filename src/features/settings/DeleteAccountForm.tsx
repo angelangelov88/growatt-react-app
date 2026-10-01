@@ -146,7 +146,7 @@ const DeleteAccountForm = ({ onCancel }: DeleteAccountFormProps) => {
       <button
         type="submit"
         disabled={remove.isPending}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
       >
         {remove.isPending && <Spinner className="text-white" />}
         {remove.isPending ? "Deleting…" : "Delete my account"}

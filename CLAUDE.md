@@ -100,6 +100,7 @@ The app is public and changes real inverters, so these rules always apply:
 
 - Tailwind CSS for all styling; global rules live in `src/index.css`.
 - Use the `classNames` utility (`classnames` package; add it when first needed) for conditional classes. A simple ternary is fine for a single either/or class.
+- Light and dark themes (Settings → Appearance and the header button). Write classes for the dark theme: `gray` and the accents' 200–400 and 800–950 shades are CSS variables (`src/index.css`, `tailwind.config.js`) that the light theme mirrors, so `bg-gray-900` is a white card in light. Use `text-strong` for the brightest neutral text (headings), and `text-white` only on solid accent fills (500–700, which don't change). For colours that must never change, use `neutral`. Check new UI in both themes.
 
 ## State and Data
 

@@ -83,6 +83,9 @@ const batterySchema = z.object({
     .multipleOf(0.01, "Use at most 2 decimal places"),
 });
 
+// PUT /api/settings?part=theme: light, dark or the device's setting.
+const themeSchema = z.object({ theme: z.enum(["system", "light", "dark"]) });
+
 // Until the user saves their own.
 const defaultSettings: z.infer<typeof settingsSchema> = {
   windowEnabled: true,
@@ -117,6 +120,7 @@ export {
   exportPresetsSchema,
   dailyExportSchema,
   batterySchema,
+  themeSchema,
   defaultSettings,
   defaultExportPresets,
 };

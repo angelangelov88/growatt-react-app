@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import "./index.css";
 import App from "./App";
+import ThemeProvider from "./contexts/ThemeProvider";
 import ToastProvider from "./contexts/ToastProvider";
 import { ME_KEY } from "./features/auth/useAuth";
 import { ApiRequestError } from "./lib/apiClient";
@@ -37,7 +38,9 @@ if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <App />
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
       </ToastProvider>
     </QueryClientProvider>,
   );
