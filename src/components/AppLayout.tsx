@@ -4,6 +4,7 @@ import AppVersion from "./AppVersion";
 import BetaBadge from "./BetaBadge";
 import HeaderNav from "./HeaderNav";
 import LegalLinks from "./LegalLinks";
+import ThemeToggle from "./ThemeToggle";
 import Wordmark from "./Wordmark";
 
 // The frame around every page, signed in or not. The header stays at the top
@@ -17,13 +18,16 @@ const AppLayout = () => (
     <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800 px-4 sm:px-6 py-4 flex items-center justify-between gap-3 sm:gap-4">
       <Link
         to="/"
-        className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white"
+        className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-strong"
       >
         <AppLogo className="size-7 shrink-0" />
         <Wordmark />
         <BetaBadge />
       </Link>
-      <HeaderNav />
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <ThemeToggle />
+        <HeaderNav />
+      </div>
     </header>
     <div className="flex-1 flex flex-col">
       <Outlet />

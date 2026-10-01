@@ -3,7 +3,7 @@ import useAuth from "../features/auth/useAuth";
 import useLogout from "../features/auth/useLogout";
 import AccountMenu from "./AccountMenu";
 
-const LINK = "text-sm text-gray-300 hover:text-white shrink-0";
+const LINK = "text-sm text-gray-300 hover:text-strong shrink-0";
 const BUTTON =
   "px-3 py-1.5 rounded-xl text-sm font-medium bg-gray-800 hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0";
 

@@ -9,7 +9,7 @@ const SOC_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 const RATE_OPTIONS = Array.from({ length: 20 }, (_, i) => String((i + 1) * 5));
 
 const selectClass =
-  "bg-gray-800 border border-gray-700 rounded-xl px-2 py-2.5 text-sm text-white font-mono focus:outline-none focus:border-blue-500 appearance-none text-center w-full";
+  "bg-gray-800 border border-gray-700 rounded-xl px-2 py-2.5 text-sm text-strong font-mono focus:outline-none focus:border-blue-500 appearance-none text-center w-full";
 
 // The dropdowns offer steps of 5, plus the current value if it's another one
 // (read from the inverter or saved before), so it still shows.

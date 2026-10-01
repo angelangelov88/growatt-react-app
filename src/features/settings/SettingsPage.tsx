@@ -1,3 +1,4 @@
+import AppearanceCard from "./AppearanceCard";
 import AutomationCard from "./AutomationCard";
 import BatteryCard from "./BatteryCard";
 import ChargeSettingsCard from "./ChargeSettingsCard";
@@ -10,12 +11,13 @@ import SecurityCard from "./SecurityCard";
 
 const SettingsPage = () => (
   <main className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
-    <h1 className="text-xl font-semibold text-white">Settings</h1>
+    <h1 className="text-xl font-semibold text-strong">Settings</h1>
     <AutomationCard />
     <ChargeSettingsCard />
     <DailyExportCard />
     <ExportPresetsCard />
     <BatteryCard />
+    <AppearanceCard />
     <CredentialsCard />
     <PasswordCard />
     <SecurityCard />

@@ -9,7 +9,7 @@ const SetupNotice = ({ hasOctopus }: SetupNoticeProps) => (
     aria-labelledby="setup-heading"
     className="rounded-2xl bg-gray-900 border border-violet-800/60 p-6 flex flex-col gap-4"
   >
-    <h2 id="setup-heading" className="text-base font-semibold text-white">
+    <h2 id="setup-heading" className="text-base font-semibold text-strong">
       Finish setting up
     </h2>
     <ul className="flex flex-col gap-2 text-sm text-gray-400">
@@ -28,7 +28,7 @@ const SetupNotice = ({ hasOctopus }: SetupNoticeProps) => (
     </ul>
     <Link
       to="/settings"
-      className="self-start px-4 py-2 rounded-xl text-sm font-medium bg-violet-600 hover:bg-violet-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
+      className="self-start px-4 py-2 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-400"
     >
       Go to Settings
     </Link>

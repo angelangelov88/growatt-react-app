@@ -71,7 +71,7 @@ const CredentialsRow = ({
                 remove.mutate();
               }}
               disabled={remove.isPending}
-              className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 rounded-xl text-sm font-medium text-white bg-red-700 hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {remove.isPending ? "Removing…" : "Remove"}
             </button>
@@ -128,7 +128,7 @@ const CredentialsRow = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <h3 id={headingId} className="text-sm font-semibold text-white">
+        <h3 id={headingId} className="text-sm font-semibold text-strong">
           {name}
         </h3>
         <span

@@ -60,7 +60,7 @@ const GridFirstCard = ({
       <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-white">
+            <h2 className="text-base font-semibold text-strong">
               Export to grid
             </h2>
             <InfoTip label="Export to grid">
@@ -140,7 +140,7 @@ const GridFirstCard = ({
                 }}
                 disabled={isDisabled || !form.isLoaded || hasNoSlots}
                 aria-describedby={describedBy}
-                className="px-3 py-1.5 rounded-xl text-sm font-medium bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-xl text-sm font-medium text-white bg-red-700 hover:bg-red-600 disabled:hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Disable All
               </button>
@@ -173,7 +173,7 @@ const GridFirstCard = ({
                   }}
                   className="min-w-0 rounded-xl px-4 py-3 text-left border border-gray-700 bg-gray-800 hover:border-gray-600 transition-colors"
                 >
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className="text-sm font-medium text-strong truncate">
                     {p.name}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
@@ -244,7 +244,7 @@ const GridFirstCard = ({
           <button
             onClick={handleApply}
             disabled={isDisabled || !form.isDirty}
-            className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isApplying ? "Applying…" : "Apply export times"}
           </button>

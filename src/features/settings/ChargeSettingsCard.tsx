@@ -37,7 +37,7 @@ const ChargeSettingsCard = () => {
       <div className="flex items-center gap-2 mb-4">
         <h2
           id="charge-settings-heading"
-          className="text-base font-semibold text-white"
+          className="text-base font-semibold text-strong"
         >
           Battery charging settings
         </h2>

@@ -46,7 +46,8 @@ const PrivacyPage = () => (
         <li>
           <strong className="text-gray-100">Your settings:</strong> your charge
           window and whether it&apos;s used, charge power, battery stop level
-          and whether automatic charging is on.
+          and whether automatic charging is on, and the theme you chose (light,
+          dark or your device&apos;s setting).
         </li>
         <li>
           <strong className="text-gray-100">Automatic charging status:</strong>{" "}
@@ -124,7 +125,9 @@ const PrivacyPage = () => (
         cookies that keep you signed in, and a short-lived one (at most 10
         minutes) used during Google sign-in. Scripts on the page can&apos;t read
         them. There are no analytics or advertising cookies, so there&apos;s
-        nothing to accept or decline.
+        nothing to accept or decline. Your browser also keeps a copy of your
+        theme (light, dark or your device&apos;s setting), so pages open in it
+        before you sign in.
       </p>
     </LegalSection>
 

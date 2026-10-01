@@ -2,8 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The app is dark only: built-in controls (time picker icons, scrollbars,
-   number spinners) use their dark versions. */
+/* Theme colours as RGB channels, used by tailwind.config.js. Dark is the
+   default; public/theme.js sets data-theme before the first paint. Built-in
+   controls (time picker icons, scrollbars, number spinners) follow
+   color-scheme. */
 :root {
   color-scheme: dark;
+  --strong: 255 255 255;
+
+  --gray-50: 249 250 251;
+  --gray-100: 243 244 246;
+  --gray-200: 229 231 235;
+  --gray-300: 209 213 219;
+  --gray-400: 156 163 175;
+  --gray-500: 107 114 128;
+  --gray-600: 75 85 99;
+  --gray-700: 55 65 81;
+  --gray-800: 31 41 55;
+  --gray-900: 17 24 39;
+  --gray-950: 3 7 18;
+
+  --violet-200: 221 214 254;
+  --violet-300: 196 181 253;
+  --violet-400: 167 139 250;
+  --violet-800: 91 33 182;
+  --violet-900: 76 29 149;
+  --violet-950: 46 16 101;
+
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --red-800: 153 27 27;
+  --red-900: 127 29 29;
+  --red-950: 69 10 10;
+
+  --emerald-200: 167 243 208;
+  --emerald-300: 110 231 183;
+  --emerald-400: 52 211 153;
+  --emerald-800: 6 95 70;
+  --emerald-900: 6 78 59;
+  --emerald-950: 2 44 34;
+
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --amber-800: 146 64 14;
+  --amber-900: 120 53 15;
+  --amber-950: 69 26 3;
+
+  --blue-200: 191 219 254;
+  --blue-300: 147 197 253;
+  --blue-400: 96 165 250;
+  --blue-800: 30 64 175;
+  --blue-900: 30 58 138;
+  --blue-950: 23 37 84;
+}
+
+/* Light: the gray scale mirrored, except the page (gray-50) under white
+   cards. Accent text shades darken to 700/800 to read on white, and the dark
+   tints behind alerts become pale ones. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --strong: 3 7 18;
+
+  --gray-50: 3 7 18;
+  --gray-100: 17 24 39;
+  --gray-200: 31 41 55;
+  --gray-300: 55 65 81;
+  --gray-400: 75 85 99;
+  --gray-500: 107 114 128;
+  --gray-600: 209 213 219;
+  --gray-700: 229 231 235;
+  --gray-800: 243 244 246;
+  --gray-900: 255 255 255;
+  --gray-950: 249 250 251;
+
+  --violet-200: 91 33 182;
+  --violet-300: 109 40 217;
+  --violet-400: 109 40 217;
+  --violet-800: 221 214 254;
+  --violet-900: 237 233 254;
+  --violet-950: 245 243 255;
+
+  --red-200: 153 27 27;
+  --red-300: 185 28 28;
+  --red-400: 185 28 28;
+  --red-800: 254 202 202;
+  --red-900: 254 226 226;
+  --red-950: 254 242 242;
+
+  --emerald-200: 6 95 70;
+  --emerald-300: 4 120 87;
+  --emerald-400: 4 120 87;
+  --emerald-800: 167 243 208;
+  --emerald-900: 209 250 229;
+  --emerald-950: 236 253 245;
+
+  --amber-200: 146 64 14;
+  --amber-300: 180 83 9;
+  --amber-400: 180 83 9;
+  --amber-800: 253 230 138;
+  --amber-900: 254 243 199;
+  --amber-950: 255 251 235;
+
+  --blue-200: 30 64 175;
+  --blue-300: 29 78 216;
+  --blue-400: 29 78 216;
+  --blue-800: 191 219 254;
+  --blue-900: 219 234 254;
+  --blue-950: 239 246 255;
 }

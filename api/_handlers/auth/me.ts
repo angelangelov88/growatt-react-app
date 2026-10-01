@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type { Me } from "../../../src/types/Api";
+import type { Me, Theme } from "../../../src/types/Api";
 import { withUser } from "../../_lib/db";
 import { allowMethods, sendError } from "../../_lib/http";
 import { requireUser } from "../../_lib/session";
@@ -13,7 +13,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
   // Asked every time: an aal2 token outlives turning MFA off by up to 15
   // minutes, so the token can't say whether it's still on. Both lookups run
   // at once.
-  const [factors, { providers, hasPassword }] = await Promise.all([
+  const [factors, { providers, hasPassword, theme }] = await Promise.all([
     user.supabase.auth.mfa.listFactors(),
     withUser(user.userId, async (tx) => {
       const providers = await tx<
@@ -23,7 +23,15 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
       const [{ has }] = await tx<
         { has: boolean }[]
       >`select private.has_password() as has`;
-      return { providers, hasPassword: has };
+      // No row until the user first saves a setting.
+      const settings = await tx<
+        { theme: Theme }[]
+      >`select theme from private.user_settings`;
+      return {
+        providers,
+        hasPassword: has,
+        theme: settings.at(0)?.theme ?? "system",
+      };
     }),
   ]);
   if (factors.error) {
@@ -38,6 +46,7 @@ const handler = async (req: VercelRequest, res: VercelResponse) => {
     hasPassword,
     hasGrowatt: has("growatt"),
     hasOctopus: has("octopus"),
+    theme,
   };
   res.json(me);
 };

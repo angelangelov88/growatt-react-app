@@ -88,7 +88,7 @@ const SecurityCard = () => {
       <div className="flex items-center gap-3 mb-4">
         <h2
           id="security-heading"
-          className="text-base font-semibold text-white"
+          className="text-base font-semibold text-strong"
         >
           Authenticator app
         </h2>

@@ -19,6 +19,7 @@ import type {
   dailyExportSchema,
   exportPresetsSchema,
   settingsSchema,
+  themeSchema,
 } from "../lib/settingsSchema";
 import type { ChargePlan, Dispatch, PowerDownSession } from "./Octopus";
 
@@ -50,6 +51,8 @@ type Me = {
   hasPassword: boolean;
   hasGrowatt: boolean;
   hasOctopus: boolean;
+  // Saved in settings; here too so every page can use it.
+  theme: Theme;
 };
 
 // POST /api/auth/mfa { action: "enroll" }. Shown once, to add the app.
@@ -98,12 +101,17 @@ type DailyExport = z.infer<typeof dailyExportSchema>;
 // PUT /api/settings?part=battery: battery size and max discharge power.
 type BatteryInfo = z.infer<typeof batterySchema>;
 
+// PUT /api/settings?part=theme. system follows the device.
+type ThemeSetting = z.infer<typeof themeSchema>;
+type Theme = ThemeSetting["theme"];
+
 // GET /api/settings, and what the PUTs return. exportEveryDay: the export
 // times last applied on the dashboard are put back every night after
 // Growatt's 23:30 reset. batteryKwh, maxDischargeKw: null until saved.
 type Settings = ChargeSettings & {
   exportPresets: ExportPresets;
   exportEveryDay: boolean;
+  theme: Theme;
 } & { [K in keyof BatteryInfo]: BatteryInfo[K] | null };
 
 // GET /api/automation: what automatic charging last did. Times are ISO
@@ -204,6 +212,8 @@ export type {
   Preset,
   DailyExport,
   BatteryInfo,
+  ThemeSetting,
+  Theme,
   Settings,
   AutomationStatus,
   CheckNowResult,

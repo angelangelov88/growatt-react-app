@@ -87,7 +87,7 @@ const BatteryFirstCard = ({
       <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-3 mb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-white">
+            <h2 className="text-base font-semibold text-strong">
               Charge battery
             </h2>
             <InfoTip label="Charge battery">
@@ -180,7 +180,7 @@ const BatteryFirstCard = ({
                   isDisabled || !form.isLoaded || isAutomatic || hasMySettings
                 }
                 aria-describedby={describedBy}
-                className="px-3 py-1.5 rounded-xl text-sm font-medium bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-xl text-sm font-medium text-white bg-amber-600 hover:bg-amber-500 disabled:hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Apply my settings
               </button>
@@ -260,7 +260,7 @@ const BatteryFirstCard = ({
             <button
               onClick={handleApply}
               disabled={isDisabled || !form.isDirty}
-              className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:hover:bg-blue-600 disabled:active:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {isApplying ? "Applying…" : "Apply charge times"}
             </button>

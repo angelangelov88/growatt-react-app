@@ -25,7 +25,7 @@ const ExportPresetsCard = () => {
     >
       <h2
         id="export-presets-heading"
-        className="text-base font-semibold text-white mb-1"
+        className="text-base font-semibold text-strong mb-1"
       >
         Export to grid presets
       </h2>

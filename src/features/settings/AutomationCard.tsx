@@ -30,7 +30,7 @@ const AutomationCard = () => {
       <div className="flex items-center gap-2 mb-4">
         <h2
           id="automation-heading"
-          className="text-base font-semibold text-white"
+          className="text-base font-semibold text-strong"
         >
           Automatic charging
         </h2>

@@ -84,7 +84,7 @@ const ResetPasswordPage = () => {
                   newLink.mutate({ email });
                 }}
                 disabled={newLink.isPending}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {newLink.isPending ? "Sending…" : "Send a new link"}
               </button>

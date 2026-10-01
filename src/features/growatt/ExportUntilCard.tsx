@@ -162,7 +162,7 @@ const ExportUntilCard = ({
           Battery {plan.soc}% → {input.stopSOC}% at {input.powerRate}% discharge
           rate.
         </p>
-        <p className="text-base font-semibold text-white mt-1">
+        <p className="text-base font-semibold text-strong mt-1">
           Export {plan.start}–{plan.end}{" "}
           <span className="text-sm font-normal text-gray-400">
             ({formatDuration(plan.minutes)})
@@ -197,7 +197,7 @@ const ExportUntilCard = ({
           <button
             onClick={confirm}
             disabled={isApplying || reader.isReading}
-            className="py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isApplying ? "Setting…" : "Confirm"}
           </button>
@@ -210,7 +210,7 @@ const ExportUntilCard = ({
     <div className="rounded-2xl bg-gray-900 border border-gray-800 p-4 sm:p-6">
       <div className="relative mb-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-base font-semibold text-strong">
             Export to grid until battery %
           </h2>
           <InfoTip label="Export until battery %">
@@ -323,7 +323,7 @@ const ExportUntilCard = ({
                 onClick={workOut}
                 disabled={!!workOutTip || isReading}
                 aria-describedby={describedBy}
-                className="w-full py-2.5 rounded-xl text-sm font-medium bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 {isReading ? "Reading battery…" : "Work out times"}
               </button>

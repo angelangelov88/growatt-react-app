@@ -37,7 +37,10 @@ const DangerZoneCard = () => {
       aria-labelledby="data-heading"
       className="rounded-2xl bg-gray-900 border border-red-900/60 p-6"
     >
-      <h2 id="data-heading" className="text-base font-semibold text-white mb-4">
+      <h2
+        id="data-heading"
+        className="text-base font-semibold text-strong mb-4"
+      >
         Your data
       </h2>
       <div className="flex flex-col gap-6">

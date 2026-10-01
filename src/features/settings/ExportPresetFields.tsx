@@ -59,7 +59,7 @@ const ExportPresetFields = ({
 
   return (
     <fieldset className="flex flex-col gap-4 min-w-0">
-      <legend className="mb-3 text-sm font-medium text-white truncate max-w-full">
+      <legend className="mb-3 text-sm font-medium text-strong truncate max-w-full">
         {value.name.trim() || "Unnamed preset"}
       </legend>
       <TextField
