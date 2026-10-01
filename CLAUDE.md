@@ -133,6 +133,11 @@ The app is public and changes real inverters, so these rules always apply:
   - `pnpm outdated` lists newer versions. Update on a branch: minor and patch versions together, each major version on its own (read its changelog). Run everything CI runs before merging, since `main` deploys to production.
 - Use pnpm, not npm. Don't commit build output (`dist/`).
 
+## Versioning
+
+- The version in `package.json` is shown in the footer (`__APP_VERSION__`, set in `vite.config.ts`). Don't change it by hand: `.github/workflows/version-bump.yml` commits a bump to every PR into `main` (`scripts/versionBump.mts`), and tags and releases it on merge.
+- The PR title picks the step: `BREAKING CHANGE` major, `feat:` minor, anything else patch. Changing the title redoes the bump, but it only ever goes up.
+
 ## Working with Claude Code
 
 - Keep conversations lean. When a piece of work is finished (a feature built, a bug fixed, a question answered) and the conversation has grown long, suggest running `/compact` before starting the next task.
