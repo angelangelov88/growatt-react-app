@@ -1,5 +1,6 @@
 import { Link, Outlet, ScrollRestoration } from "react-router";
 import AppLogo from "./AppLogo";
+import AppVersion from "./AppVersion";
 import BetaBadge from "./BetaBadge";
 import HeaderNav from "./HeaderNav";
 import LegalLinks from "./LegalLinks";
@@ -29,6 +30,7 @@ const AppLayout = () => (
     </div>
     <footer className="pb-8">
       <LegalLinks />
+      <AppVersion />
     </footer>
   </div>
 );

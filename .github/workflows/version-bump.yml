@@ -1,0 +1,79 @@
+name: Version
+
+# Each PR into main raises the app version (shown in the footer) by one step.
+# main only takes merges, so the bump is committed to the PR branch before the
+# merge: scripts/versionBump.mts sets it from main's version and the PR title
+# ("feat:" minor, "BREAKING CHANGE" major, otherwise patch). The push uses a
+# deploy key (VERSION_BUMP_DEPLOY_KEY), not GITHUB_TOKEN, so CI runs again on
+# the bump commit. Once merged, the version is tagged and released with notes
+# listing the merged PRs. This repo's logs are public: only versions printed.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    # PRs from forks don't get the deploy key. Edits only matter to the title.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.action != 'closed' &&
+      (github.event.action != 'edited' || github.event.changes.title)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: version-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+          ssh-key: ${{ secrets.VERSION_BUMP_DEPLOY_KEY }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Work out the version
+        id: bump
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          git fetch --depth=1 origin "$BASE_BRANCH"
+          BASE_REF="origin/$BASE_BRANCH" node scripts/versionBump.mts
+      - name: Commit the bump to the PR branch
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          BRANCH: ${{ github.head_ref }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: bump version to $VERSION"
+          git push origin "HEAD:$BRANCH"
+
+  release:
+    if: github.event.action == 'closed' && github.event.pull_request.merged
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          persist-credentials: false
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          TAG="v$(node -p 'require("./package.json").version')"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG already released"
+          else
+            gh release create "$TAG" --target "$MERGE_SHA" --generate-notes
+          fi
